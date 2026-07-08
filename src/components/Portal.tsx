@@ -3,6 +3,7 @@
 
 import { ReactNode, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { cn } from '@/lib/utils'
 
 interface PortalProps {
   children: ReactNode
@@ -36,9 +37,9 @@ function SetPortal({
   return createPortal(children, container)
 }
 
-export default function Portal(props: { children: ReactNode }) {
+export default function Portal(props: PortalProps) {
   return (
-    <SetPortal className="fixed inset-0 z-[9999] min-h-screen min-w-screen bg-black/20" >
+    <SetPortal className={cn('fixed inset-0 z-[9999] min-h-screen min-w-screen bg-black/20', props.className)} >
       {props.children}
     </SetPortal >
   );

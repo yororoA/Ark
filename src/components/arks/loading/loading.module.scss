@@ -1,3 +1,5 @@
+@import '@/styles/variables';
+
 $square-root-2: 1.414;
 
 $base-height: 538px;
@@ -5,12 +7,12 @@ $base-animation-height: 84px;
 
 $AH-ratio: $base-animation-height / $base-height; // 0.15613 (unitless)
 $AH: $AH-ratio * 100vh;
-$AH-fontsize: $AH / 6;
+$AH-fontsize: $AH / 6; // 字体大小, 很重要, 全局为 $AH-fontsize / 0.8
 
 $icon-size: $AH * 0.5 / $square-root-2;
 $bd-width: $icon-size/8;
-$bd: $bd-width solid #fff;
-$scale: 3.5;
+$bd: $bd-width solid $white;
+$scale: 3;
 
 .wrap {
   position: absolute;
@@ -23,7 +25,7 @@ $scale: 3.5;
 
   .charJump {
     display: inline-block;
-    color: #e4e4e4;
+    color: $white;
     animation: charJump var(--charJumpDuration, 5s) ease-in-out infinite;
     animation-delay: var(--charJumpDelay, 0s);
   }
@@ -60,7 +62,7 @@ $scale: 3.5;
       }
 
       .animationText {
-        color: #e4e4e4;
+        color: $white;
       }
     }
   }
@@ -87,7 +89,7 @@ $scale: 3.5;
 
   100% {
     transform: rotate(45deg) scale($scale);
-    border-width: $bd-width / $scale;
+    border-width: $bd-width / ($scale / 2);
     opacity: 0;
   }
 }

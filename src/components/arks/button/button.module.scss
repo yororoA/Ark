@@ -1,0 +1,21 @@
+@import '@/styles/variables';
+
+.button {
+  background-color: rgba($color: $gray, $alpha: 1.0);
+  border: $white 1px solid;
+  box-shadow: $black 0.1rem 0.2rem 0.5rem;
+  cursor: pointer;
+
+  &:hover {
+    background-color: red;
+  }
+
+  &.small {
+    font-size: 0.6rem;
+    padding: 0.45rem 2.3rem;
+  }
+
+  &.large {
+    padding: 0.9rem 3.3rem;
+  }
+}

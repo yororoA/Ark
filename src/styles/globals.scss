@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "variables";
+@import "@/components/arks/loading/loading.module.scss";
+
+html{
+  font-size: $AH-fontsize / 0.8;
+}
+
+body{
+  color: $white;
+  -webkit-text-stroke:  0.01rem $black; // 字体描边
+}
