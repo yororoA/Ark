@@ -11,7 +11,7 @@ export default function LoginLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className='min-h-screen flex flex-col relative items-center justify-between'>
+    <div className='min-h-screen flex flex-col relative items-center justify-between overflow-hidden'>
       {children}
     </div>
   );

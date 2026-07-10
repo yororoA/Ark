@@ -1,0 +1,58 @@
+@use 'sass:math';
+@use 'sass:color';
+@use '@/styles/variables' as *;
+
+$height: math.div(750, 1600) * 100%;
+$width: math.div(1250, 2560) * 100%;
+
+$solid-color: mix($gray, $black, 30%);
+$declaration-base-bgc: rgba($solid-color, 0.8);
+
+.declaration {
+  -webkit-text-stroke: 0;
+  height: $height;
+  width: $width;
+  font-size: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 .1rem .5rem rgba(0, 0, 0, 0.5);
+  background:
+    radial-gradient(circle at 50% 90%, transparent 85%, rgba(0, 0, 0, 0.6) 100%),
+    $declaration-base-bgc;
+
+  .declarationContentWrapper {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
+    padding: $gap*1.5;
+
+    pre {
+      font-family: var(--font-noto-sans);
+      white-space: pre-wrap;
+    }
+
+    * {
+      margin-bottom: $gap;
+    }
+  }
+
+  span {
+    display: flex;
+    width: 100%;
+
+    &.declarationBtn {
+      font-size: 0.6rem;
+      padding: 0.6rem;
+      background: $solid-color;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+
+      &:active {
+        color: $active-color;
+      }
+    }
+  }
+}

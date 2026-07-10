@@ -1,0 +1,102 @@
+@use 'sass:math';
+@use '@/styles/variables' as *;
+
+$copyright-size: $gap*0.7;
+$pro-tag-size: $gap * 0.7;
+
+// protag 前后 - 的 mg
+$ps-mg: $pro-tag-size * 1;
+// tag 平行四边形
+$tag-prefix-height: $pro-tag-size * 1.5;
+$tag-prefix-width: math.div($tag-prefix-height, 1.732) * 5;
+$tag-bgc: color-mix(in srgb, $black 21.2%, $gray);
+
+.nav {
+  padding: $gap*1.5 $gap;
+  width: 100%;
+  height: $nav-height;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .bines_sign {
+    margin-bottom: $gap * 10;
+  }
+
+  .pro_tag {
+    font-weight: 700;
+    font-size: $pro-tag-size;
+    width: $pro-tag-size * 15;
+    text-align: center;
+    background-color: color-mix(in srgb, $black 57%, $gray);
+    margin-top: $gap * 20;
+
+    &::before,
+    &::after {
+      content: '-';
+      display: inline-block;
+    }
+
+    &::before {
+      margin-right: $ps-mg;
+    }
+
+    &::after {
+      margin-left: $ps-mg;
+    }
+  }
+
+  .pro_tag,
+  .tag {
+    margin-bottom: $gap * 2.8;
+  }
+
+  .tag {
+    margin-top: $gap * 0.4;
+    font-size: $pro-tag-size;
+
+    .tag_suffix {
+      font-weight: 600;
+      color: $white;
+    }
+
+    .tag_prefix {
+      display: inline-flex;
+      justify-content: center;
+      font-weight: 600;
+      width: $tag-prefix-width;
+      height: $tag-prefix-height;
+      background-color: $tag-bgc;
+      clip-path: polygon(20% 0, 100% 0, 80% 100%, 0 100%);
+      position: relative;
+
+      &::before {
+        content: '';
+        display: inline-block;
+        width: $tag-prefix-width;
+        height: $tag-prefix-height;
+        background-image: linear-gradient(36deg, $white 0%, $gray 100%);
+        position: absolute;
+        clip-path: polygon(20% 0, 39% 100%, 40% 100%, 60.5% 1%, 79% 100%, 80% 100%, 61% 0, 60% 0, 39.5% 99%, 21% 0);
+      }
+    }
+  }
+}
+
+.gap {
+  column-gap: $gap;
+}
+
+.copyright {
+  font-size: $copyright-size;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: $copyright-size;
+}
