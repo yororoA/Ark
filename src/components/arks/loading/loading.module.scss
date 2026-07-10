@@ -1,16 +1,14 @@
-@import '@/styles/variables';
+@use 'sass:math';
+@use '@/styles/variables' as *;
 
 $square-root-2: 1.414;
 
 $base-height: 538px;
 $base-animation-height: 84px;
 
-$AH-ratio: $base-animation-height / $base-height; // 0.15613 (unitless)
-$AH: $AH-ratio * 100vh;
-$AH-fontsize: $AH / 6; // 字体大小, 很重要, 全局为 $AH-fontsize / 0.8
 
-$icon-size: $AH * 0.5 / $square-root-2;
-$bd-width: $icon-size/8;
+$icon-size: math.div($AH * 0.5, $square-root-2);
+$bd-width: math.div($icon-size, 8);
 $bd: $bd-width solid $white;
 $scale: 3;
 
@@ -50,8 +48,8 @@ $scale: 3;
         left: 50%;
         width: $icon-size;
         height: $icon-size;
-        margin-left: -$icon-size / 2;
-        margin-top: -$icon-size / 2;
+        margin-left: math.div(-$icon-size, 2);
+        margin-top: math.div(-$icon-size, 2);
         background: transparent;
         border: $bd;
         transform: rotate(45deg);
@@ -89,7 +87,7 @@ $scale: 3;
 
   100% {
     transform: rotate(45deg) scale($scale);
-    border-width: $bd-width / ($scale / 2);
+    border-width: math.div($bd-width, math.div($scale, 2));
     opacity: 0;
   }
 }

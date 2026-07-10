@@ -1,12 +1,15 @@
-@import "tailwindcss";
-@import "variables";
-@import "@/components/arks/loading/loading.module.scss";
+@use 'sass:math';
+@use "variables" as *;
+@use "@/components/arks/loading/loading.module.scss";
 
-html{
-  font-size: $AH-fontsize / 0.8;
+html {
+  font-size: math.div($AH-fontsize, 0.8);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-body{
+body {
   color: $white;
-  -webkit-text-stroke:  0.01rem $black; // 字体描边
+  // -webkit-text-stroke: 0.01rem $black; /*  字体描边 */
 }

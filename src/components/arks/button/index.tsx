@@ -1,7 +1,6 @@
 import { ButtonHTMLAttributes } from 'react';
 import styles from './button.module.scss';
 import { cn } from '@/lib/utils';
-import Portal from '@/components/Portal';
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: 'small' | 'large'

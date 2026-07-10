@@ -1,21 +1,34 @@
-@import '@/styles/variables';
+@use '@/styles/variables' as *;
+
+$default-bgc: rgba($color: $gray, $alpha: 1.0);
+$hover-bgc: color-mix(in srgb, $white 3%, $default-bgc);
+$active-bgc: color-mix(in srgb, $black 10%, $default-bgc);
+$transition: all 0.15s ease-in-out;
 
 .button {
-  background-color: rgba($color: $gray, $alpha: 1.0);
+  -webkit-text-stroke: 0;
+  background-color: $default-bgc;
   border: $white 1px solid;
   box-shadow: $black 0.1rem 0.2rem 0.5rem;
   cursor: pointer;
+  transition: $transition;
 
   &:hover {
-    background-color: red;
+    background-color: $hover-bgc;
+  }
+
+  &:active {
+    background-color: $active-bgc;
+    color: $active-color;
   }
 
   &.small {
-    font-size: 0.6rem;
-    padding: 0.45rem 2.3rem;
+    font-size: 0.5rem;
+    padding: 0.3rem 1.5rem;
   }
 
   &.large {
-    padding: 0.9rem 3.3rem;
+    font-size: 0.75rem;
+    padding: 0.6rem 2.1rem;
   }
 }

@@ -20,26 +20,22 @@ function SetPortal({
 
   useEffect(() => {
     setMounted(true)
-    return () => setMounted(false)
   }, [])
 
   if (!mounted) return null
 
-  let container = document.getElementById(containerId)
-  if (!container) {
-    container = document.createElement('div')
-    container.id = containerId
-    document.body.appendChild(container)
-  }
+  const container = document.getElementById(containerId)
+  if (!container) return null
 
-  container.className = className ?? ''
-
-  return createPortal(children, container)
+  return createPortal(
+    <div className={className}>{children}</div>,
+    container,
+  )
 }
 
 export default function Portal(props: PortalProps) {
   return (
-    <SetPortal className={cn('fixed inset-0 z-[9999] min-h-screen min-w-screen bg-black/20', props.className)} >
+    <SetPortal className={cn('fixed inset-0 z-[9998] min-h-screen min-w-screen bg-black/20', props.className)} >
       {props.children}
     </SetPortal >
   );

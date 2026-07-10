@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  --font-batang: var(--font-gowun-batang), Batang, "바탕", serif;
+  --font-ibm: var(--font-ibm-plex), sans-serif;
+  --font-song: var(--font-noto-serif), "Songti SC", "SimSun", "宋体", serif;
+  --font-sans: var(--font-noto-sans), "Noto Sans SC", sans-serif;
+}
