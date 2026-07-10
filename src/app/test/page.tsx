@@ -2,6 +2,8 @@
 
 import Loading from '@/components/arks/loading';
 import Button from '@/components/arks/button';
+import Sphere from '@/components/arks/sphere';
+
 // import { Metadata } from 'next';
 
 // export const metadata: Metadata = {
@@ -16,6 +18,7 @@ export default function Test() {
       <Loading type="animation" text="正在提交反馈至神经......" />
       {/* <Loading type="text" text="加载中..." /> */}
       {/* <Button size="large" onClick={() => console.log('提交')}>账号管理</Button> */}
+      <Sphere />
     </div>
   );
 }
