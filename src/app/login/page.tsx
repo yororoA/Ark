@@ -12,9 +12,13 @@ export default function Login() {
   const nav = `from-[#3f3f3f]/99 from-60% to-[#3f3f3f]/80`
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const SphereClassName = useMemo(() => isConnecting ?
-    'translate-y-[0rem] scale-[0.7] transition-transform duration-[400ms]'
-    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[400ms]'
+  const SphereLargeClassName = useMemo(() => isConnecting ?
+    'translate-y-[0rem] scale-[0.7] transition-transform duration-[400ms] opacity-[1] '
+    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[400ms] opacity-[0.5]'
+    , [isConnecting]);
+  const SphereSmallClassName = useMemo(() => isConnecting ?
+    'translate-y-[0rem] scale-[0.8] transition-transform duration-[400ms] opacity-[1]'
+    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[400ms] opacity-[0.5]'
     , [isConnecting]);
 
   const handleConnect = () => {
@@ -23,7 +27,10 @@ export default function Login() {
 
   return (
     <>
-      <Sphere className={SphereClassName} color='rgba(255, 204, 0, 0.4)' edges={10} edgeWidth={'.3'} />
+      <Sphere className={SphereLargeClassName} color='rgba(34,211,238,.5)' edges={10} edgeWidth={2} dotRadius={3} />
+      <Sphere className={cn(SphereSmallClassName, 'rotate-z-[90deg] rotate-x-[20deg]')} color="rgba(192,132,252,0.8)" edges={6} edgeWidth={2} dotRadius={3} />
+      <span className={cn(styles.light)} />
+
       <span className={cn(styles.nav, 'bg-gradient-to-b', nav)} />
       {!isConnecting && <>
         <div className={cn(styles.main, "relative w-full flex justify-center flex-1")}>

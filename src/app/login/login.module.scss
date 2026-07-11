@@ -21,6 +21,25 @@ $tag-bgc: color-mix(in srgb, $black 21.2%, $gray);
   align-items: center;
 }
 
+.light {
+  $light-size: 35 * $gap;
+
+  position: absolute;
+  top: 0%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: $light-size;
+  height: $light-size;
+  // background: radial-gradient(rgba($gray, 0.1), rgba($black, .57));
+  background: radial-gradient(ellipse at center,
+      rgba(180, 220, 255, .35) 0%,
+      rgba(180, 220, 255, .15) 35%,
+      transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+  box-shadow: 0 0 100*$gap rgba(180, 220, 225, .05);
+}
+
 .main {
   display: flex;
   flex-direction: column;
@@ -65,6 +84,7 @@ $tag-bgc: color-mix(in srgb, $black 21.2%, $gray);
     .tag_suffix {
       font-weight: 600;
       color: $white;
+      // color: $black;
     }
 
     .tag_prefix {
