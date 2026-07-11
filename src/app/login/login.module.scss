@@ -4,12 +4,74 @@
 $copyright-size: $gap*0.7;
 $pro-tag-size: $gap * 0.7;
 
+
 // protag 前后 - 的 mg
 $ps-mg: $pro-tag-size * 1;
 // tag 平行四边形
 $tag-prefix-height: $pro-tag-size * 1.5;
 $tag-prefix-width: math.div($tag-prefix-height, 1.732) * 5;
 $tag-bgc: color-mix(in srgb, $black 21.2%, $gray);
+
+// 连接中，中间卡片
+$info-card-width: 8*$gap;
+$info-card-height: math.div(435, 250) * $info-card-width;
+
+.connectionInfoCard {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: $info-card-width;
+  height: $info-card-height;
+  background-color: rgba($gray, 0.9);
+  border: $button-border;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $gap*1.8 0;
+
+  mask-image:
+    linear-gradient(#fff, #fff),
+    $img-url;
+  mask-composite: exclude;
+  mask-size: cover, 700%;
+  mask-repeat: no-repeat, no-repeat;
+  mask-position: center, 12% 75%;
+
+  animation: card 0.4s ease-in-out 0s 1 normal;
+
+  &::before {
+    content: '#';
+    position: absolute;
+    font-family: var(--font-song);
+    top: 43%;
+    left: 30%;
+    transform: translate(-50%, -50%);
+    font-size: 1.1rem;
+    font-weight: 400;
+  }
+
+  &::after {
+    content: '0';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    font-family: var(--font-song);
+    font-weight: 500;
+  }
+}
+
+@keyframes card {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
 
 .nav {
   padding: $gap*1.5 $gap;

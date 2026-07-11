@@ -8,7 +8,7 @@ $transition: all 0.15s ease-in-out;
 .button {
   -webkit-text-stroke: 0;
   background-color: $default-bgc;
-  border: $white 1px solid;
+  border: $button-border;
   box-shadow: $black 0.1rem 0.2rem 0.5rem;
   cursor: pointer;
   transition: $transition;

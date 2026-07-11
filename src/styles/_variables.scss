@@ -4,6 +4,10 @@ $white: #e4e4e4;
 $black: #000;
 $gray: #3f3f3f;
 
+
+// 按钮相关
+$button-border: $white 1px solid;
+
 // 加载组件相关
 $AH-ratio: math.div(84, 538);
 $AH: $AH-ratio * 100vh;
@@ -14,6 +18,7 @@ $base-height: 1080px;
 $nav-height: 129px;
 $nav-height-ratio: math.div($nav-height, $base-height);
 $nav-height: $nav-height-ratio * 100vh;
+$img-url: url('/login_dark.png');
 
 // 全局调用
 $gap: $nav-height-ratio*$nav-height*1.5;

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
+import { useGetLocation } from '@/hooks/useGetLocation';
 
 import Button from "@/components/arks/button";
 import styles from './login.module.scss';
@@ -9,6 +10,7 @@ import Declaration from "./components/declaration";
 import Sphere from "@/components/arks/sphere";
 
 export default function Login() {
+  const location = useGetLocation();
   const nav = `from-[#3f3f3f]/99 from-60% to-[#3f3f3f]/80`
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -29,8 +31,13 @@ export default function Login() {
     <>
       <Sphere className={SphereLargeClassName} color='rgba(34,211,238,.5)' edges={10} edgeWidth={2} dotRadius={3} />
       <Sphere className={cn(SphereSmallClassName, 'rotate-z-[90deg] rotate-x-[20deg]')} color="rgba(192,132,252,0.8)" edges={6} edgeWidth={2} dotRadius={3} />
+      {isConnecting && <>
+        <div className={cn(styles.connectionInfoCard)}>
+          <span className='text-[.45rem] leading-[.45rem]'>{'接驳点'}</span>
+          <span className='text-[1rem] font-song font-bold leading-[1.1rem]'>{`AS/CN`}</span>
+        </div>
+      </>}
       <span className={cn(styles.light)} />
-
       <span className={cn(styles.nav, 'bg-gradient-to-b', nav)} />
       {!isConnecting && <>
         <div className={cn(styles.main, "relative w-full flex justify-center flex-1")}>

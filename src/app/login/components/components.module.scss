@@ -27,6 +27,7 @@ $declaration-base-bgc: rgba($solid-color, 0.8);
     -ms-overflow-style: none;
     width: 100%;
     padding: $gap*1.5;
+    position: relative;
 
     pre {
       font-family: var(--font-noto-sans);
@@ -43,12 +44,36 @@ $declaration-base-bgc: rgba($solid-color, 0.8);
     width: 100%;
 
     &.declarationBtn {
+      $pd: 0.6rem;
+      $lh-height: 0.9rem;
+
       font-size: 0.6rem;
-      padding: 0.6rem;
+      padding: $pd;
+      line-height: $lh-height;
       background: $solid-color;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      position: relative;
+
+      &::before {
+        $bg-width: 13*$gap;
+
+        content: '';
+        position: absolute;
+        width: $bg-width;
+        height: $bg-width;
+        background: $img-url no-repeat center center;
+        background-size: contain;
+        // opacity: .3;
+        filter: brightness(3);
+        // background-color: #fff;
+        right: 0;
+        bottom: 2*$pd+$lh-height;
+        cursor: default;
+        pointer-events: none;
+        z-index: -1;
+      }
 
       &:active {
         color: $active-color;
