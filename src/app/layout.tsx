@@ -52,6 +52,7 @@ export default function RootLayout({
     <html
       lang="zh-CN"
       className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable)}
+      suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col relative">
         <div id="portal-root" />
