@@ -9,12 +9,14 @@ interface PortalProps {
   children: ReactNode
   containerId?: string
   className?: string
+  black?: boolean
 }
 
 function SetPortal({
   children,
   containerId = 'portal-root',
   className,
+  black = true,
 }: PortalProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -25,7 +27,10 @@ function SetPortal({
   if (!mounted) return null
 
   const container = document.getElementById(containerId)
-  if (!container) return null
+  if (!container) return null;
+  if (black) {
+    className = cn('bg-black/20', className)
+  }
 
   return createPortal(
     <div className={className}>{children}</div>,
@@ -35,7 +40,7 @@ function SetPortal({
 
 export default function Portal(props: PortalProps) {
   return (
-    <SetPortal className={cn('fixed inset-0 z-[9998] min-h-screen min-w-screen bg-black/20', props.className)} >
+    <SetPortal className={cn('fixed inset-0 z-[9998] min-h-screen min-w-screen', props.className)} black={props.black} >
       {props.children}
     </SetPortal >
   );

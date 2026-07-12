@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useGetLocation } from '@/hooks/useGetLocation';
+import { useBrightness } from '@/context/brightness-context';
 
 import Button from "@/components/arks/button";
 import styles from './login.module.scss';
@@ -8,12 +9,18 @@ import { cn } from '@/lib/utils';
 import Image from "next/image";
 import Declaration from "./components/declaration";
 import Sphere from "@/components/arks/sphere";
+import Loading from "@/components/arks/loading";
 
 export default function Login() {
-  const location = useGetLocation();
+  const location = useGetLocation(); // 用户ip定位
+  const { setDimmed } = useBrightness(); // 登录页背景图亮度
+
   const nav = `from-[#3f3f3f]/99 from-60% to-[#3f3f3f]/80`
+
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
+
+  // 球
   const SphereLargeClassName = useMemo(() => isConnecting ?
     'translate-y-[0rem] scale-[0.7] transition-transform duration-[400ms] opacity-[1] '
     : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[400ms] opacity-[0.5]'
@@ -23,8 +30,22 @@ export default function Login() {
     : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[400ms] opacity-[0.5]'
     , [isConnecting]);
 
+  // 连接进度
+  const [progress, setProgress] = useState('0%')
+
+  // 连接按钮点击事件
   const handleConnect = () => {
     setIsConnecting(true)
+    setDimmed(true) // 登录页背景图变暗
+    const intervalId = setInterval(() => {
+      setProgress((prev) => {
+        if (Number(prev.replace('%', '')) >= 100) {
+          clearInterval(intervalId)
+          return '100%'
+        }
+        return `${Number(prev.replace('%', '')) + 5}%`;
+      })
+    }, 100);
   }
 
   return (
@@ -36,6 +57,8 @@ export default function Login() {
           <span className='text-[.45rem] leading-[.45rem]'>{'接驳点'}</span>
           <span className='text-[1rem] font-song font-bold leading-[1.1rem]'>{`AS/CN`}</span>
         </div>
+        <span className={'absolute text-[.6rem] top-[78%] left-[50%] translate-x-[-50%] translate-y-[-50%] brightness-200'}>正在尝试与Bines Network&trade;进行认知同步</span>
+        <Loading type="login" progress={progress} />
       </>}
       <span className={cn(styles.light)} />
       <span className={cn(styles.nav, 'bg-gradient-to-b', nav)} />

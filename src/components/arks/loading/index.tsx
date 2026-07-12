@@ -4,8 +4,9 @@ import Portal from '@/components/Portal'
 import { cn } from '@/lib/utils'
 
 export type LoadingProps = {
-  type: 'charJump' | 'text' | 'animation'
-  text: string
+  type: 'charJump' | 'text' | 'animation' | 'login'
+  text?: string
+  progress?: string
 }
 
 export default function Loading(props: LoadingProps) {
@@ -17,13 +18,15 @@ export default function Loading(props: LoadingProps) {
         return props.text
       case 'animation':
         return Animation({ text: props.text })
+      case 'login':
+        return LoginLoading({ progresss: props.progress })
       default:
         return props.text
     }
   }, [props]);
 
   return (
-    <Portal>
+    <Portal black={props.type !== 'login'}>
       <div className={styles.wrap}>
         {textChars}
       </div>
@@ -59,6 +62,17 @@ function Animation(props: { text: string }) {
       <span className={cn(styles.animationIcon, "relative")} >
         <span className={cn(styles.animationText, "absolute left-full top-1/2 -translate-y-1/2 whitespace-nowrap")}>{props.text}</span>
       </span>
+    </div>
+  )
+}
+
+function LoginLoading(props: { progresss?: string }) {
+  const progress = props.progresss || '0%'
+
+  return (
+    <div className={styles.login}>
+      <span className={cn(styles.loginBar)} style={{ '--loginBarWidth': progress }} >{progress !== '100%' && progress}</span>
+      <span className={cn(styles.loginBar)} style={{ '--loginBarWidth': progress }} >{progress !== '100%' && progress}</span>
     </div>
   )
 }
