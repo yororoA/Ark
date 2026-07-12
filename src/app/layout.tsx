@@ -1,11 +1,12 @@
 import { Metadata } from 'next';
 import "@/styles/globals.scss";
 import "@/app/global.css";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { BrightnessProvider } from "@/context/brightness-context";
+import BgImage from "@/components/arks/bg-image";
 
 // ------------------------------------ 字体配置 ------------------------------------
-import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC } from 'next/font/google';
+import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
 // Batang - 登录页黑条 tag
 const gowunBatang = Gowun_Batang({
   weight: ['400', '700'],
@@ -35,6 +36,14 @@ const notoSansSC = Noto_Sans_SC({
   display: 'swap',
 })
 
+// 登录进度条数字
+const orbitron = Orbitron({
+  weight: ['400', '700', '900'],   // Orbitron 支持的字重
+  subsets: ['latin'],
+  variable: '--font-orbitron',
+  display: 'swap',
+});
+
 // -------------------------------------------------------------------------------
 export const metadata: Metadata = {
   title: "YororoIce Ark",
@@ -48,22 +57,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
 
+
+
   return (
     <html
       lang="zh-CN"
-      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable)}
+      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col relative">
         <div id="portal-root" />
-        <Image
-          src="/bg.jpg"
-          alt="bg"
-          fill={true}
-          loading="eager"
-          className="absolute top-0 left-0 w-full h-full object-cover"
-        />
-        {children}
+        <BrightnessProvider>
+          <BgImage />
+          {children}
+        </BrightnessProvider>
       </body>
     </html>
   );
