@@ -20,6 +20,5 @@ export function useGetLocation(): IPinfoLite | null {
     }
   }, [])
 
-  console.log(location)
   return location
 }

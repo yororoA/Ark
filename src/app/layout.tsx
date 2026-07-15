@@ -1,4 +1,6 @@
-import { Metadata } from 'next';
+'use client'
+
+// import { Metadata } from 'next';
 import "@/styles/globals.scss";
 import "@/app/global.css";
 import { cn } from "@/lib/utils";
@@ -6,7 +8,11 @@ import { BrightnessProvider } from "@/context/brightness-context";
 import BgImage from "@/components/arks/bg-image";
 
 // ------------------------------------ 字体配置 ------------------------------------
-import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
+import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron, Geist } from 'next/font/google';
+
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
+
+
 // Batang - 登录页黑条 tag
 const gowunBatang = Gowun_Batang({
   weight: ['400', '700'],
@@ -45,10 +51,10 @@ const orbitron = Orbitron({
 });
 
 // -------------------------------------------------------------------------------
-export const metadata: Metadata = {
-  title: "YororoIce Ark",
-  description: "...",
-};
+// export const metadata: Metadata = {
+//   title: "YororoIce Ark",
+//   description: "...",
+// };
 
 
 export default function RootLayout({
@@ -56,13 +62,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-
-
   return (
     <html
       lang="zh-CN"
-      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable)}
+      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable, "font-sans", geist.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col relative">
