@@ -1,8 +1,7 @@
 'use client'
 
 import Loading from '@/components/arks/loading';
-import Button from '@/components/arks/button';
-import Sphere from '@/components/arks/sphere';
+import Input from '@/components/arks/input';
 
 // import { Metadata } from 'next';
 
@@ -15,10 +14,10 @@ export default function Test() {
   return (
     <div className='relative'>
       {/* <Loading type="charJump" text="Loading..." /> */}
-      <Loading type="animation" text="正在提交反馈至神经......" />
+      {/* <Loading type="animation" text="正在提交反馈至神经......" /> */}
       {/* <Loading type="text" text="加载中..." /> */}
       {/* <Button size="large" onClick={() => console.log('提交')}>账号管理</Button> */}
-      <Sphere />
+      <Input placeholder="请输入账号" />
     </div>
   );
 }

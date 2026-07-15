@@ -1,0 +1,35 @@
+@use '@/styles/variables' as *;
+
+$placeholder-color: color-mix(in srgb, $white 40%, $black);
+$transition: all 0.15s ease-in-out;
+
+.input {
+  -webkit-text-stroke: 0;
+  background-color: $default-bgc;
+  border: $button-border;
+  box-shadow: $black 0.1rem 0.2rem 0.5rem;
+  color: $white;
+  font-size: 0.5rem;
+  padding: 0.3rem;
+  outline: none;
+  transition: $transition;
+
+  &::placeholder {
+    color: $placeholder-color;
+    font-family: inherit;
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, $white 3%, $default-bgc);
+  }
+
+  &:focus {
+    background-color: color-mix(in srgb, $white 5%, $default-bgc);
+    border-color: $active-color;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
