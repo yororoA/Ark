@@ -1,24 +1,33 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useGetLocation } from '@/hooks/useGetLocation';
 import { useBrightness } from '@/context/brightness-context';
+import { useAuthStore } from '@/store/auth';
 
 import Button from "@/components/arks/button";
 import styles from './login.module.scss';
 import { cn } from '@/lib/utils';
 import Image from "next/image";
 import Declaration from "./components/declaration";
+import AccountManagement from "./components/accountManagement";
 import Sphere from "@/components/arks/sphere";
 import Loading from "@/components/arks/loading";
 
 export default function Login() {
   const location = useGetLocation(); // 用户ip定位
   const { setDimmed } = useBrightness(); // 登录页背景图亮度
+  const ensureInitialized = useAuthStore((state) => state.ensureInitialized);
+
+  useEffect(() => {
+    ensureInitialized();
+  }, [ensureInitialized]);
 
   const nav = `from-[#3f3f3f]/99 from-60% to-[#3f3f3f]/80`
 
-  const [isDeclarationVisible, setIsDeclarationVisible] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
+  const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
+  const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
+
+  const [isConnecting, setIsConnecting] = useState(false);
 
   // 球
   const SphereLargeClassName = useMemo(() => isConnecting ?
@@ -55,7 +64,7 @@ export default function Login() {
       {isConnecting && <>
         <div className={cn(styles.connectionInfoCard)}>
           <span className='text-[.45rem] leading-[.45rem]'>{'接驳点'}</span>
-          <span className='text-[1rem] font-song font-bold leading-[1.1rem]'>{`AS/CN`}</span>
+          <span className='text-[1rem] font-song font-bold leading-[1.1rem]'>{location ? `${location?.continentCode}/${location?.countryCode}` : 'Unknown'}</span>
         </div>
         <span className={'absolute text-[.6rem] top-[78%] left-[50%] translate-x-[-50%] translate-y-[-50%] brightness-200'}>正在尝试与Bines Network&trade;进行认知同步</span>
         <Loading type="login" progress={progress} />
@@ -68,12 +77,13 @@ export default function Login() {
             <Image src="/bines_sign.png" loading="eager" fill alt="logo" className="object-contain" />
           </div>
           <span className={cn(styles.pro_tag, 'font-batang z-[1]')}>{'YOROROICE ARK'}</span>
-          <Button size="large" className="font-song z-[1]" onClick={handleConnect}>{'建立连接'}</Button>
-          <div className={cn(styles.tag)}>
+          <Button size="large" className="font-song z-[1]" onClick={handleConnect} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>{'建立连接'}</Button>
+          <div className={cn(styles.tag)} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>
             <span className={cn(styles.tag_prefix, 'z-[1]')}>{'访客?'}</span>
             <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{'YOROROICE ARK'}</span>
           </div>
         </div>
+        {isAccountManagementVisible && <AccountManagement onClose={() => setIsAccountManagementVisible(false)} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
       </>}
       <span className={cn(styles.nav, 'relative bg-gradient-to-t', nav, 'translate-y-[10px]')} >
@@ -89,6 +99,7 @@ export default function Login() {
         </div>
 
         {!isConnecting && <div className={cn(styles.gap, 'relative h-full w-full flex items-center justify-end')}>
+          <Button size="small" onClick={() => setIsAccountManagementVisible(true)}>{'账号管理'}</Button>
           <Button size="small" onClick={() => setIsDeclarationVisible(true)}>{'查看声明'}</Button>
         </div>}
       </span>

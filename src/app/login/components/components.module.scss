@@ -2,16 +2,16 @@
 @use 'sass:color';
 @use '@/styles/variables' as *;
 
-$height: math.div(750, 1600) * 100%;
-$width: math.div(1250, 2560) * 100%;
+$declaration-height: 45%;
+$declaration-width: 40%;
 
 $solid-color: mix($gray, $black, 30%);
 $declaration-base-bgc: rgba($solid-color, 0.8);
 
 .declaration {
   -webkit-text-stroke: 0;
-  height: $height;
-  width: $width;
+  height: $declaration-height;
+  width: $declaration-width;
   font-size: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -32,6 +32,7 @@ $declaration-base-bgc: rgba($solid-color, 0.8);
     pre {
       font-family: var(--font-noto-sans);
       white-space: pre-wrap;
+      overflow-wrap: break-word;
     }
 
     * {
@@ -79,5 +80,134 @@ $declaration-base-bgc: rgba($solid-color, 0.8);
         color: $active-color;
       }
     }
+  }
+}
+
+
+$acmBGC: color-mix(in srgb, $gray 60%, $black);
+
+.accountManagement {
+  min-height: $declaration-height;
+  width: $declaration-width;
+  font-size: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 0 .1rem .5rem rgba(0, 0, 0, 0.5);
+  border: 1.5px solid color-mix(in srgb, $white 60%, $black);
+  background-color: $acmBGC;
+
+  .accountManagementTitle {
+    font-size: .8rem;
+    font-family: var(--font-orbitron);
+    font-weight: 400;
+    padding: $gap $gap*1.5;
+    margin-bottom: $gap;
+    border-bottom: 1.5px solid rgba($color: $gray, $alpha: .8);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .accountManagementCloseBtn {
+      cursor: pointer;
+      display: block;
+      box-sizing: content-box;
+      border: $button-border;
+      border-width: 1px;
+      padding: $gap * 0.08;
+      background-color: rgba($color: $white, $alpha: 0.1);
+
+      &:hover {
+        background-color: rgba($color: $white, $alpha: 0.2);
+      }
+
+      &:active {
+        background-color: $active-bgc;
+      }
+    }
+  }
+
+  .accountManagementFooter {
+    font-size: .8rem;
+    font-family: var(--font-orbitron);
+    font-weight: 400;
+    padding: $gap*0.5 $gap*0.8;
+    border-top: 1.5px solid rgba($color: $gray, $alpha: .8);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    bottom: 0;
+
+    .loginBtn {
+      width: 6.5rem;
+    }
+  }
+}
+
+.accountManagementContent {
+  z-index: 9999;
+  border: none;
+  padding: 0;
+  background-color: $acmBGC;
+  border-radius: 0;
+}
+
+.account {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  padding: $gap 0;
+  margin: 0 $gap*1.5;
+  border: 1.5px solid color-mix(in srgb, $white 60%, $black);
+  border-radius: 0;
+  background-color: rgba($color: $gray, $alpha: .4);
+  cursor: pointer;
+  color: $white;
+  gap: 0;
+
+  &:hover {
+    background-color: rgba($color: $white, $alpha: 0.2);
+  }
+
+  .desc {
+    display: flex;
+    align-items: center;
+    text-align: left;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      border-radius: 50%;
+    }
+  }
+}
+
+.avatar {
+  display: inline-block;
+  text-align: center;
+  background-color: $gray;
+  border-radius: 50%;
+  font-family: var(--font-batang);
+  font-weight: 700;
+  margin: 0 $gap;
+  color: $white;
+
+  $ratio: 0.55;
+
+  &.small {
+    $small-size: 1.5rem;
+
+    font-size: $small-size * $ratio;
+    line-height: $small-size;
+    width: $small-size;
+    height: $small-size;
+  }
+
+  &.big {
+    $big-size: 2rem;
+    border-width: 1.5px;
+    border-color: color-mix(in srgb, $white 60%, $black);
+    font-size: $big-size * $ratio;
+    line-height: $big-size;
+    width: $big-size;
+    height: $big-size;
   }
 }
