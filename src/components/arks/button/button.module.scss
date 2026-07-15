@@ -1,8 +1,6 @@
 @use '@/styles/variables' as *;
 
-$default-bgc: rgba($color: $gray, $alpha: 1.0);
 $hover-bgc: color-mix(in srgb, $white 3%, $default-bgc);
-$active-bgc: color-mix(in srgb, $black 10%, $default-bgc);
 $transition: all 0.15s ease-in-out;
 
 .button {

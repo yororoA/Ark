@@ -13,3 +13,7 @@ body {
   color: $white;
   // -webkit-text-stroke: 0.01rem $black; /*  字体描边 */
 }
+
+::-webkit-scrollbar {
+  display: none;
+}

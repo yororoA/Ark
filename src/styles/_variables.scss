@@ -23,3 +23,5 @@ $img-url: url('/login_dark.png');
 // 全局调用
 $gap: $nav-height-ratio*$nav-height*1.5;
 $active-color: color-mix(in srgb, $gray 20%, $white);
+$default-bgc: rgba($color: $gray, $alpha: 1.0);
+$active-bgc: color-mix(in srgb, $black 10%, $default-bgc);
