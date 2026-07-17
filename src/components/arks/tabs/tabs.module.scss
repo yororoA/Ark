@@ -1,0 +1,34 @@
+@use '@/styles/variables' as *;
+
+$transition: all 0.15s ease-in-out;
+$placeholder-color: color-mix(in srgb, $white 40%, $black);
+
+.tabs {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+
+  .tab {
+    -webkit-text-stroke: 0;
+    background-color: $default-bgc;
+    border: none;
+    border-bottom: 1.8px solid color-mix(in srgb, $white 30%, $black);
+    color: $placeholder-color;
+    cursor: pointer;
+    font-family: var(--font-orbitron);
+    font-size: 0.6rem;
+    padding: $gap * 0.6;
+    transition: $transition;
+
+    &:hover {
+      color: rgba($color: $white, $alpha: 0.5);
+      background-color: color-mix(in srgb, $white 1%, $default-bgc);
+    }
+
+    &.active {
+      color: $white;
+      border-bottom-color: $active-color;
+      background-color: color-mix(in srgb, $white 3%, $default-bgc);
+    }
+  }
+}
