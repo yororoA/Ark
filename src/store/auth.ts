@@ -10,7 +10,7 @@ export interface AuthDetail {
   country_code?: string;
 }
 
-export type AuthDetails = AuthDetail[];
+type AuthDetails = AuthDetail[];
 
 interface AuthState {
   details: AuthDetails;
@@ -38,18 +38,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       return { details: [...state.details, detail] };
     });
-    localStorage.setItem('authDetails', JSON.stringify(get().details));
   },
 
   removeDetail: (uid) => {
     get().ensureInitialized();
     set((state) => ({ details: state.details.filter((d) => d.uid !== uid) }));
-    localStorage.setItem('authDetails', JSON.stringify(get().details));
   },
 
   clearDetails: () => {
     set({ details: [] });
-    localStorage.setItem('authDetails', JSON.stringify([]));
   },
 
   getDetail: (uid) => {
@@ -67,8 +64,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         set({ details: JSON.parse(details) });
       } catch (error) {
+        console.error('解析认证详情失败:', error);
         set({ details: [] });
-        throw new Error('解析认证详情失败');
       }
     } else {
       localStorage.setItem('authDetails', JSON.stringify([]));
@@ -79,6 +76,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   removeGuest: () => {
     get().ensureInitialized();
     set((state) => ({ details: state.details.filter((d) => !d.isGuest) }));
-    localStorage.setItem('authDetails', JSON.stringify(get().details));
   },
 }));
+
+// 订阅 details 变更，自动持久化到 localStorage
+useAuthStore.subscribe((state, prevState) => {
+  if (state.details !== prevState.details) {
+    localStorage.setItem('authDetails', JSON.stringify(state.details));
+  }
+});
