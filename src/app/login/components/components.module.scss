@@ -7,6 +7,7 @@ $declaration-width: 40%;
 
 $solid-color: mix($gray, $black, 30%);
 $declaration-base-bgc: rgba($solid-color, 0.8);
+$transition: all 0.15s ease-in-out;
 
 .declaration {
   -webkit-text-stroke: 0;
@@ -106,24 +107,6 @@ $acmBGC: color-mix(in srgb, $gray 60%, $black);
     display: flex;
     align-items: center;
     justify-content: space-between;
-
-    .accountManagementCloseBtn {
-      cursor: pointer;
-      display: block;
-      box-sizing: content-box;
-      border: $button-border;
-      border-width: 1px;
-      padding: $gap * 0.08;
-      background-color: rgba($color: $white, $alpha: 0.1);
-
-      &:hover {
-        background-color: rgba($color: $white, $alpha: 0.2);
-      }
-
-      &:active {
-        background-color: $active-bgc;
-      }
-    }
   }
 
   .accountManagementFooter {
@@ -139,6 +122,25 @@ $acmBGC: color-mix(in srgb, $gray 60%, $black);
 
     .loginBtn {
       width: 6.5rem;
+    }
+  }
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    margin: $gap;
+    margin-top: 0;
+    border: $button-border;
+    border-color: color-mix(in srgb, $white 30%, $black);
+    border-width: 1.8px;
+    gap: $gap;
+
+    .inputGroup {
+      display: flex;
+      flex-direction: column;
+      gap: $gap;
+      padding: $gap*1.2;
+      padding-top: 0;
     }
   }
 }

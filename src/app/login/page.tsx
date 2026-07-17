@@ -12,20 +12,34 @@ import Declaration from "./components/declaration";
 import AccountManagement from "./components/accountManagement";
 import Sphere from "@/components/arks/sphere";
 import Loading from "@/components/arks/loading";
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Login() {
   const location = useGetLocation(); // 用户ip定位
   const { setDimmed } = useBrightness(); // 登录页背景图亮度
   const ensureInitialized = useAuthStore((state) => state.ensureInitialized);
+  const rawDetails = useAuthStore((state) => {
+    return state.details
+  });
+  // 按最后登录时间排序，最新在最前面
+  const details = useMemo(() => [...rawDetails].sort((a, b) =>
+    b.lastLoginAt?.localeCompare(a.lastLoginAt || '') || 0
+  ), [rawDetails]);
 
   useEffect(() => {
     ensureInitialized();
   }, [ensureInitialized]);
 
+  useEffect(() => {
+    if (details.length > 0) {
+      setIsAccountManagementVisible(false);
+    }
+  }, [details]);
+
   const nav = `from-[#3f3f3f]/99 from-60% to-[#3f3f3f]/80`
 
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
-  const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
+  const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(!(details.length > 0));
 
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -43,18 +57,31 @@ export default function Login() {
   const [progress, setProgress] = useState('0%')
 
   // 连接按钮点击事件
-  const handleConnect = () => {
-    setIsConnecting(true)
-    setDimmed(true) // 登录页背景图变暗
-    const intervalId = setInterval(() => {
-      setProgress((prev) => {
-        if (Number(prev.replace('%', '')) >= 100) {
-          clearInterval(intervalId)
-          return '100%'
-        }
-        return `${Number(prev.replace('%', '')) + 5}%`;
-      })
-    }, 100);
+  const { switchUser } = useAuth();
+  const handleConnect = async () => {
+    try {
+      setIsConnecting(true)
+      setDimmed(true) // 登录页背景图变暗
+      const intervalId = setInterval(() => {
+        setProgress((prev) => {
+          if (Number(prev.replace('%', '')) >= 80) {
+            clearInterval(intervalId)
+            return '80%'
+          }
+          const next = Number(prev.replace('%', '')) + Math.floor(Math.random() * 15);
+          return `${next >= 80 ? 80 : next}%`;
+        })
+      }, 100);
+      await switchUser(details[0]?.uid || '');
+      const timeoutId = setTimeout(() => {
+        clearInterval(intervalId);
+        setProgress('100%');
+        clearTimeout(timeoutId);
+      }, 1000);
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
   }
 
   return (
@@ -80,10 +107,10 @@ export default function Login() {
           <Button size="large" className="font-song z-[1]" onClick={handleConnect} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>{'建立连接'}</Button>
           <div className={cn(styles.tag)} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>
             <span className={cn(styles.tag_prefix, 'z-[1]')}>{'访客?'}</span>
-            <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{'YOROROICE ARK'}</span>
+            <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{details[0]?.username || 'YOROROICE ARK'}</span>
           </div>
         </div>
-        {isAccountManagementVisible && <AccountManagement onClose={() => setIsAccountManagementVisible(false)} />}
+        {isAccountManagementVisible && <AccountManagement details={details} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
       </>}
       <span className={cn(styles.nav, 'relative bg-gradient-to-t', nav, 'translate-y-[10px]')} >
@@ -95,7 +122,7 @@ export default function Login() {
             <Image src="/sign_white.png" loading="eager" fill alt="sign" sizes="40vw" className="object-contain" />
           </div>
           <span className={cn(styles.copyright, 'font-ibm')}>©2026 YororoIce. All code rights reserved.</span>
-          <span className={styles.copyright}>本网站 UI 复刻于游戏《明日方舟》，仅用于个人使用，不涉及任何商业用途</span>
+          <span className={styles.copyright}>本网站部分 UI 仿刻于游戏《明日方舟》，仅用于个人使用，不涉及任何商业用途</span>
         </div>
 
         {!isConnecting && <div className={cn(styles.gap, 'relative h-full w-full flex items-center justify-end')}>

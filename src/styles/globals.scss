@@ -17,3 +17,21 @@ body {
 ::-webkit-scrollbar {
   display: none;
 }
+
+.iconBtn {
+  cursor: pointer;
+  display: block;
+  box-sizing: content-box;
+  border: $button-border;
+  border-width: 1px;
+  padding: $gap * 0.08;
+  background-color: rgba($color: $white, $alpha: 0.1);
+
+  &:hover {
+    background-color: rgba($color: $white, $alpha: 0.2);
+  }
+
+  &:active {
+    background-color: $active-bgc;
+  }
+}
