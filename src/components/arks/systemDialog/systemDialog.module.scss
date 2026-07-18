@@ -1,0 +1,116 @@
+@use '@/styles/variables' as *;
+@use 'sass:color';
+
+$sd-height: 35%;
+$sd-width: 37%;
+
+$icon-color: color.mix($gray, $white, 20%);
+$transition: all 0.15s ease-in-out;
+
+$wrapBGC: color-mix(in srgb, $gray 40%, $black);
+$cfBGC: color-mix(in srgb, $gray 2%, $white);
+$cancelBGC: color-mix(in srgb, $black 15%, $white);
+$confirmBGC: color-mix(in srgb, $white 10%, $black);
+
+.DialogWrap {
+  min-height: $sd-height;
+  width: $sd-width;
+  font-size: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 0 .1rem .5rem rgba(0, 0, 0, 0.5);
+  // border: 1.5px solid color-mix(in srgb, $white 60%, $black);
+  background-color: $wrapBGC;
+  border-radius: .3rem;
+  overflow: hidden;
+
+  .DialogTitle {
+    position: relative;
+    font-size: .8rem;
+    font-family: var(--font-orbitron);
+    font-weight: 400;
+    padding: $gap $gap*1.5;
+    border-bottom: 1.5px solid rgba($color: $gray, $alpha: .8);
+    text-align: center;
+    font-weight: 700;
+    box-shadow: inset 0 0 100rem 1rem rgba(0, 0, 0, .8);
+    background-image:
+      radial-gradient(circle at 0 0,
+        rgba(255, 255, 255, .4) 1px,
+        transparent 1px);
+
+    background-size: 6px 6px;
+
+    &::before,
+    &::after {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    &::before {
+      content: 'YOROROICE';
+      font-size: 1.6rem;
+      font-family: var(--font-ibm);
+      font-style: italic;
+      font-weight: 700;
+      opacity: .4;
+    }
+  }
+
+  .DialogContent {
+    padding: $gap*1.5 $gap;
+    background-color: $cfBGC;
+    border-top: 3px solid rgba($color: blue, $alpha: .8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: $black;
+    gap: $gap*.2;
+
+    .icon {
+      color: $icon-color;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .OpeBtns {
+      font-size: .8rem;
+      font-family: var(--font-orbitron);
+      font-weight: 400;
+      padding: $gap*0.5 $gap*0.8;
+      padding-bottom: 0;
+      gap: $gap;
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: $gap*.7;
+
+      >* {
+        flex: 1;
+        border: none;
+        box-shadow: none;
+        border-radius: 5rem;
+      }
+
+      > :nth-child(1) {
+        color: $black;
+        background-color: $cancelBGC;
+      }
+
+      > :nth-child(2) {
+        color: $white;
+        background-color: $confirmBGC;
+      }
+    }
+  }
+}
