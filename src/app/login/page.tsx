@@ -58,7 +58,7 @@ export default function Login() {
 
   // 连接按钮点击事件
   const { switchUser } = useAuth();
-  const handleConnect = async () => {
+  const handleConnect = async (s?: boolean) => {
     try {
       setIsConnecting(true)
       setDimmed(true) // 登录页背景图变暗
@@ -72,7 +72,7 @@ export default function Login() {
           return `${next >= 80 ? 80 : next}%`;
         })
       }, 100);
-      await switchUser(details[0]?.uid || '');
+      if (s) await switchUser(details[0]?.uid || '');
       const timeoutId = setTimeout(() => {
         clearInterval(intervalId);
         setProgress('100%');
@@ -104,7 +104,7 @@ export default function Login() {
             <Image src="/bines_sign.png" loading="eager" fill alt="logo" className="object-contain" />
           </div>
           <span className={cn(styles.pro_tag, 'font-batang z-[1]')}>{'YOROROICE ARK'}</span>
-          <Button size="large" className="font-song z-[1]" onClick={handleConnect} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>{'建立连接'}</Button>
+          <Button size="large" className="font-song z-[1]" onClick={() => handleConnect(true)} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>{'建立连接'}</Button>
           <div className={cn(styles.tag)} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>
             <span className={cn(styles.tag_prefix, 'z-[1]')}>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '访客' : '用户'}</span>
             <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{details[0]?.username || 'YOROROICE ARK'}</span>

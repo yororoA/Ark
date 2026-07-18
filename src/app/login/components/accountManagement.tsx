@@ -18,7 +18,7 @@ import DeleteLoginRecord from "./deleteLoginRecord";
 
 
 
-export default function AccountManagement(props: { onClose: () => void, onConnect: () => void, details: AuthDetail[] }) {
+export default function AccountManagement(props: { onClose: () => void, onConnect: (s?: boolean) => void, details: AuthDetail[] }) {
   const { sendCode, register, login } = useAuth();
   const { onClose, onConnect, details } = props;
 
@@ -81,7 +81,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
     try {
       await register(usernameRef.current.value, passwordRef.current.value, emailRef.current.value, codeRef.current.value);
       onClose();
-      onConnect();
+      onConnect(false);
     } catch (err) {
       console.log(err);
       throw err;
@@ -98,7 +98,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
     try {
       await login(usernameRef.current.value, passwordRef.current.value);
       onClose();
-      onConnect();
+      onConnect(false);
     } catch (err) {
       console.log(err);
       throw err;
@@ -174,7 +174,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
               }
             </div>
             <div className={cn(styles.accountManagementFooter)}>
-              {selectedDetail && <Button size="small" onClick={onConnect} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
+              {details.length > 0 && <Button size="small" onClick={() => onConnect(true)} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
               <Button size="small" className={cn(styles.loginBtn, 'opacity-50 ml-auto')} onClick={() => setOtherVisable(true)}>其他账号登录</Button>
             </div>
           </>
