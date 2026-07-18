@@ -13,6 +13,7 @@ import AccountManagement from "./components/accountManagement";
 import Sphere from "@/components/arks/sphere";
 import Loading from "@/components/arks/loading";
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export default function Login() {
   const location = useGetLocation(); // 用户ip定位
@@ -57,33 +58,54 @@ export default function Login() {
   // 连接进度
   const [progress, setProgress] = useState('0%')
 
+  const { switchUser, register, login } = useAuth();
+  const router = useRouter();
   // 连接按钮点击事件
-  const { switchUser } = useAuth();
-  const handleConnect = async (s?: boolean) => {
+  const handleConnect = async (s?: 'switch' | 'register' | 'login', username?: string, password?: string, email?: string, code?: string) => {
+    setIsConnecting(true)
+    setDimmed(true) // 登录页背景图变暗
+    let intervalId: ReturnType<typeof setInterval> | undefined;
     try {
-      setIsConnecting(true)
-      setDimmed(true) // 登录页背景图变暗
-      const intervalId = setInterval(() => {
+      intervalId = setInterval(() => {
         setProgress((prev) => {
           if (Number(prev.replace('%', '')) >= 80) {
-            clearInterval(intervalId)
+            clearInterval(intervalId);
+            intervalId = undefined;
             return '80%'
           }
           const next = Number(prev.replace('%', '')) + Math.floor(Math.random() * 15);
           return `${next >= 80 ? 80 : next}%`;
         })
       }, 100);
-      if (s) await switchUser(details[0]?.uid || '');
-      const timeoutId = setTimeout(() => {
-        clearInterval(intervalId);
-        setProgress('100%');
-        clearTimeout(timeoutId);
-      }, 1000);
+      if (s === 'switch') await switchUser(details[0]?.uid || '');
+      else if (s === 'register') await register(username, password, email, code);
+      else if (s === 'login') await login(username, password);
+      setProgress('100%');
     } catch (err) {
       console.log(err);
-      throw err;
+      setProgress('0%');
+      setDimmed(false);
+      setIsConnecting(false);
+    } finally {
     }
   }
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    if (progress === '100%') {
+      timeoutId = setTimeout(() => {
+        router.push('/');
+        setDimmed(false);
+        setIsConnecting(false);
+      }, 1000);
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  }, [progress]);
 
   return (
     <>
@@ -106,7 +128,7 @@ export default function Login() {
           </div>
           {initialized && <>
             <span className={cn(styles.pro_tag, 'font-batang z-[1]')}>{'YOROROICE ARK'}</span>
-            <Button size="large" className="font-song z-[1]" onClick={() => handleConnect(true)}>{'建立连接'}</Button>
+            <Button size="large" className="font-song z-[1]" onClick={() => handleConnect('switch')}>{'建立连接'}</Button>
             <div className={cn(styles.tag)}>
               <span className={cn(styles.tag_prefix, 'z-[1]')}>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '访客' : '用户'}</span>
               <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{details[0]?.username}</span>
