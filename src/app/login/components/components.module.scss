@@ -5,7 +5,7 @@
 $declaration-height: 45%;
 $declaration-width: 40%;
 
-$solid-color: mix($gray, $black, 30%);
+$solid-color: color.mix($gray, $black, 30%);
 $declaration-base-bgc: rgba($solid-color, 0.8);
 $transition: all 0.15s ease-in-out;
 
@@ -151,6 +151,7 @@ $acmBGC: color-mix(in srgb, $gray 60%, $black);
   padding: 0;
   background-color: $acmBGC;
   border-radius: 0;
+  flex: 1;
 }
 
 .account {

@@ -10,10 +10,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent, DropdownMenuItem
 } from "@/components/ui/dropdown-menu";
-import { X, ChevronRight, ChevronLeft } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react'
 import Button from "@/components/arks/button";
 import Input from "@/components/arks/input";
 import Tabs from "@/components/arks/tabs";
+import DeleteLoginRecord from "./deleteLoginRecord";
 
 
 
@@ -22,6 +23,9 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   const { onClose, onConnect, details } = props;
 
   const [selectedDetail, setSelectedDetail] = useState<AuthDetail | undefined>(details[0]);
+  const [showDeleteDialog, setShowDelete] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const detailToDeleteRef = useRef<AuthDetail | undefined>(undefined);
   const boundaryRef = useRef<HTMLDivElement>(null);
 
   // 平滑滚动
@@ -103,17 +107,18 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
 
   return (
     <Portal className="flex justify-center items-center">
-      <div className={cn(styles.accountManagement)} ref={boundaryRef}>
+      {showDeleteDialog && <DeleteLoginRecord onCancel={() => { setShowDelete(false); detailToDeleteRef.current = undefined }} detail={detailToDeleteRef.current} />}
+      <div className={cn(styles.accountManagement)} style={{ opacity: `${showDeleteDialog ? 0 : 1}` }} ref={boundaryRef}>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
           {otherVisable && <ChevronLeft size={24} strokeWidth={1.3} onClick={() => setOtherVisable(false)} className="iconBtn absolute" />}
           <h1 className="ml-[1.5rem]">{'账号管理'}</h1>
-          <X size={24} strokeWidth={1.3} className="iconBtn" onClick={onClose} />
+          {details.length > 0 && <X size={24} strokeWidth={1.3} className="iconBtn" onClick={onClose} />}
         </div>
         {!otherVisable ?
           <>
             <div className="flex-1">
               {details.length > 0 ?
-                <DropdownMenu>
+                <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                   <DropdownMenuTrigger className="block w-full relative group">
                     <div className={cn(styles.account)}>
                       <span className={cn(styles.avatar, styles.big, 'row-span-2')}>{selectedDetail?.username?.charAt(0).toUpperCase() || 'G'}</span>
@@ -136,7 +141,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                           : detail.continent_code || detail.country_code || 'Unknown';
 
                         return (
-                          <DropdownMenuItem className={cn(styles.account)} key={detail.uid} onClick={() => setSelectedDetail(detail)}>
+                          <DropdownMenuItem className={cn(styles.account)} key={detail.uid} onSelect={() => setSelectedDetail(detail)}>
                             <span className={cn(styles.avatar, styles.small, 'row-span-2')}>{detail.username?.charAt(0).toUpperCase() || 'G'}</span>
                             <span className={cn(styles.desc, 'text-[.6rem] font-[500]')}>
                               {detail.username || 'Guest'}
@@ -150,6 +155,15 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                               <span className="inline-block w-[3px] h-[3px] rounded-full bg-gray-400 mx-[.15rem]" />
                               {detail.isAdmin ? '管理员' : detail.isGuest ? '访客' : '用户'}
                             </span>
+                            <span className="absolute right-0 mr-[.9rem] pointer-events-auto group"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setShowDelete(true);
+                                setDropdownOpen(false);
+                                detailToDeleteRef.current = detail;
+                              }}>
+                              <Trash2 strokeWidth={1.3} className="group-hover:stroke-red-500" />
+                            </span>
                           </DropdownMenuItem>
                         )
                       })
@@ -160,8 +174,8 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
               }
             </div>
             <div className={cn(styles.accountManagementFooter)}>
-              <Button size="small" onClick={onConnect} className={cn(styles.loginBtn)}>登录</Button>
-              <Button size="small" className={cn(styles.loginBtn, 'opacity-50')} onClick={() => setOtherVisable(true)}>其他账号登录</Button>
+              {selectedDetail && <Button size="small" onClick={onConnect} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
+              <Button size="small" className={cn(styles.loginBtn, 'opacity-50 ml-auto')} onClick={() => setOtherVisable(true)}>其他账号登录</Button>
             </div>
           </>
           :
@@ -177,7 +191,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
               />
               <div className={cn(styles.inputGroup)}>
                 <Input label="用户名" id="username" required placeholder="请输入用户名" ref={usernameRef} />
-                <Input label="密码" id="password" required placeholder="请输入密码" ref={passwordRef} />
+                <Input label="密码" id="password" encrypt={true} required placeholder="请输入密码" ref={passwordRef} />
                 {activeTab === 'register' && (
                   <>
                     <Input label="邮箱" id="email" required placeholder="请输入邮箱" ref={emailRef} />
