@@ -10,6 +10,7 @@ interface PortalProps {
   containerId?: string
   className?: string
   black?: boolean
+  style?: React.CSSProperties
 }
 
 function SetPortal({
@@ -17,6 +18,8 @@ function SetPortal({
   containerId = 'portal-root',
   className,
   black = true,
+  style,
+  ...rest
 }: PortalProps) {
   const [mounted, setMounted] = useState(false)
 
@@ -33,14 +36,14 @@ function SetPortal({
   }
 
   return createPortal(
-    <div className={className}>{children}</div>,
+    <div className={className} style={style} {...rest}>{children}</div>,
     container,
   )
 }
 
 export default function Portal(props: PortalProps) {
   return (
-    <SetPortal className={cn('fixed inset-0 z-[9998] min-h-screen min-w-screen', props.className)} black={props.black} >
+    <SetPortal className={cn('fixed inset-0 z-[9998] min-h-screen min-w-screen', props.className)} black={props.black} style={props.style}>
       {props.children}
     </SetPortal >
   );

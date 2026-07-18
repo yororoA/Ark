@@ -1,6 +1,9 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useLayoutEffect, useRef } from 'react'
+
+// SSR 安全的 layoutEffect:服务端用 useEffect(不执行),客户端用 useLayoutEffect(同步,在 paint 前)
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 interface SphereCanvasProps {
   color?: string
@@ -32,7 +35,7 @@ export default function SphereCanvas({
 }: SphereCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
@@ -187,7 +190,11 @@ export default function SphereCanvas({
       animationFrameId = requestAnimationFrame(render)
     }
 
-    animationFrameId = requestAnimationFrame(render)
+    // 关键修复:同步绘制第一帧,不依赖 rAF
+    // useLayoutEffect 在 paint 前同步执行,这样 Sphere 的 canvas 内容
+    // 会在首次 paint 时就和 bines_sign 等同步显示,而不是等到 initialized 变化后
+    // render 内部会自调度 rAF,这里只调用一次即可
+    render(performance.now())
     return () => cancelAnimationFrame(animationFrameId)
   }, [color, edges, edgeWidth, dotRadius, enableBlinking])
 

@@ -7,6 +7,7 @@ export type LoadingProps = {
   type: 'charJump' | 'text' | 'animation' | 'login'
   text?: string
   progress?: string
+  style?: React.CSSProperties
 }
 
 export default function Loading(props: LoadingProps) {
@@ -26,7 +27,7 @@ export default function Loading(props: LoadingProps) {
   }, [props]);
 
   return (
-    <Portal black={props.type !== 'login'}>
+    <Portal black={props.type !== 'login'} style={props.style}>
       <div className={styles.wrap}>
         {textChars}
       </div>
