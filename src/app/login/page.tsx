@@ -106,7 +106,7 @@ export default function Login() {
           <span className={cn(styles.pro_tag, 'font-batang z-[1]')}>{'YOROROICE ARK'}</span>
           <Button size="large" className="font-song z-[1]" onClick={handleConnect} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>{'建立连接'}</Button>
           <div className={cn(styles.tag)} style={{ opacity: isAccountManagementVisible ? 0 : 1 }}>
-            <span className={cn(styles.tag_prefix, 'z-[1]')}>{'访客?'}</span>
+            <span className={cn(styles.tag_prefix, 'z-[1]')}>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '访客' : '用户'}</span>
             <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{details[0]?.username || 'YOROROICE ARK'}</span>
           </div>
         </div>
