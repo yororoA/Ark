@@ -142,7 +142,7 @@ $info-card-height: math.div(435, 250) * $info-card-width;
   .tag {
     margin-top: $gap * 0.4;
     font-size: $pro-tag-size;
-    transition: all 0.15s ease-in-out;
+    // transition: all 0.15s ease-in-out;
 
     .tag_suffix {
       font-weight: 600;
