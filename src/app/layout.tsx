@@ -8,10 +8,7 @@ import { BrightnessProvider } from "@/context/brightness-context";
 import BgImage from "@/components/arks/bg-image";
 
 // ------------------------------------ 字体配置 ------------------------------------
-import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron, Geist } from 'next/font/google';
-
-const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
-
+import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
 
 // Batang - 登录页黑条 tag
 const gowunBatang = Gowun_Batang({
@@ -65,7 +62,7 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable, "font-sans", geist.variable)}
+      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable, "font-sans")}
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col relative">
