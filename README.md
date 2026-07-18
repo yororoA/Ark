@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<p align="center">
+  <img alt="YOROROICE ARK" src="docs/sign_en.png" width="800">
+  <img alt="YOROROICE ARK" src="docs/sign_zh.jpg" width="800">
+</p>
 
-## Getting Started
+<p align="center">
+  <strong>YOROROICE ARK</strong> — 一个明日方舟风格的个人门户与博客系统。
+</p>
 
-First, run the development server:
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React">
+  <img src="https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
+</p>
+
+---
+
+## 技术栈
+
+| 类别 | 技术 |
+|------|------|
+| 框架 | Next.js 16 (App Router) |
+| UI 库 | React 19 |
+| 样式 | Tailwind CSS 4 + SCSS Modules |
+| 组件 | shadcn/ui + Radix UI |
+| 状态管理 | Zustand |
+| 动画 | Lenis 平滑滚动 |
+| 工具 | crypto-js, clsx, zod |
+
+## 快速开始
 
 ```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 访问 http://localhost:9999
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+开发时如需其他设备访问网页，可参考 [内网穿透](docs/tunnel.md)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 环境变量
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+创建 `.env` 文件：
 
-## Learn More
+```env
+IPINFO_API_KEY=your_ipinfo_key
+BACKEND_URL=https://your-backend-url.com
+ADMIN_UIDS=uid1,uid2
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 项目结构
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/
+│   ├── login/          # 登录页
+│   └── page.tsx        # 首页
+├── components/
+│   ├── arks/           # 自定义组件 (按钮、输入框、球体等)
+│   └── ui/             # shadcn/ui 组件
+├── hooks/              # 自定义 Hooks
+├── store/              # Zustand 状态管理
+├── context/            # React Context
+├── lib/                # 工具函数
+└── styles/             # 全局样式
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+[MIT](LICENSE) © 2026 yororoA, YororoIce
