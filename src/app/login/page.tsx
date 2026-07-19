@@ -32,16 +32,12 @@ export default function Login() {
     ensureInitialized();
   }, [ensureInitialized]);
 
-  useEffect(() => {
-    if (details.length > 0) {
-      setIsAccountManagementVisible(false);
-    }
-  }, [details]);
-
   const nav = `from-[#3f3f3f]/99 from-60% to-[#3f3f3f]/80`
 
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
-  const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(!(details.length > 0));
+  const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
+  // 无登录记录时强制打开账号管理（无法关闭）；有记录时按用户操作
+  const showAccountManagement = initialized && (details.length === 0 || isAccountManagementVisible);
 
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -61,42 +57,50 @@ export default function Login() {
   const { switchUser, register, login } = useAuth();
   const router = useRouter();
   // 连接按钮点击事件
-  const handleConnect = async (s?: 'switch' | 'register' | 'login', username?: string, password?: string, email?: string, code?: string) => {
+  const handleConnect = async (s?: 'switch' | 'register' | 'login', username?: string, uid?: string, password?: string, email?: string, code?: string) => {
     setIsConnecting(true)
     setDimmed(true) // 登录页背景图变暗
     let intervalId: ReturnType<typeof setInterval> | undefined;
+    intervalId = setInterval(() => {
+      setProgress((prev) => {
+        if (Number(prev.replace('%', '')) >= 80) {
+          clearInterval(intervalId);
+          intervalId = undefined;
+          return '80%'
+        }
+        const next = Number(prev.replace('%', '')) + Math.floor(Math.random() * 15);
+        return `${next >= 80 ? 80 : next}%`;
+      })
+    }, 100);
+
+    // 先让动画稳定播放（progress 推进到 80%），再执行 Server Action。
+    // 关键：避免 Server Action 中 cookies().set() 触发的 RSC refresh 打断正在运行的动画。
+    // await new Promise<void>((resolve) => setTimeout(resolve, 800));
+
     try {
-      intervalId = setInterval(() => {
-        setProgress((prev) => {
-          if (Number(prev.replace('%', '')) >= 80) {
-            clearInterval(intervalId);
-            intervalId = undefined;
-            return '80%'
-          }
-          const next = Number(prev.replace('%', '')) + Math.floor(Math.random() * 15);
-          return `${next >= 80 ? 80 : next}%`;
-        })
-      }, 100);
-      if (s === 'switch') await switchUser(details[0]?.uid || '');
-      else if (s === 'register') await register(username, password, email, code);
-      else if (s === 'login') await login(username, password);
-      setProgress('100%');
+      if (s === 'switch') await switchUser(uid || details[0]?.uid || '');
+      else if (s === 'register') await register(username || '', password || '', email || '', code || '');
+      else if (s === 'login') await login(username || '', password || '');
     } catch (err) {
       console.log(err);
+      if (intervalId) clearInterval(intervalId);
       setProgress('0%');
       setDimmed(false);
       setIsConnecting(false);
-    } finally {
+      return;
     }
+    // 防御性清理（progress 到 80% 时 setInterval 已自清除，但 Server Action 可能在 800ms 内已完成 round-trip 之前的极端情况）
+    if (intervalId) clearInterval(intervalId);
+    setProgress('100%');
   }
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     if (progress === '100%') {
       timeoutId = setTimeout(() => {
-        router.push('/');
-        setDimmed(false);
-        setIsConnecting(false);
+        setDimmed(false); // context state，需在跳转前重置，否则首页 BgImage 仍是暗的
+        // 用户回退时直接返回来源页而非再次进入 login
+        router.replace('/');
       }, 1000);
     }
 
@@ -105,7 +109,16 @@ export default function Login() {
         clearTimeout(timeoutId);
       }
     }
-  }, [progress]);
+  }, [progress, router, setDimmed]);
+
+  // 兜底：组件 unmount 时确保 isDimmed 重置。
+  // 防止 router.replace 的 navigation 太快（首页已缓存）导致 setTimeout 里的
+  // setDimmed(false) 被 navigation 打断没来得及 commit，首页 BgImage 仍是暗的。
+  useEffect(() => {
+    return () => {
+      setDimmed(false);
+    };
+  }, [setDimmed]);
 
   return (
     <>
@@ -122,7 +135,7 @@ export default function Login() {
       <span className={cn(styles.light)} />
       <span className={cn(styles.nav, 'bg-gradient-to-b', nav)} />
       {<>
-        <div className={cn(styles.main, "relative w-full flex justify-center flex-1")} style={{ opacity: isAccountManagementVisible ? 0 : 1, visibility: isConnecting ? 'hidden' : 'visible', pointerEvents: isConnecting ? 'none' : 'auto' }}>
+        <div className={cn(styles.main, "relative w-full flex justify-center flex-1")} style={{ opacity: showAccountManagement ? 0 : 1, visibility: isConnecting ? 'hidden' : 'visible', pointerEvents: showAccountManagement || isConnecting ? 'none' : 'auto' }}>
           <div className={cn(styles.bines_sign, 'absolute w-full pointer-events-none z-[0]')} style={{ aspectRatio: '16/8' }}>
             <Image src="/bines_sign.png" loading="eager" fill alt="logo" className="object-contain" />
           </div>
@@ -135,7 +148,7 @@ export default function Login() {
             </div>
           </>}
         </div>
-        {isAccountManagementVisible && <AccountManagement details={details} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
+        {showAccountManagement && <AccountManagement details={details} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
       </>}
       <span className={cn(styles.nav, 'relative bg-gradient-to-t', nav, 'translate-y-[10px]')} >

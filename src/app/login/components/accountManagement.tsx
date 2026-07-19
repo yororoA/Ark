@@ -22,11 +22,11 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   const { sendCode } = useAuth();
   const { onClose, onConnect, details } = props;
 
-  const [selectedDetail, setSelectedDetail] = useState<AuthDetail | undefined>(details[0]);
-  const [showDeleteDialog, setShowDelete] = useState(false);
+  const [selectedUid, setSelectedUid] = useState<string | undefined>(details[0]?.uid);
+  const selectedDetail = details.find((d) => d.uid === selectedUid) ?? details[0];
+  const [detailToDelete, setDetailToDelete] = useState<AuthDetail | undefined>(undefined);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const detailToDeleteRef = useRef<AuthDetail | undefined>(undefined);
-  const boundaryRef = useRef<HTMLDivElement>(null);
+  const [boundaryEl, setBoundaryEl] = useState<HTMLDivElement | null>(null);
 
   // 平滑滚动
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null)
@@ -95,8 +95,13 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
 
   return (
     <Portal className="flex justify-center items-center">
-      {showDeleteDialog && <DeleteLoginRecord onCancel={() => { setShowDelete(false); detailToDeleteRef.current = undefined }} detail={detailToDeleteRef.current} />}
-      <div className={cn(styles.accountManagement)} style={{ opacity: `${showDeleteDialog ? 0 : 1}` }} ref={boundaryRef}>
+      {detailToDelete && (
+        <DeleteLoginRecord
+          onCancel={() => setDetailToDelete(undefined)}
+          detail={detailToDelete}
+        />
+      )}
+      <div className={cn(styles.accountManagement)} style={{ opacity: `${detailToDelete ? 0 : 1}` }} ref={setBoundaryEl}>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
           {otherVisable && <ChevronLeft size={24} strokeWidth={1.3} onClick={() => setOtherVisable(false)} className="iconBtn absolute" />}
           <h1 className="ml-[1.5rem]">{'账号管理'}</h1>
@@ -121,7 +126,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                     </div>
                     <ChevronRight size={30} strokeWidth={1.3} className='absolute right-[2rem] top-1/2 -translate-y-1/2 transition-transform duration-200 group-data-[state=open]:rotate-90' />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent ref={wrapperRef} collisionBoundary={boundaryRef.current} className={cn(styles.accountManagementContent, 'w-[var(--radix-dropdown-menu-trigger-width)] h-screen')}>
+                  <DropdownMenuContent ref={wrapperRef} collisionBoundary={boundaryEl} className={cn(styles.accountManagementContent, 'w-[var(--radix-dropdown-menu-trigger-width)] h-screen')}>
                     {
                       details.map((detail, index) => {
                         const location = detail.continent_code && detail.country_code
@@ -129,7 +134,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                           : detail.continent_code || detail.country_code || 'Unknown';
 
                         return (
-                          <DropdownMenuItem className={cn(styles.account)} key={detail.uid} onSelect={() => setSelectedDetail(detail)}>
+                          <DropdownMenuItem className={cn(styles.account)} key={detail.uid} onSelect={() => setSelectedUid(detail.uid)}>
                             <span className={cn(styles.avatar, styles.small, 'row-span-2')}>{detail.username?.charAt(0).toUpperCase() || 'G'}</span>
                             <span className={cn(styles.desc, 'text-[.6rem] font-[500]')}>
                               {detail.username || 'Guest'}
@@ -146,9 +151,8 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                             <span className="absolute right-0 mr-[.9rem] pointer-events-auto group"
                               onClick={(e) => {
                                 e.preventDefault();
-                                setShowDelete(true);
+                                setDetailToDelete(detail);
                                 setDropdownOpen(false);
-                                detailToDeleteRef.current = detail;
                               }}>
                               <Trash2 strokeWidth={1.3} className="group-hover:stroke-red-500" />
                             </span>
@@ -162,7 +166,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
               }
             </div>
             <div className={cn(styles.accountManagementFooter)}>
-              {details.length > 0 && <Button size="small" onClick={() => { onClose(); onConnect('switch') }} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
+              {details.length > 0 && <Button size="small" onClick={() => { onClose(); onConnect('switch', selectedDetail?.uid) }} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
               <Button size="small" className={cn(styles.loginBtn, 'opacity-50 ml-auto')} onClick={() => setOtherVisable(true)}>其他账号登录</Button>
             </div>
           </>
@@ -193,6 +197,6 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
             </div>
           </>}
       </div>
-    </Portal >
+    </Portal>
   );
 }

@@ -1,7 +1,7 @@
 // components/Portal.tsx
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
@@ -13,6 +13,8 @@ interface PortalProps {
   style?: React.CSSProperties
 }
 
+const emptySubscribe = () => () => {}
+
 function SetPortal({
   children,
   containerId = 'portal-root',
@@ -21,30 +23,33 @@ function SetPortal({
   style,
   ...rest
 }: PortalProps) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  )
 
   if (!mounted) return null
 
   const container = document.getElementById(containerId)
-  if (!container) return null;
-  if (black) {
-    className = cn('bg-black/20', className)
-  }
+  if (!container) return null
 
   return createPortal(
-    <div className={className} style={style} {...rest}>{children}</div>,
+    <div className={cn(black && 'bg-black/20', className)} style={style} {...rest}>
+      {children}
+    </div>,
     container,
   )
 }
 
 export default function Portal(props: PortalProps) {
   return (
-    <SetPortal className={cn('fixed inset-0 z-[9998] min-h-screen min-w-screen', props.className)} black={props.black} style={props.style}>
+    <SetPortal
+      className={cn('fixed inset-0 z-[9998] min-h-screen min-w-screen', props.className)}
+      black={props.black}
+      style={props.style}
+    >
       {props.children}
-    </SetPortal >
-  );
+    </SetPortal>
+  )
 }
