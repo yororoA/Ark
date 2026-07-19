@@ -15,10 +15,11 @@ import Button from "@/components/arks/button";
 import Input from "@/components/arks/input";
 import Tabs from "@/components/arks/tabs";
 import DeleteLoginRecord from "./deleteLoginRecord";
+import type { ConnectParams } from '../types';
 
 
 
-export default function AccountManagement(props: { onClose: () => void, onConnect: (s?: 'switch' | 'register' | 'login', username?: string, password?: string, email?: string, code?: string) => void, details: AuthDetail[] }) {
+export default function AccountManagement(props: { onClose: () => void, onConnect: (params: ConnectParams) => void, details: AuthDetail[] }) {
   const { sendCode } = useAuth();
   const { onClose, onConnect, details } = props;
 
@@ -79,7 +80,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
       throw new Error('请输入验证码');
     }
     onClose();
-    await onConnect('register', usernameRef.current.value, passwordRef.current.value, emailRef.current.value, codeRef.current.value);
+    await onConnect({ action: 'register', username: usernameRef.current.value, password: passwordRef.current.value, email: emailRef.current.value, code: codeRef.current.value });
   }
   // 登录
   const handleLogin = async () => {
@@ -90,7 +91,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
       throw new Error('请输入密码');
     }
     onClose();
-    await onConnect('login', usernameRef.current.value, passwordRef.current.value);
+    await onConnect({ action: 'login', username: usernameRef.current.value, password: passwordRef.current.value });
   }
 
   return (
@@ -166,7 +167,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
               }
             </div>
             <div className={cn(styles.accountManagementFooter)}>
-              {details.length > 0 && <Button size="small" onClick={() => { onClose(); onConnect('switch', selectedDetail?.uid) }} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
+              {details.length > 0 && <Button size="small" onClick={() => { onClose(); onConnect({ action: 'switch', uid: selectedDetail?.uid }) }} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
               <Button size="small" className={cn(styles.loginBtn, 'opacity-50 ml-auto')} onClick={() => setOtherVisable(true)}>其他账号登录</Button>
             </div>
           </>

@@ -14,6 +14,7 @@ import Sphere from "@/components/arks/sphere";
 import Loading from "@/components/arks/loading";
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import type { ConnectParams } from './types';
 
 export default function Login() {
   const location = useGetLocation(); // 用户ip定位
@@ -36,10 +37,11 @@ export default function Login() {
 
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
   const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
-  // 无登录记录时强制打开账号管理（无法关闭）；有记录时按用户操作
-  const showAccountManagement = initialized && (details.length === 0 || isAccountManagementVisible);
-
   const [isConnecting, setIsConnecting] = useState(false);
+  // 无登录记录时强制打开账号管理（无法关闭）；有记录时按用户操作。
+  // 连接中(isConnecting)时强制关闭——避免首次登录(details.length===0)时
+  // onClose() 因短路无法卸载 AccountManagement，导致进度条已经开始变化但弹窗还在。
+  const showAccountManagement = initialized && (details.length === 0 || isAccountManagementVisible) && !isConnecting;
 
   // 球
   const SphereLargeClassName = useMemo(() => isConnecting ?
@@ -57,7 +59,7 @@ export default function Login() {
   const { switchUser, register, login } = useAuth();
   const router = useRouter();
   // 连接按钮点击事件
-  const handleConnect = async (s?: 'switch' | 'register' | 'login', username?: string, uid?: string, password?: string, email?: string, code?: string) => {
+  const handleConnect = async (params: ConnectParams) => {
     setIsConnecting(true)
     setDimmed(true) // 登录页背景图变暗
     let intervalId: ReturnType<typeof setInterval> | undefined;
@@ -73,14 +75,10 @@ export default function Login() {
       })
     }, 100);
 
-    // 先让动画稳定播放（progress 推进到 80%），再执行 Server Action。
-    // 关键：避免 Server Action 中 cookies().set() 触发的 RSC refresh 打断正在运行的动画。
-    // await new Promise<void>((resolve) => setTimeout(resolve, 800));
-
     try {
-      if (s === 'switch') await switchUser(uid || details[0]?.uid || '');
-      else if (s === 'register') await register(username || '', password || '', email || '', code || '');
-      else if (s === 'login') await login(username || '', password || '');
+      if (params.action === 'switch') await switchUser(params.uid || details[0]?.uid || '');
+      else if (params.action === 'register') await register(params.username, params.password, params.email, params.code);
+      else if (params.action === 'login') await login(params.username, params.password);
     } catch (err) {
       console.log(err);
       if (intervalId) clearInterval(intervalId);
@@ -89,7 +87,7 @@ export default function Login() {
       setIsConnecting(false);
       return;
     }
-    // 防御性清理（progress 到 80% 时 setInterval 已自清除，但 Server Action 可能在 800ms 内已完成 round-trip 之前的极端情况）
+    // 防御性清理（progress 到 80% 时 setInterval 已自清除）
     if (intervalId) clearInterval(intervalId);
     setProgress('100%');
   }
@@ -141,7 +139,7 @@ export default function Login() {
           </div>
           {initialized && <>
             <span className={cn(styles.pro_tag, 'font-batang z-[1]')}>{'YOROROICE ARK'}</span>
-            <Button size="large" className="font-song z-[1]" onClick={() => handleConnect('switch')}>{'建立连接'}</Button>
+            <Button size="large" className="font-song z-[1]" onClick={() => handleConnect({ action: 'switch' })}>{'建立连接'}</Button>
             <div className={cn(styles.tag)}>
               <span className={cn(styles.tag_prefix, 'z-[1]')}>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '访客' : '用户'}</span>
               <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{details[0]?.username}</span>
