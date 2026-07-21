@@ -12,6 +12,7 @@ export function useGetLocation(): IPinfoLite | null {
     getLocation().then((loc) => {
       if (!isMounted) return;
       // todo: toast 提示用户 IP 定位失败
+      if (!loc) return;
       if ('bogon' in loc && loc.bogon) return;
       setLocation(loc as IPinfoLite)
     })

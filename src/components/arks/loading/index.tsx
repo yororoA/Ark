@@ -14,15 +14,15 @@ export default function Loading(props: LoadingProps) {
   const textChars = useMemo(() => {
     switch (props.type) {
       case 'charJump':
-        return CharJump({ text: props.text })
+        return CharJump({ text: props.text! })
       case 'text':
-        return props.text
+        return props.text!
       case 'animation':
-        return Animation({ text: props.text })
+        return Animation({ text: props.text! })
       case 'login':
         return LoginLoading({ progresss: props.progress })
       default:
-        return props.text
+        return props.text || ''
     }
   }, [props]);
 

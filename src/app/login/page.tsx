@@ -45,12 +45,12 @@ export default function Login() {
 
   // 球
   const SphereLargeClassName = useMemo(() => isConnecting ?
-    'translate-y-[0rem] scale-[0.7] transition-transform duration-[400ms] opacity-[1] '
-    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[400ms] opacity-[0.5]'
+    'translate-y-[0rem] scale-[0.7] transition-transform duration-[1000ms] opacity-[1] '
+    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[1000ms] opacity-[0.5]'
     , [isConnecting]);
   const SphereSmallClassName = useMemo(() => isConnecting ?
-    'translate-y-[0rem] scale-[0.8] transition-transform duration-[400ms] opacity-[1]'
-    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[400ms] opacity-[0.5]'
+    'translate-y-[0rem] scale-[0.8] transition-transform duration-[1000ms] opacity-[1]'
+    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[1000ms] opacity-[0.5]'
     , [isConnecting]);
 
   // 连接进度
@@ -70,7 +70,7 @@ export default function Login() {
           intervalId = undefined;
           return '80%'
         }
-        const next = Number(prev.replace('%', '')) + Math.floor(Math.random() * 15);
+        const next = Number(prev.replace('%', '')) + Math.floor(Math.random() * 5);
         return `${next >= 80 ? 80 : next}%`;
       })
     }, 100);
@@ -98,7 +98,7 @@ export default function Login() {
       timeoutId = setTimeout(() => {
         setDimmed(false); // context state，需在跳转前重置，否则首页 BgImage 仍是暗的
         // 用户回退时直接返回来源页而非再次进入 login
-        router.replace('/');
+        router.replace('/home');
       }, 1000);
     }
 
