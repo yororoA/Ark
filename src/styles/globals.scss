@@ -35,3 +35,17 @@ body {
     background-color: $active-bgc;
   }
 }
+
+.iconBtn_noBgd {
+  cursor: pointer;
+  display: block;
+  box-sizing: content-box;
+
+  &:hover {
+    color: rgba($color: $white, $alpha: 0.9);
+  }
+
+  &:active {
+    color: rgba($color: $white, $alpha: 0.6);
+  }
+}
