@@ -64,12 +64,10 @@
 
 .main .connect-button {
   box-sizing: border-box;
-  width: clamp(176px, 56vw, 220px);
-  height: 56px;
-  max-width: 100%;
+  min-width: 176px;
+  max-width: calc(100vw - 32px);
   min-height: 56px;
-  padding: 12px 20px;
-  font-size: 22px;
+  white-space: nowrap;
 }
 
 .account-tag {
@@ -161,7 +159,6 @@
   .top-band { height: 16px; }
   .main { padding-block: 12px; gap: 8px; }
   .brand-mark { height: 90px; width: 310px; }
-  .main .connect-button { height: 44px; min-height: 44px; padding-block: 0; font-size: 18px; }
   .footer { padding-block: 12px; }
   .footer-logo { height: 36px; }
 }

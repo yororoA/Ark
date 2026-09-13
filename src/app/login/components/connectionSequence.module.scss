@@ -1135,15 +1135,3 @@
   .welcome-role { font-size: 19px; }
   .welcome-identified { font-size: 26px; }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .sequence,
-  .sequence *,
-  .sequence *::before,
-  .sequence *::after { animation: none !important; transition: none !important; }
-  .corner-seed { display: none; }
-  .sequence[data-phase='success'] .terminal-content { visibility: hidden; }
-  .credential-scan { background: var(--paper); color: var(--ink); }
-  .scan-symbols { display: none; }
-  .sequence[data-phase='exit'] .exit-shade { opacity: 1; }
-}

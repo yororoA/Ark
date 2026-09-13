@@ -22,11 +22,10 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 interface ConnectionNetworkProps {
-  reducedMotion: boolean;
   onReady: () => void;
 }
 
-export default function ConnectionNetwork({ reducedMotion, onReady }: ConnectionNetworkProps) {
+export default function ConnectionNetwork({ onReady }: ConnectionNetworkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useIsoLayoutEffect(() => {
@@ -94,11 +93,11 @@ export default function ConnectionNetwork({ reducedMotion, onReady }: Connection
     let frame = 0;
     const startedAt = performance.now();
     const render = (now: number) => {
-      const elapsed = reducedMotion ? 0 : (now - startedAt) / 1000;
+      const elapsed = (now - startedAt) / 1000;
       outer.rotation.set(0.23 + elapsed * 0.19, elapsed * 0.42, 0.12);
       inner.rotation.set(-0.35 - elapsed * 0.3, -elapsed * 0.24, 0.7);
       renderer.render(scene, camera);
-      if (!reducedMotion && !document.hidden) frame = requestAnimationFrame(render);
+      if (!document.hidden) frame = requestAnimationFrame(render);
     };
     const onVisibility = () => {
       cancelAnimationFrame(frame);
@@ -120,7 +119,7 @@ export default function ConnectionNetwork({ reducedMotion, onReady }: Connection
       pointMaterial.dispose();
       renderer.dispose();
     };
-  }, [onReady, reducedMotion]);
+  }, [onReady]);
 
   return <canvas ref={canvasRef} data-testid="connection-network" aria-hidden="true" />;
 }

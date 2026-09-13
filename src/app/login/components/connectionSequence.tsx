@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowLeft, TriangleAlert } from 'lucide-react';
 import Portal from '@/components/Portal';
 import { CONNECTION_TIMING as TIMING } from './connectionTimeline';
@@ -9,7 +9,6 @@ import styles from './connectionSequence.module.scss';
 import Loading from '@/components/arks/loading';
 
 const ConnectionNetwork = dynamic(() => import('./connectionNetwork'), { ssr: false });
-const MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 const DECODE_LINES = [
   'RTQ17 / AKRHO4',
   'XBNEQ / TYRMNLS',
@@ -50,12 +49,6 @@ interface ConnectionSequenceProps extends ConnectionState {
   location: string;
   onComplete: () => void;
   onDismiss: () => void;
-}
-
-function subscribeToMotion(onChange: () => void) {
-  const media = window.matchMedia(MOTION_QUERY);
-  media.addEventListener('change', onChange);
-  return () => media.removeEventListener('change', onChange);
 }
 
 function CornerMarks() {
@@ -116,7 +109,7 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
           <i />
         </div>
         <div className={styles['letter-matrix']}>
-          {'YOROROIC'.split('').map((letter, index) => (
+          {'YOROROICE'.split('').map((letter, index) => (
             <span key={index} style={{ '--matrix-index': index } as CSSProperties}>{letter}</span>
           ))}
         </div>
@@ -142,11 +135,6 @@ export default function ConnectionSequence({
   onComplete,
   onDismiss,
 }: ConnectionSequenceProps) {
-  const reducedMotion = useSyncExternalStore(
-    subscribeToMotion,
-    () => window.matchMedia(MOTION_QUERY).matches,
-    () => false,
-  );
   const [stage, setStage] = useState<'boot' | 'terminal' | 'sync' | 'exit'>('boot');
   const [introComplete, setIntroComplete] = useState(false);
   const [networkReady, setNetworkReady] = useState(false);
@@ -160,27 +148,25 @@ export default function ConnectionSequence({
   }, []);
 
   useEffect(() => {
-    const terminal = window.setTimeout(() => setStage('terminal'), reducedMotion ? 0 : TIMING.boot);
-    const ready = window.setTimeout(() => setIntroComplete(true), reducedMotion ? 0 : TIMING.boot + TIMING.terminal);
+    const terminal = window.setTimeout(() => setStage('terminal'), TIMING.boot);
+    const ready = window.setTimeout(() => setIntroComplete(true), TIMING.boot + TIMING.terminal);
     return () => {
       window.clearTimeout(terminal);
       window.clearTimeout(ready);
     };
-  }, [reducedMotion]);
+  }, []);
 
   useEffect(() => {
     if (!introComplete || status !== 'success') return;
-    const identity = reducedMotion ? 100 : TIMING.identity;
-    const syncDuration = reducedMotion ? 100 : TIMING.sync;
-    const sync = window.setTimeout(() => setStage('sync'), identity);
-    const exit = window.setTimeout(() => setStage('exit'), identity + syncDuration);
-    const complete = window.setTimeout(onComplete, identity + syncDuration + (reducedMotion ? 100 : TIMING.exit));
+    const sync = window.setTimeout(() => setStage('sync'), TIMING.identity);
+    const exit = window.setTimeout(() => setStage('exit'), TIMING.identity + TIMING.sync);
+    const complete = window.setTimeout(onComplete, TIMING.identity + TIMING.sync + TIMING.exit);
     return () => {
       window.clearTimeout(sync);
       window.clearTimeout(exit);
       window.clearTimeout(complete);
     };
-  }, [introComplete, status, reducedMotion, onComplete]);
+  }, [introComplete, status, onComplete]);
 
   const phase = status === 'error' ? 'error'
     : stage === 'sync' || stage === 'exit' ? stage
@@ -295,12 +281,12 @@ export default function ConnectionSequence({
             </div>
           )}
           <footer className={styles['terminal-footer']}>BINES NETWORK <span /></footer>
-          {phase === 'success' && !reducedMotion && <Loading type="animation" text="正在建立神经连接" />}
+          {phase === 'success' && <Loading type="animation" text="正在建立神经连接" />}
         </div>
 
         {verified && (
           <div className={styles['network-stage']} aria-hidden={!networkVisible}>
-            <ConnectionNetwork reducedMotion={reducedMotion} onReady={handleNetworkReady} />
+            <ConnectionNetwork onReady={handleNetworkReady} />
             {networkReady && <>
               <div className={styles['station-plate']}>
                 <span>接驳点</span>

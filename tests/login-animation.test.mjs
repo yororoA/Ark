@@ -128,7 +128,7 @@ test('failure shows the backend message and can start a fresh connection', async
   assert.equal(requests.length, 2);
 });
 
-test('reduced motion has no active animations and does not bypass pending authentication', async (t) => {
+test('reduced motion preference does not suppress the connection animation', async (t) => {
   let finish;
   const pending = new Promise((resolve) => { finish = resolve; });
   const { page } = await session(t, {
@@ -140,12 +140,16 @@ test('reduced motion has no active animations and does not bypass pending authen
     },
   });
   await page.getByRole('button', { name: '建立连接', exact: true }).click();
-  await phase(page, 'terminal').waitFor();
-  await checkTerminalLayout(page);
-  assert.equal(await page.getByRole('dialog').evaluate((dialog) => dialog.getAnimations({ subtree: true }).length), 0);
-  await shot(page, 'mobile-03-reduced-motion');
+  await phase(page, 'boot').waitFor();
+  await page.waitForTimeout(150);
+  assert.ok(
+    await page.getByRole('dialog').evaluate((dialog) => dialog.getAnimations({ subtree: true }).length) > 0,
+    'Animations remain active when the operating system requests reduced motion',
+  );
   finish();
-  await page.waitForURL('**/home', { timeout: 2000 });
+  await phase(page, 'terminal').waitFor({ timeout: 5000 });
+  await checkTerminalLayout(page);
+  await shot(page, 'mobile-03-reduced-motion');
 });
 
 for (const action of ['login', 'register']) {
@@ -399,8 +403,11 @@ for (const viewport of [
         sphereZ: canvases[0] ? Number(getComputedStyle(canvases[0].parentElement?.parentElement).zIndex) : null,
       };
     });
-    assert.ok(entryGeometry.connect.width >= 176 && entryGeometry.connect.width <= 220);
-    assert.ok(entryGeometry.connect.height >= 44 && entryGeometry.connect.height <= 56);
+    assert.ok(entryGeometry.connect.width >= 176 && entryGeometry.connect.width <= Math.min(300, viewport.width - 32));
+    assert.ok(entryGeometry.connect.height >= 56 && entryGeometry.connect.height <= 90);
+    if (viewport.height >= 800) {
+      assert.ok(entryGeometry.connect.height > 56, 'The primary button scales with the viewport height');
+    }
     for (const canvas of entryGeometry.canvas) {
       assert.ok(Math.abs(canvas.left + canvas.width / 2 - viewport.width / 2) < 1, 'Idle spheres stay horizontally centered');
       assert.ok(canvas.top < entryGeometry.band.bottom && canvas.top + canvas.height > entryGeometry.band.bottom, 'Top band overlaps part of the sphere');
