@@ -56,11 +56,11 @@ export function useAuth() {
   // 登录
   async function login(username: string, password: string) {
     const resp = await callAuth<{ uid?: string; isAdmin?: boolean }>('login', { username, password });
-    if (!resp) {
+    if (!resp?.uid) {
       throw new Error('登录失败，请稍后重试');
     }
     authStore.addDetail({
-      username, uid: resp.uid!, isGuest: false,
+      username, uid: resp.uid, isGuest: false,
       isAdmin: resp.isAdmin ?? false,
       lastLoginAt: new Date().toISOString(),
       continent_code: location?.continentCode,
@@ -71,11 +71,11 @@ export function useAuth() {
   // 注册
   async function register(username: string, password: string, email: string, verificationCode: string) {
     const resp = await callAuth<{ uid?: string; isAdmin?: boolean }>('register', { username, password, email, verificationCode });
-    if (!resp) {
+    if (!resp?.uid) {
       throw new Error('注册失败，请稍后重试');
     }
     authStore.addDetail({
-      username, uid: resp.uid!, isGuest: false,
+      username, uid: resp.uid, isGuest: false,
       isAdmin: resp.isAdmin ?? false,
       lastLoginAt: new Date().toISOString(),
       continent_code: location?.continentCode,

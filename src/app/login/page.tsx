@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useGetLocation } from '@/hooks/useGetLocation';
 import { useBrightness } from '@/context/brightness-context';
 import { useAuthStore } from '@/store/auth';
@@ -10,8 +10,8 @@ import { cn } from '@/lib/utils';
 import Image from "next/image";
 import Declaration from "./components/declaration";
 import AccountManagement from "./components/accountManagement";
+import ConnectionSequence, { type ConnectionState } from "./components/connectionSequence";
 import Sphere from "@/components/arks/sphere";
-import Loading from "@/components/arks/loading";
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import type { ConnectParams } from './types';
@@ -37,102 +37,87 @@ export default function Login() {
 
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
   const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  // 无登录记录时强制打开账号管理（无法关闭）；有记录时按用户操作。
-  // 连接中(isConnecting)时强制关闭——避免首次登录(details.length===0)时
-  // onClose() 因短路无法卸载 AccountManagement，导致进度条已经开始变化但弹窗还在。
+  const [connection, setConnection] = useState<ConnectionState | null>(null);
+  const connectingRef = useRef(false);
+  const requestIdRef = useRef(0);
+  const isConnecting = connection !== null;
+  // 首次登录强制打开账号管理，连接期间让位于终端动效。
   const showAccountManagement = initialized && (details.length === 0 || isAccountManagementVisible) && !isConnecting;
 
-  // 球
-  const SphereLargeClassName = useMemo(() => isConnecting ?
-    'translate-y-[0rem] scale-[0.7] transition-transform duration-[1000ms] opacity-[1] '
-    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[1000ms] opacity-[0.5]'
-    , [isConnecting]);
-  const SphereSmallClassName = useMemo(() => isConnecting ?
-    'translate-y-[0rem] scale-[0.8] transition-transform duration-[1000ms] opacity-[1]'
-    : 'translate-y-[-17rem] scale-[1.2] transition-transform duration-[1000ms] opacity-[0.5]'
-    , [isConnecting]);
-
-  // 连接进度
-  const [progress, setProgress] = useState('0%')
+  const sphereClassName = 'translate-y-[-17rem] scale-[1.2] opacity-[0.5]';
 
   const { switchUser, register, login } = useAuth();
   const router = useRouter();
   // 连接按钮点击事件
   const handleConnect = async (params: ConnectParams) => {
-    setIsConnecting(true)
-    setDimmed(true) // 登录页背景图变暗
-    let intervalId: ReturnType<typeof setInterval> | undefined;
-    intervalId = setInterval(() => {
-      setProgress((prev) => {
-        if (Number(prev.replace('%', '')) >= 80) {
-          clearInterval(intervalId);
-          intervalId = undefined;
-          return '80%'
-        }
-        const next = Number(prev.replace('%', '')) + Math.floor(Math.random() * 5);
-        return `${next >= 80 ? 80 : next}%`;
-      })
-    }, 100);
+    if (connectingRef.current) return;
+    connectingRef.current = true;
+    const requestId = ++requestIdRef.current;
+    const uid = params.action === 'switch' ? params.uid || details[0]?.uid || '' : '';
+    const username = params.action === 'switch'
+      ? details.find((detail) => detail.uid === uid)?.username || 'Guest'
+      : params.username;
+
+    setConnection({ status: 'pending', username });
+    setIsDeclarationVisible(false);
+    setDimmed(true);
 
     try {
-      if (params.action === 'switch') await switchUser(params.uid || details[0]?.uid || '');
+      if (params.action === 'switch') await switchUser(uid);
       else if (params.action === 'register') await register(params.username, params.password, params.email, params.code);
       else if (params.action === 'login') await login(params.username, params.password);
     } catch (err) {
-      console.log(err);
-      if (intervalId) clearInterval(intervalId);
-      setProgress('0%');
-      setDimmed(false);
-      setIsConnecting(false);
+      if (requestId !== requestIdRef.current) return;
+      setConnection({
+        status: 'error',
+        username,
+        error: err instanceof Error ? err.message : '连接失败，请稍后重试',
+      });
       return;
     }
-    // 防御性清理（progress 到 80% 时 setInterval 已自清除）
-    if (intervalId) clearInterval(intervalId);
-    setProgress('100%');
+
+    if (requestId === requestIdRef.current) {
+      setConnection({ status: 'success', username });
+    }
   }
 
-  useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    if (progress === '100%') {
-      timeoutId = setTimeout(() => {
-        setDimmed(false); // context state，需在跳转前重置，否则首页 BgImage 仍是暗的
-        // 用户回退时直接返回来源页而非再次进入 login
-        router.replace('/home');
-      }, 1000);
-    }
+  const handleConnected = useCallback(() => {
+    setDimmed(false);
+    router.replace('/home');
+  }, [router, setDimmed]);
 
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    }
-  }, [progress, router, setDimmed]);
+  const handleDismissConnection = useCallback(() => {
+    connectingRef.current = false;
+    setConnection(null);
+    setDimmed(false);
+    setIsAccountManagementVisible(true);
+  }, [setDimmed]);
 
-  // 兜底：组件 unmount 时确保 isDimmed 重置。
-  // 防止 router.replace 的 navigation 太快（首页已缓存）导致 setTimeout 里的
-  // setDimmed(false) 被 navigation 打断没来得及 commit，首页 BgImage 仍是暗的。
+  // Ignore late responses after navigation and restore the shared background.
   useEffect(() => {
     return () => {
+      requestIdRef.current += 1;
       setDimmed(false);
     };
   }, [setDimmed]);
 
   return (
     <>
-      <Sphere className={SphereLargeClassName} color='rgba(34,211,238,.5)' edges={10} edgeWidth={2} dotRadius={3} />
-      <Sphere className={cn(SphereSmallClassName, 'rotate-z-[90deg] rotate-x-[20deg]')} color="rgba(192,132,252,0.8)" edges={6} edgeWidth={2} dotRadius={3} />
-      {<>
-        <div className={cn(styles.connectionInfoCard)} style={{ visibility: isConnecting ? 'visible' : 'hidden' }}>
-          <span className='text-[.45rem] leading-[.45rem]'>{'接驳点'}</span>
-          <span className='text-[1rem] font-song font-bold leading-[1.1rem]'>{location ? `${location?.continentCode}/${location?.countryCode}` : 'Unknown'}</span>
-        </div>
-        <span style={{ visibility: isConnecting ? 'visible' : 'hidden' }} className={'absolute text-[.6rem] top-[78%] left-[50%] translate-x-[-50%] translate-y-[-50%] brightness-200'}>正在尝试与Bines Network&trade;进行认知同步</span>
-        <Loading style={{ visibility: isConnecting ? 'visible' : 'hidden' }} type="login" progress={progress} />
-      </>}
-      <span className={cn(styles.light)} />
-      <span className={cn(styles.nav, 'bg-gradient-to-b', nav)} />
-      {<>
+      {connection && (
+        <ConnectionSequence
+          {...connection}
+          location={location ? `${location.continentCode}/${location.countryCode}` : '-- / --'}
+          onComplete={handleConnected}
+          onDismiss={handleDismissConnection}
+        />
+      )}
+      <div className={styles['login-scene']} inert={isConnecting}>
+        {!isConnecting && <>
+          <Sphere className={sphereClassName} color='rgba(34,211,238,.5)' edges={10} edgeWidth={2} dotRadius={3} />
+          <Sphere className={cn(sphereClassName, 'rotate-z-[90deg] rotate-x-[20deg]')} color="rgba(192,132,252,0.8)" edges={6} edgeWidth={2} dotRadius={3} />
+        </>}
+        <span className={cn(styles.light)} />
+        <span className={cn(styles.nav, 'bg-gradient-to-b', nav)} />
         <div className={cn(styles.main, "relative w-full flex justify-center flex-1")} style={{ opacity: showAccountManagement ? 0 : 1, visibility: isConnecting ? 'hidden' : 'visible', pointerEvents: showAccountManagement || isConnecting ? 'none' : 'auto' }}>
           <div className={cn(styles.bines_sign, 'absolute w-full pointer-events-none z-[0]')} style={{ aspectRatio: '16/8' }}>
             <Image src="/bines_sign.png" loading="eager" fill alt="logo" className="object-contain" />
@@ -148,24 +133,24 @@ export default function Login() {
         </div>
         {showAccountManagement && <AccountManagement details={details} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
-      </>}
-      <span className={cn(styles.nav, 'relative bg-gradient-to-t', nav, 'translate-y-[10px]')} >
-        <div className={cn(styles.gap, 'relative h-full grid grid-cols-[auto_auto_1fr] items-center justify-center')}>
-          <div className="row-span-2 relative h-full" style={{ aspectRatio: '1720/785' }}>
-            <Image src="/logo_white.png" loading="eager" fill alt="logo" sizes="30vw" className="object-contain" />
+        <span className={cn(styles.nav, 'relative bg-gradient-to-t', nav, 'translate-y-[10px]')} >
+          <div className={cn(styles.gap, 'relative h-full grid grid-cols-[auto_auto_1fr] items-center justify-center')}>
+            <div className="row-span-2 relative h-full" style={{ aspectRatio: '1720/785' }}>
+              <Image src="/logo_white.png" loading="eager" fill alt="logo" sizes="30vw" className="object-contain" />
+            </div>
+            <div className="row-span-2 relative h-full" style={{ aspectRatio: '1192/368' }}>
+              <Image src="/sign_white.png" loading="eager" fill alt="sign" sizes="40vw" className="object-contain" />
+            </div>
+            <span className={cn(styles.copyright, 'font-ibm')}>©2026 YororoIce. All code rights reserved.</span>
+            <span className={styles.copyright}>本网站部分 UI 仿刻于游戏《明日方舟》，仅用于个人使用，不涉及任何商业用途</span>
           </div>
-          <div className="row-span-2 relative h-full" style={{ aspectRatio: '1192/368' }}>
-            <Image src="/sign_white.png" loading="eager" fill alt="sign" sizes="40vw" className="object-contain" />
-          </div>
-          <span className={cn(styles.copyright, 'font-ibm')}>©2026 YororoIce. All code rights reserved.</span>
-          <span className={styles.copyright}>本网站部分 UI 仿刻于游戏《明日方舟》，仅用于个人使用，不涉及任何商业用途</span>
-        </div>
 
-        {initialized && <div className={cn(styles.gap, 'relative h-full w-full flex items-center justify-end')} style={{ visibility: isConnecting ? 'hidden' : 'visible' }}>
-          <Button size="small" onClick={() => setIsAccountManagementVisible(true)}>{'账号管理'}</Button>
-          <Button size="small" onClick={() => setIsDeclarationVisible(true)}>{'查看声明'}</Button>
-        </div>}
-      </span>
+          {initialized && <div className={cn(styles.gap, 'relative h-full w-full flex items-center justify-end')} style={{ visibility: isConnecting ? 'hidden' : 'visible' }}>
+            <Button size="small" onClick={() => setIsAccountManagementVisible(true)}>{'账号管理'}</Button>
+            <Button size="small" onClick={() => setIsDeclarationVisible(true)}>{'查看声明'}</Button>
+          </div>}
+        </span>
+      </div>
     </>
   );
 }
