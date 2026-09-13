@@ -106,7 +106,6 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
             />
           ))}
         </span>
-        <span className={styles['rail-lower-nodes']} />
         <div className={styles['decode-copy']}>
           <div className={styles['decode-rows']}>
             <div className={styles['decode-track']}>

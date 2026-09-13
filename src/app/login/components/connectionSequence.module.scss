@@ -191,8 +191,7 @@
 
 .rail-ticks,
 .rail-stripes,
-.rail-upper-nodes,
-.rail-lower-nodes {
+.rail-upper-nodes {
   position: absolute;
   width: 170px;
   height: 14px;
@@ -223,7 +222,7 @@
 }
 .rail-stripes {
   top: 8px;
-  left: clamp(265px, 29vmin, 310px);
+  left: clamp(310px, 34vmin, 360px);
   width: clamp(160px, 17vmin, 184px);
   height: clamp(44px, 4.8vmin, 52px);
   background: repeating-linear-gradient(110deg, white 0 7px, transparent 7px 17px);
@@ -248,15 +247,6 @@
     background: var(--signal);
     animation: rail-cell-reveal 1ms var(--cell-delay) linear both;
   }
-}
-.rail-lower-nodes {
-  right: calc(var(--rail-offset) + 16px);
-  top: 32px;
-  width: clamp(108px, 11vmin, 120px);
-  height: clamp(10px, 1.2vmin, 12px);
-  background: repeating-linear-gradient(90deg, #fff 0 11px, transparent 11px 18px);
-  transform-origin: right;
-  animation-name: nodes-reveal;
 }
 
 .decode-copy {
@@ -305,7 +295,7 @@
 .letter-matrix {
   position: absolute;
   top: 12px;
-  left: calc(var(--rail-offset) + 16px);
+  left: calc(var(--rail-offset) + 36px);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -911,10 +901,6 @@
   0%, 43% { transform: scaleX(0); opacity: 0; }
   60%, 100% { transform: scaleX(1); opacity: 1; }
 }
-@keyframes nodes-reveal {
-  0%, 58% { transform: scaleX(0); opacity: 0; }
-  69%, 100% { transform: scaleX(1); opacity: 1; }
-}
 @keyframes decode-in {
   0%, 50% { opacity: 0; clip-path: inset(0 0 0 100%); }
   66%, 100% { opacity: 1; clip-path: inset(0); }
@@ -931,12 +917,8 @@
   67% { transform: translate(4px, -88px); }
   70% { transform: translate(-5px, -66px); filter: blur(.7px); }
   73% { transform: translate(6px, -110px); }
-  78% { transform: translate(-4px, -22px); filter: blur(1px); }
-  81% { transform: translate(5px, -88px); }
-  84% { transform: translate(-3px, -44px); filter: blur(.6px); }
-  87% { transform: translate(3px, -110px); }
-  90% { transform: translate(-2px, -88px); }
-  92%, 100% { transform: translate(0, -110px); filter: none; }
+  76% { transform: translate(-3px, -88px); filter: blur(.6px); }
+  78%, 100% { transform: translate(0, -110px); filter: none; }
 }
 @keyframes matrix-reveal {
   0%, 53% { opacity: 0; clip-path: inset(0 0 100%); }
@@ -1107,8 +1089,8 @@
   .signal-rail { scale: .6; }
   .rail-left,
   .rail-right { width: 150vw; }
-  .rail-stripes { left: 240px; }
-  .letter-matrix { width: 100px; height: 100px; font-size: 16px; }
+  .rail-stripes { left: 280px; }
+  .letter-matrix { left: 118px; width: 100px; height: 100px; font-size: 16px; }
   .decode-copy { width: 190px; font-size: 11px; }
   .decode-copy > span { font-size: 10px; }
   .terminal-content {

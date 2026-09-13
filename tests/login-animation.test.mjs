@@ -296,8 +296,11 @@ for (const [label, viewport] of [
           const visibleCells = (selector) => Array.from(
             plane?.querySelectorAll(`${selector} > i`) ?? [],
           ).filter(element => Number.parseFloat(getComputedStyle(element).opacity) > .5).length;
+          const decodeTrack = plane?.querySelector('[class*="decode-track"]');
           return {
             matrix: plane?.querySelector('[class*="letter-matrix"]')?.textContent,
+            decodeText: decodeTrack?.lastElementChild?.textContent,
+            decodeOffset: new DOMMatrixReadOnly(getComputedStyle(decodeTrack).transform).f,
             slashCount: plane?.querySelectorAll('[class*="rail-ticks"] > i').length,
             visibleSlashes: visibleCells('[class*="rail-ticks"]'),
             squareCount: plane?.querySelectorAll('[class*="rail-upper-nodes"] > i').length,
@@ -307,6 +310,8 @@ for (const [label, viewport] of [
           };
         });
         assert.equal(rail.matrix, 'YOROROIC');
+        assert.equal(rail.decodeText, 'BINES NETWORK');
+        assert.ok(rail.decodeOffset <= -109, 'The decoder settles on the BINES NETWORK row');
         assert.equal(rail.visibleSlashes, rail.slashCount, 'The left slash loader completes before the square loader');
         assert.ok(rail.visibleSquares > 0 && rail.visibleSquares < rail.squareCount, 'The right square loader advances one complete cell at a time');
         assert.equal(rail.slashTransform, 'none', 'The left cells are never stretched');
