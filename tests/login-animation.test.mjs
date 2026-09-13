@@ -2,6 +2,7 @@ import { before, after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import sharp from 'sharp';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const baseURL = process.env.TEST_BASE_URL || 'http://localhost:9999';
@@ -68,11 +69,16 @@ test('fast authentication still plays the full sequence and ignores duplicate cl
   await page.getByRole('button', { name: '建立连接', exact: true }).dblclick({ delay: 0 });
   await phase(page, 'boot').waitFor();
   await phase(page, 'terminal').waitFor();
+  await page.waitForTimeout(2300);
   await checkTerminalLayout(page);
   await phase(page, 'success').waitFor();
   assert.match(await page.getByRole('status').textContent(), /身份认证通过/);
+  assert.equal(await page.getByRole('dialog').getAttribute('aria-label'), 'BINES 连接终端');
+  assert.doesNotMatch(await page.getByRole('dialog').textContent(), /PRTS/);
+  assert.equal(await page.locator('[class*="welcome-role"]').textContent(), 'USER');
+  await phase(page, 'sync').waitFor();
   await page.waitForURL('**/home');
-  assert.ok(Date.now() - startedAt >= 4500, 'A fast response does not skip the introduction');
+  assert.ok(Date.now() - startedAt >= 12200, 'A fast response does not skip the reference timeline');
   assert.equal(requests.length, 1);
   assert.deepEqual(requests[0], { action: 'switch', body: { uid: account.uid } });
   assert.equal(await page.getByRole('img', { name: 'bg', exact: true }).evaluate((image) => image.classList.contains('brightness-60')), false);
@@ -94,7 +100,7 @@ test('slow authentication waits on mobile instead of inventing success', async (
   await page.waitForTimeout(900);
   await shot(page, 'mobile-01-boot');
   await phase(page, 'terminal').waitFor();
-  await page.waitForTimeout(3300);
+  await page.waitForTimeout(4900);
   assert.match(page.url(), /\/login$/);
   assert.equal(await page.getByRole('dialog').getAttribute('aria-busy'), 'true');
   assert.match(await page.getByRole('status').textContent(), /正在进行身份认证/);
@@ -194,7 +200,7 @@ test('landscape terminal remains readable and a late response cannot navigate an
   });
   await page.getByRole('button', { name: '建立连接', exact: true }).click();
   await phase(page, 'terminal').waitFor();
-  await page.waitForTimeout(1600);
+  await page.waitForTimeout(2400);
   await checkTerminalLayout(page);
   await shot(page, 'landscape-01-terminal');
   await page.goto(`${baseURL}/`);
@@ -203,4 +209,75 @@ test('landscape terminal remains readable and a late response cannot navigate an
   assert.equal(new URL(page.url()).pathname, '/');
   assert.equal(await page.getByRole('dialog').count(), 0);
   assert.equal(await page.getByRole('img', { name: 'bg', exact: true }).evaluate((image) => image.classList.contains('brightness-60')), false);
+});
+
+async function networkPixels(buffer) {
+  const metadata = await sharp(buffer).metadata();
+  assert.ok(metadata.width && metadata.height);
+  // Exclude the horizontal progress line at 66% and the footer below it.
+  const { data, info } = await sharp(buffer).extract({
+    left: 0,
+    top: Math.floor(metadata.height * 0.34),
+    width: metadata.width,
+    height: Math.floor(metadata.height * 0.26),
+  }).raw().toBuffer({ resolveWithObject: true });
+  let count = 0;
+  for (let index = 0; index < data.length; index += info.channels) {
+    if (data[index] > 90 && data[index + 1] > 90 && data[index + 2] < data[index] * 0.8) count++;
+  }
+  return { count, data };
+}
+
+for (const [label, viewport] of [
+  ['desktop', { width: 1440, height: 900 }],
+  ['mobile', { width: 390, height: 844 }],
+]) {
+  test(`${label} keyframes follow the reference and the network has visible moving pixels`, async (t) => {
+    const { page } = await session(t, {
+      viewport,
+      respond: route => route.fulfill({ json: { ...account, isAdmin: true } }),
+    });
+    await page.getByRole('button', { name: '建立连接', exact: true }).click();
+    const startedAt = Date.now();
+    for (const [milliseconds, name] of [
+      [1250, 'plaque'], [2200, 'expansion'], [3650, 'decoding'],
+      [4650, 'seed'], [5400, 'sliced-title'], [6650, 'fields'], [8400, 'credentials'],
+      [9350, 'scan'], [10600, 'welcome'],
+    ]) {
+      await page.waitForTimeout(Math.max(0, milliseconds - (Date.now() - startedAt)));
+      await shot(page, `${label}-reference-${name}`);
+    }
+    assert.match(await page.getByRole('dialog').textContent(), /ADMINISTRATOR/);
+    await phase(page, 'sync').waitFor();
+    const network = page.getByTestId('connection-network');
+    await page.locator('[data-testid="connection-network"][data-renderer="ready"]').waitFor();
+    await page.waitForTimeout(170);
+    const first = await networkPixels(await network.screenshot());
+    await page.waitForTimeout(180);
+    const second = await networkPixels(await network.screenshot());
+    assert.ok(first.count > 300, 'The yellow wireframe is not blank');
+    assert.ok(second.count > 300, 'The wireframe remains visible');
+    assert.notDeepEqual(first.data, second.data, 'The wireframe rotates between frames');
+    await shot(page, `${label}-reference-network`);
+    await page.waitForURL('**/home');
+  });
+}
+
+test('a narrow error screen does not overlap the terminal or lose keyboard focus', async (t) => {
+  const { page } = await session(t, {
+    viewport: { width: 320, height: 640 },
+    respond: route => route.fulfill({ status: 401, json: { message: '测试会话已过期，请重新登录后再次建立连接。'.repeat(3) } }),
+  });
+  await page.getByRole('button', { name: '建立连接', exact: true }).click();
+  await phase(page, 'error').waitFor();
+  const layout = await page.getByRole('dialog').evaluate(dialog => {
+    const terminal = dialog.querySelector('[class*="terminal-content"]')?.getBoundingClientRect();
+    const failure = dialog.querySelector('[class*="failure-detail"]')?.getBoundingClientRect();
+    return { terminalBottom: terminal?.bottom, failureTop: failure?.top };
+  });
+  assert.ok(layout.terminalBottom <= layout.failureTop);
+  assert.equal(await page.getByRole('button', { name: '返回登录' }).evaluate(button => button === document.activeElement), true);
+  await shot(page, 'mobile-reference-error');
+  await page.getByRole('button', { name: '返回登录' }).click();
+  assert.equal(await page.getByRole('dialog', { name: 'BINES 连接终端' }).count(), 0);
 });

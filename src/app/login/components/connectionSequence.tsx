@@ -1,13 +1,27 @@
 'use client'
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { ArrowLeft, Check, LoaderCircle, ShieldCheck, TriangleAlert } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { ArrowLeft, TriangleAlert } from 'lucide-react';
 import Portal from '@/components/Portal';
+import { CONNECTION_TIMING as TIMING } from './connectionTimeline';
 import styles from './connectionSequence.module.scss';
+
+const ConnectionNetwork = dynamic(() => import('./connectionNetwork'), { ssr: false });
+const MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const DECODE_LINES = ['XBNEQ / TYRMNLS', 'CNX47 / AU0HZD', 'BINES / NETWORK'];
+const timelineStyle = {
+  '--boot-duration': `${TIMING.boot}ms`,
+  '--terminal-duration': `${TIMING.terminal}ms`,
+  '--identity-duration': `${TIMING.identity}ms`,
+  '--sync-duration': `${TIMING.sync}ms`,
+  '--exit-duration': `${TIMING.exit}ms`,
+} as CSSProperties;
 
 export interface ConnectionState {
   status: 'pending' | 'success' | 'error';
   username: string;
+  role?: 'ADMINISTRATOR' | 'USER' | 'GUEST';
   error?: string;
 }
 
@@ -17,23 +31,37 @@ interface ConnectionSequenceProps extends ConnectionState {
   onDismiss: () => void;
 }
 
-const MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const TIMING = {
-  terminal: 1900,
-  introComplete: 3400,
-  success: 650,
-  exit: 700,
-};
-
 function subscribeToMotion(onChange: () => void) {
   const media = window.matchMedia(MOTION_QUERY);
   media.addEventListener('change', onChange);
   return () => media.removeEventListener('change', onChange);
 }
 
+function CornerMarks() {
+  return <div className={styles['corner-marks']} aria-hidden="true">
+    {Array.from({ length: 4 }, (_, index) => <span key={index} />)}
+  </div>;
+}
+
+function CredentialScan({ username }: { username: string }) {
+  return (
+    <div className={styles['credential-scan']} aria-hidden="true">
+      <div className={styles['scan-outline']} />
+      <div className={styles['scan-symbols']}>
+        {Array.from({ length: 9 }, (_, index) => <span key={index} style={{ '--index': index } as CSSProperties}>/</span>)}
+      </div>
+      <span className={styles['credential-monogram']}>{Array.from(username)[0]?.toUpperCase() || 'B'}</span>
+      <span className={styles['credential-id']}>ID / 01</span>
+      <span className={styles['credential-name']}>{username}</span>
+      <span className={styles['credential-ticks']} />
+    </div>
+  );
+}
+
 export default function ConnectionSequence({
   status,
   username,
+  role = 'USER',
   error,
   location,
   onComplete,
@@ -44,17 +72,19 @@ export default function ConnectionSequence({
     () => window.matchMedia(MOTION_QUERY).matches,
     () => false,
   );
-  const [stage, setStage] = useState<'boot' | 'terminal' | 'exit'>('boot');
+  const [stage, setStage] = useState<'boot' | 'terminal' | 'sync' | 'exit'>('boot');
   const [introComplete, setIntroComplete] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     dialogRef.current?.focus({ preventScroll: true });
+    // Fetch the small 3D chunk during the opening, before the network stage.
+    void import('./connectionNetwork');
   }, []);
 
   useEffect(() => {
-    const terminal = window.setTimeout(() => setStage('terminal'), reducedMotion ? 0 : TIMING.terminal);
-    const ready = window.setTimeout(() => setIntroComplete(true), reducedMotion ? 0 : TIMING.introComplete);
+    const terminal = window.setTimeout(() => setStage('terminal'), reducedMotion ? 0 : TIMING.boot);
+    const ready = window.setTimeout(() => setIntroComplete(true), reducedMotion ? 0 : TIMING.boot + TIMING.terminal);
     return () => {
       window.clearTimeout(terminal);
       window.clearTimeout(ready);
@@ -62,123 +92,142 @@ export default function ConnectionSequence({
   }, [reducedMotion]);
 
   useEffect(() => {
-    // Both the visual introduction and the real authentication must finish.
     if (!introComplete || status !== 'success') return;
-    const hold = reducedMotion ? 120 : TIMING.success;
-    const exit = window.setTimeout(() => setStage('exit'), hold);
-    const complete = window.setTimeout(onComplete, hold + (reducedMotion ? 120 : TIMING.exit));
+    const identity = reducedMotion ? 100 : TIMING.identity;
+    const syncDuration = reducedMotion ? 100 : TIMING.sync;
+    const sync = window.setTimeout(() => setStage('sync'), identity);
+    const exit = window.setTimeout(() => setStage('exit'), identity + syncDuration);
+    const complete = window.setTimeout(onComplete, identity + syncDuration + (reducedMotion ? 100 : TIMING.exit));
     return () => {
+      window.clearTimeout(sync);
       window.clearTimeout(exit);
       window.clearTimeout(complete);
     };
   }, [introComplete, status, reducedMotion, onComplete]);
 
   const phase = status === 'error' ? 'error'
-    : stage === 'exit' ? 'exit'
+    : stage === 'sync' || stage === 'exit' ? stage
       : introComplete && status === 'success' ? 'success' : stage;
-  const verified = phase === 'success' || phase === 'exit';
+  const verified = phase === 'success' || phase === 'sync' || phase === 'exit';
   const failed = phase === 'error';
-  const statusText = failed ? '连接未完成' : verified ? '身份认证通过' : '正在进行身份认证';
+  const networkVisible = phase === 'sync' || phase === 'exit';
+  const nameSteps = Math.max(1, Math.min(Array.from(username).length, 24));
 
   return (
     <Portal black={false}>
       <section
         ref={dialogRef}
         className={styles.sequence}
+        style={timelineStyle}
         data-phase={phase}
         data-testid="connection-sequence"
         role="dialog"
         tabIndex={-1}
         aria-modal="true"
-        aria-label="PRTS 连接终端"
+        aria-label="BINES 连接终端"
         aria-busy={status === 'pending'}
       >
+        <span className={styles['screen-reader-status']} role="status">
+          {failed ? '连接未完成' : verified ? '身份认证通过' : '正在进行身份认证'}
+        </span>
         <div className={styles['boot-stage']} aria-hidden="true">
-          <div className={styles['boot-meta']}>
-            <span>PRTS / CONNECTION REQUEST</span>
-            <span>YOROROICE ARK</span>
-          </div>
-          <div className={styles['lock-on']}>
-            <div className={styles['signal-rail']} />
-            <div className={styles['outer-frame']} />
-            <div className={styles['inner-frame']} />
-            <div className={styles['boot-brand']}>
-              <span>YOROROICE</span>
-              <strong>ARK</strong>
-              <span>TERMINAL CONNECTION</span>
+          <div className={styles['boot-backdrop']} />
+          <div className={styles['boot-composition']}>
+            <div className={styles['signal-rail']}>
+              <span className={styles['rail-left']} />
+              <span className={styles['rail-right']} />
+              <span className={styles['rail-ticks']} />
+              <span className={styles['rail-stripes']} />
+              <span className={styles['rail-packets']} />
+              <div className={styles['decode-copy']}>
+                <div className={styles['decode-rows']}>
+                  {DECODE_LINES.map(line => <span key={line}>{line}</span>)}
+                </div>
+                <span>TERMINAL SERVICE</span>
+                <i />
+              </div>
+              <div className={styles['letter-matrix']}>
+                {'BINES'.split('').map((letter, index) => <span key={index}>{letter}</span>)}
+              </div>
             </div>
-            <span className={styles['signal-code']}>BINES / NETWORK</span>
-          </div>
-          <div className={styles['boot-caption']}>
-            <span className={styles['signal-dot']} />
-            ESTABLISHING CONNECTION
+            <div className={styles['outer-frame']} />
+            <div className={styles['echo-frame']} />
+            <div className={styles['boot-plaque']}>
+              <span className={styles['plaque-rim']} />
+              <span className={styles['plaque-crossline']} />
+              <strong>BINES</strong>
+              <small>YOROROICE ARK</small>
+            </div>
           </div>
         </div>
 
-        <div className={styles['terminal-stage']} aria-hidden={phase === 'boot'}>
-          <header className={styles['terminal-header']}>
-            <span><span className={styles['square-mark']} /> BINES NETWORK</span>
-            <span>PRTS / 01</span>
-          </header>
-
+        <div className={styles['terminal-stage']} aria-hidden={phase === 'boot' || networkVisible}>
+          <span className={styles['corner-seed']} aria-hidden="true" />
           <div className={styles['terminal-content']}>
-            <span className={styles['corner-mark']} aria-hidden="true" />
-            <span className={styles['corner-mark']} aria-hidden="true" />
-            <span className={styles['corner-mark']} aria-hidden="true" />
-            <span className={styles['corner-mark']} aria-hidden="true" />
-
+            <CornerMarks />
             <div className={styles['terminal-brand']}>
-              <h1>PRTS</h1>
+              <span className={styles['brand-rule']} />
+              <h1 className={styles['brand-word']}>
+                <span className={styles['brand-label']}>BINES</span>
+                {[0, 1, 2].map(slice => <span key={slice} className={styles['brand-slice']} data-slice={slice} aria-hidden="true">BINES</span>)}
+              </h1>
               <strong>YOROROICE ARK</strong>
-              <span>TERMINAL SERVICE</span>
+              <span className={styles['brand-subtitle']}>TERMINAL SERVICE</span>
+              <span className={styles['brand-rule']} />
             </div>
-            <div className={styles.divider} aria-hidden="true" />
+            <div className={styles.divider} aria-hidden="true"><span /><span /></div>
             <div className={styles['identity-panel']}>
               <div className={styles['identity-field']}>
-                <span className={styles['field-label']}>USER NAME</span>
-                <span className={styles['field-value']} title={username}>{username}</span>
+                <span className={styles['field-label']}>USERNAME</span>
+                <div className={styles['field-box']}>
+                  <span className={styles['field-value']} style={{ '--name-steps': nameSteps } as CSSProperties} title={username}>{username}</span>
+                </div>
               </div>
               <div className={styles['identity-field']}>
                 <span className={styles['field-label']}>AUTHENTICATION</span>
-                <div className={styles['auth-status']}>
-                  {failed ? <TriangleAlert size={19} /> : verified ? <ShieldCheck size={19} /> : <LoaderCircle size={19} className={styles.spinner} />}
-                  <span role="status">{statusText}</span>
+                <div className={styles['field-box']}>
+                  <span className={styles['auth-code']} aria-hidden="true">**********</span>
                 </div>
               </div>
-              <div className={styles['status-track']} data-complete={verified} aria-hidden="true">
-                <span />
-              </div>
-              {failed ? (
-                <div className={styles['failure-detail']}>
-                  <p role="alert">{error || '暂时无法连接，请稍后重试。'}</p>
-                  <button type="button" onClick={onDismiss} autoFocus>
-                    <ArrowLeft size={16} />
-                    返回登录
-                  </button>
-                </div>
-              ) : (
-                <div className={styles['connection-note']}>
-                  {verified ? <Check size={14} /> : <span className={styles['signal-dot']} />}
-                  <span>{verified ? 'ACCESS GRANTED' : 'VERIFYING IDENTITY'}</span>
-                </div>
-              )}
+              <span className={styles['connection-note']} aria-hidden="true">{failed ? 'CONNECTION FAILED' : 'VERIFYING IDENTITY'}</span>
             </div>
           </div>
 
-          <footer className={styles['terminal-footer']}>
-            <div className={styles['station-info']}>
+          {verified && !networkVisible && (
+            <div className={styles['identity-confirmation']}>
+              <CornerMarks />
+              <div className={styles['welcome-copy']}>
+                <span className={styles['welcome-role']}>{role}</span>
+                <span className={styles['welcome-identified']}>IDENTIFIED</span>
+                <strong>WELCOME</strong>
+              </div>
+              <CredentialScan username={username} />
+            </div>
+          )}
+          {failed && (
+            <div className={styles['failure-detail']}>
+              <TriangleAlert size={20} />
+              <p role="alert">{error || '暂时无法连接，请稍后重试。'}</p>
+              <button type="button" onClick={onDismiss} autoFocus><ArrowLeft size={16} />返回登录</button>
+            </div>
+          )}
+          <footer className={styles['terminal-footer']}>BINES NETWORK <span /></footer>
+          {verified && <div className={styles['connection-strip']} aria-hidden="true"><i />正在建立神经连接</div>}
+        </div>
+
+        {networkVisible && (
+          <div className={styles['network-stage']}>
+            <ConnectionNetwork reducedMotion={reducedMotion} />
+            <div className={styles['station-plate']}>
               <span>接驳点</span>
               <strong>{location}</strong>
+              <div><sup>#</sup>0</div>
             </div>
-            <ol className={styles['connection-steps']} aria-label="连接状态">
-              <li data-active={!verified && !failed}>01 / LINK</li>
-              <li data-active={!verified && !failed}>02 / AUTH</li>
-              <li data-active={verified}>03 / ACCESS</li>
-            </ol>
-            <span className={styles['footer-brand']}>YOROROICE ARK <span className={styles['square-mark']} /></span>
-          </footer>
-        </div>
-        <div className={styles.shutter} aria-hidden="true" />
+            <div className={styles['network-link']} aria-hidden="true"><span /><span /></div>
+            <p>正在尝试与 BINES Network 进行认知同步</p>
+          </div>
+        )}
+        <div className={styles['exit-shade']} aria-hidden="true" />
       </section>
     </Portal>
   );

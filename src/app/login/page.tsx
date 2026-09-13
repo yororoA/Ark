@@ -77,7 +77,14 @@ export default function Login() {
     }
 
     if (requestId === requestIdRef.current) {
-      setConnection({ status: 'success', username });
+      const authenticated = useAuthStore.getState().details.find(detail =>
+        params.action === 'switch' ? detail.uid === uid : detail.username === username
+      );
+      setConnection({
+        status: 'success',
+        username: authenticated?.username || username,
+        role: authenticated?.isAdmin ? 'ADMINISTRATOR' : authenticated?.isGuest ? 'GUEST' : 'USER',
+      });
     }
   }
 

@@ -40,6 +40,11 @@ export default function Declaration(props: { onClose: () => void }) {
             + '    ② https://www.bilibili.com/video/BV1Cn4y1o7r6/?spm_id_from=333.1387.list.card_archive.click&vd_source=1e099b31d05e4344ac2cbf94a5077b23\n'
           }
           </pre>
+          <pre>{'【设计参考】\n'
+            + '1、【鹰角网络】-《明日方舟》\n'
+            + '2、2086丷《有空再做了【明日方舟】》(https://www.bilibili.com/video/BV1Qj411x745/)\n'
+          }
+          </pre>
         </div>
         <span onClick={onClose} className={cn(styles.declarationBtn)}>{'我知道了'}</span>
       </div>
