@@ -222,10 +222,23 @@ async function networkPixels(buffer) {
     height: Math.floor(metadata.height * 0.26),
   }).raw().toBuffer({ resolveWithObject: true });
   let count = 0;
+  let minX = info.width;
+  let maxX = -1;
   for (let index = 0; index < data.length; index += info.channels) {
-    if (data[index] > 90 && data[index + 1] > 90 && data[index + 2] < data[index] * 0.8) count++;
+    if (data[index] > 40 && data[index + 1] > 40 && data[index + 2] < data[index] * 0.8) {
+      const x = Math.floor(index / info.channels) % info.width;
+      count++;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+    }
   }
-  return { count, data };
+  return { count, data, width: info.width, minX, maxX };
+}
+
+async function canvasBuffer(page, locator) {
+  const box = await locator.boundingBox();
+  assert.ok(box);
+  return page.screenshot({ clip: box, animations: 'allow' });
 }
 
 for (const [label, viewport] of [
@@ -240,25 +253,84 @@ for (const [label, viewport] of [
     await page.getByRole('button', { name: '建立连接', exact: true }).click();
     const startedAt = Date.now();
     for (const [milliseconds, name] of [
-      [1250, 'plaque'], [2200, 'expansion'], [3650, 'decoding'],
+      [1250, 'plaque'], [1900, 'rim-draw'], [2200, 'expansion'], [3650, 'decoding'],
       [4650, 'seed'], [5400, 'sliced-title'], [6650, 'fields'], [8400, 'credentials'],
       [9350, 'scan'], [10600, 'welcome'],
     ]) {
       await page.waitForTimeout(Math.max(0, milliseconds - (Date.now() - startedAt)));
       await shot(page, `${label}-reference-${name}`);
+      if (name === 'plaque') {
+        const projection = await page.locator('[class*="boot-projection"]').evaluate(
+          element => ({
+            filter: getComputedStyle(element).filter,
+            opacity: Number.parseFloat(getComputedStyle(element).opacity),
+          }),
+        );
+        assert.match(projection.filter, /blur\(/, 'The full opening layer keeps a blurred projected copy');
+        assert.ok(projection.opacity > 0 && projection.opacity < .6, 'The projected copy stays subordinate to the sharp plane');
+      }
+      if (name === 'rim-draw') {
+        const mark = await page.evaluate(() => {
+          const plane = document.querySelector('[class*="boot-plane"]:not([class*="boot-projection"])');
+          const text = plane?.querySelector('[class*="boot-plaque"] strong')?.getBoundingClientRect();
+          const underline = plane?.querySelector('[class*="plaque-crossline"]')?.getBoundingClientRect();
+          const rim = plane?.querySelector('[class*="plaque-rim"]');
+          return {
+            textBottom: text?.bottom,
+            underlineTop: underline?.top,
+            rimSweep: Number.parseFloat(getComputedStyle(rim).getPropertyValue('--rim-sweep')),
+          };
+        });
+        assert.ok(mark.underlineTop >= mark.textBottom, 'The plaque line stays below BINES');
+        assert.ok(mark.rimSweep > 0 && mark.rimSweep < 360, 'The yellow diamond is drawn progressively');
+      }
+      if (name === 'expansion') {
+        const plaqueBackground = await page
+          .locator('[class*="boot-plane"]:not([class*="boot-projection"]) [class*="boot-plaque"]')
+          .evaluate(element => getComputedStyle(element).backgroundColor);
+        assert.match(plaqueBackground, /^rgba\(/, 'The yellow diamond keeps a translucent center');
+      }
+      if (name === 'decoding') {
+        const rail = await page.evaluate(() => {
+          const plane = document.querySelector('[class*="boot-plane"]:not([class*="boot-projection"])');
+          const visibleCells = (selector) => Array.from(
+            plane?.querySelectorAll(`${selector} > i`) ?? [],
+          ).filter(element => Number.parseFloat(getComputedStyle(element).opacity) > .5).length;
+          return {
+            matrix: plane?.querySelector('[class*="letter-matrix"]')?.textContent,
+            slashCount: plane?.querySelectorAll('[class*="rail-ticks"] > i').length,
+            visibleSlashes: visibleCells('[class*="rail-ticks"]'),
+            squareCount: plane?.querySelectorAll('[class*="rail-upper-nodes"] > i').length,
+            visibleSquares: visibleCells('[class*="rail-upper-nodes"]'),
+            slashTransform: getComputedStyle(plane?.querySelector('[class*="rail-ticks"]')).transform,
+            squareTransform: getComputedStyle(plane?.querySelector('[class*="rail-upper-nodes"]')).transform,
+          };
+        });
+        assert.equal(rail.matrix, 'YOROROIC');
+        assert.equal(rail.visibleSlashes, rail.slashCount, 'The left slash loader completes before the square loader');
+        assert.ok(rail.visibleSquares > 0 && rail.visibleSquares < rail.squareCount, 'The right square loader advances one complete cell at a time');
+        assert.equal(rail.slashTransform, 'none', 'The left cells are never stretched');
+        assert.equal(rail.squareTransform, 'none', 'The right cells are never stretched');
+      }
     }
     assert.match(await page.getByRole('dialog').textContent(), /ADMINISTRATOR/);
-    await phase(page, 'sync').waitFor();
     const network = page.getByTestId('connection-network');
-    await page.locator('[data-testid="connection-network"][data-renderer="ready"]').waitFor();
-    await page.waitForTimeout(170);
-    const first = await networkPixels(await network.screenshot());
-    await page.waitForTimeout(180);
-    const second = await networkPixels(await network.screenshot());
-    assert.ok(first.count > 300, 'The yellow wireframe is not blank');
-    assert.ok(second.count > 300, 'The wireframe remains visible');
-    assert.notDeepEqual(first.data, second.data, 'The wireframe rotates between frames');
+    await page.locator('[data-testid="connection-network"][data-renderer="ready"]').waitFor({ state: 'attached' });
+    await phase(page, 'sync').waitFor();
+    await page.waitForTimeout(80);
+    const first = await networkPixels(await canvasBuffer(page, network));
+    await page.waitForTimeout(80);
+    const second = await networkPixels(await canvasBuffer(page, network));
     await shot(page, `${label}-reference-network`);
+    assert.ok(first.count > 500, 'The yellow wireframe is not blank');
+    assert.ok(second.count > 500, 'The wireframe remains visible');
+    assert.notDeepEqual(first.data, second.data, 'The wireframe rotates between frames');
+    const networkWidthRatio = (first.maxX - first.minX + 1) / first.width;
+    if (label === 'desktop') {
+      const networkWidth = first.maxX - first.minX + 1;
+      assert.ok(networkWidth >= 280 && networkWidth <= 440, 'The wireframe keeps a bounded desktop footprint');
+      assert.ok(networkWidthRatio < .3, 'The wireframe does not scale with a large desktop viewport');
+    }
     await page.waitForURL('**/home');
   });
 }
@@ -399,12 +471,17 @@ test('terminal details split smoothly into a trapezoid and type characters progr
     },
   });
   await page.getByRole('button', { name: '建立连接', exact: true }).click();
+  const bootTransform = await page.locator('[class*="boot-plane"]:not([class*="boot-projection"])').evaluate(element => getComputedStyle(element).transform);
+  assert.match(bootTransform, /^matrix3d\(/, 'The opening rail and details share a 3D perspective plane');
   await phase(page, 'terminal').waitFor();
   const terminalStartedAt = Date.now();
+  const terminalTransform = await page.locator('[class*="terminal-content"]').evaluate(element => getComputedStyle(element).transform);
+  assert.match(terminalTransform, /^matrix3d\(/, 'The terminal content is projected as a 3D plane');
   const corners = page.locator('[class*="terminal-content"] [class*="corner-marks"] > span');
   const positions = [];
+  await page.waitForTimeout(250);
   for (let index = 0; index < 6; index++) {
-    await page.waitForTimeout(90);
+    await page.waitForTimeout(75);
     positions.push(await corners.first().evaluate(element => {
       const rect = element.getBoundingClientRect();
       return `${Math.round(rect.x)}:${Math.round(rect.y)}`;
@@ -419,22 +496,23 @@ test('terminal details split smoothly into a trapezoid and type characters progr
   const topWidth = bounds[1].x - bounds[0].x;
   const bottomWidth = bounds[3].x - bounds[2].x;
   assert.ok(topWidth < bottomWidth, 'The four corners must form a top-narrow trapezoid');
+  assert.ok(topWidth / bottomWidth >= .88 && topWidth / bottomWidth <= .97, 'The trapezoid perspective should stay close to the reference');
   const fragments = page.locator('[class*="brand-slice"]');
   assert.equal(await fragments.count(), 7);
   const fragmentDurations = await fragments.evaluateAll(elements =>
     elements.map(element => element.getAnimations()[0]?.effect.getTiming().duration)
   );
-  assert.deepEqual(fragmentDurations, Array(7).fill(650), 'Fragment motion is accelerated without changing the terminal phase');
+  assert.deepEqual(fragmentDurations, Array(7).fill(520), 'Fragment motion is accelerated without changing the terminal phase');
 
   const firstField = page.locator('[class*="field-box"]').first();
-  await page.waitForTimeout(260);
+  await page.waitForTimeout(Math.max(0, 1480 - (Date.now() - terminalStartedAt)));
   const fieldPositions = [];
   for (let index = 0; index < 6; index++) {
     fieldPositions.push(Math.round((await firstField.boundingBox()).x));
     await page.waitForTimeout(70);
   }
   assert.ok(new Set(fieldPositions).size >= 4, 'The input frame should move through multiple smooth positions');
-  await page.waitForTimeout(Math.max(0, 2300 - (Date.now() - terminalStartedAt)));
+  await page.waitForTimeout(Math.max(0, 2450 - (Date.now() - terminalStartedAt)));
   const characters = page.locator('[class*="field-value"] [class*="typed-character"]');
   const earlyVisible = await characters.evaluateAll(elements => elements.filter(element => Number(getComputedStyle(element).opacity) > .5).length);
   await page.waitForTimeout(360);

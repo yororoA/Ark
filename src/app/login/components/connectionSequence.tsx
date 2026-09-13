@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic';
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { ArrowLeft, TriangleAlert } from 'lucide-react';
 import Portal from '@/components/Portal';
 import { CONNECTION_TIMING as TIMING } from './connectionTimeline';
@@ -16,7 +16,7 @@ const DECODE_LINES = [
   'B7A01 / VN5KQ2',
   'CNX47 / AU0HZD',
   'QPR8S / NX0041',
-  'BINES / NETWORK',
+  'BINES NETWORK',
 ];
 const BRAND_FRAGMENTS = [
   { x: -176, y: 18, delay: 0 },
@@ -27,6 +27,10 @@ const BRAND_FRAGMENTS = [
   { x: 94, y: -7, delay: 94 },
   { x: -48, y: 4, delay: 108 },
 ];
+const LEFT_RAIL_CELLS = Array.from({ length: 44 }, (_, index) =>
+  Math.round(TIMING.boot * .48 + index * (TIMING.boot * .2 / 43)));
+const RIGHT_RAIL_CELLS = Array.from({ length: 30 }, (_, index) =>
+  Math.round(TIMING.boot * .68 + index * (TIMING.boot * .32 / 29)));
 const timelineStyle = {
   '--boot-duration': `${TIMING.boot}ms`,
   '--terminal-duration': `${TIMING.terminal}ms`,
@@ -75,6 +79,61 @@ function CredentialScan({ username }: { username: string }) {
   );
 }
 
+function BootPlane({ projection = false }: { projection?: boolean }) {
+  const className = projection
+    ? `${styles['boot-plane']} ${styles['boot-projection']}`
+    : styles['boot-plane'];
+
+  return (
+    <div className={className} aria-hidden="true">
+      <div className={styles['signal-rail']}>
+        <span className={styles['rail-left']} />
+        <span className={styles['rail-right']} />
+        <span className={styles['rail-ticks']}>
+          {LEFT_RAIL_CELLS.map((delay, index) => (
+            <i
+              key={index}
+              style={{ '--cell-delay': `${delay}ms` } as CSSProperties}
+            />
+          ))}
+        </span>
+        <span className={styles['rail-stripes']} />
+        <span className={styles['rail-upper-nodes']}>
+          {RIGHT_RAIL_CELLS.map((delay, index) => (
+            <i
+              key={index}
+              style={{ '--cell-delay': `${delay}ms` } as CSSProperties}
+            />
+          ))}
+        </span>
+        <span className={styles['rail-lower-nodes']} />
+        <div className={styles['decode-copy']}>
+          <div className={styles['decode-rows']}>
+            <div className={styles['decode-track']}>
+              {DECODE_LINES.map((line, index) => <span key={line} style={{ '--decode-index': index } as CSSProperties}>{line}</span>)}
+            </div>
+          </div>
+          <span>TERMINAL SERVICE</span>
+          <i />
+        </div>
+        <div className={styles['letter-matrix']}>
+          {'YOROROIC'.split('').map((letter, index) => (
+            <span key={index} style={{ '--matrix-index': index } as CSSProperties}>{letter}</span>
+          ))}
+        </div>
+      </div>
+      <div className={styles['frame-haze']} />
+      <div className={styles['outer-frame']} />
+      <div className={styles['boot-plaque']}>
+        <span className={styles['plaque-rim']} />
+        <span className={styles['plaque-crossline']} />
+        <strong>BINES</strong>
+        <small>YOROROICE ARK</small>
+      </div>
+    </div>
+  );
+}
+
 export default function ConnectionSequence({
   status,
   username,
@@ -91,7 +150,9 @@ export default function ConnectionSequence({
   );
   const [stage, setStage] = useState<'boot' | 'terminal' | 'sync' | 'exit'>('boot');
   const [introComplete, setIntroComplete] = useState(false);
+  const [networkReady, setNetworkReady] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
+  const handleNetworkReady = useCallback(() => setNetworkReady(true), []);
 
   useEffect(() => {
     dialogRef.current?.focus({ preventScroll: true });
@@ -151,35 +212,8 @@ export default function ConnectionSequence({
         <div className={styles['boot-stage']} aria-hidden="true">
           <div className={styles['boot-backdrop']} />
           <div className={styles['boot-composition']}>
-            <div className={styles['signal-rail']}>
-              <span className={styles['rail-left']} />
-              <span className={styles['rail-right']} />
-              <span className={styles['rail-ticks']} />
-              <span className={styles['rail-stripes']} />
-              <span className={styles['rail-packets']} />
-              <div className={styles['decode-copy']}>
-                <div className={styles['decode-rows']}>
-                  <div className={styles['decode-track']}>
-                    {DECODE_LINES.map((line, index) => <span key={line} style={{ '--decode-index': index } as CSSProperties}>{line}</span>)}
-                  </div>
-                </div>
-                <span>TERMINAL SERVICE</span>
-                <i />
-              </div>
-              <div className={styles['letter-matrix']}>
-                {'BINES'.split('').map((letter, index) => (
-                  <span key={index} style={{ '--matrix-index': index } as CSSProperties}>{letter}</span>
-                ))}
-              </div>
-            </div>
-            <div className={styles['outer-frame']} />
-            <div className={styles['echo-frame']} />
-            <div className={styles['boot-plaque']}>
-              <span className={styles['plaque-rim']} />
-              <span className={styles['plaque-crossline']} />
-              <strong>BINES</strong>
-              <small>YOROROICE ARK</small>
-            </div>
+            <BootPlane projection />
+            <BootPlane />
           </div>
         </div>
 
@@ -239,6 +273,7 @@ export default function ConnectionSequence({
                 </div>
               </div>
               <span className={styles['connection-note']} aria-hidden="true">{failed ? 'CONNECTION FAILED' : 'VERIFYING IDENTITY'}</span>
+              <span className={styles['terminal-code']} aria-hidden="true">BX-01 / SECURE CHANNEL</span>
             </div>
           </div>
 
@@ -264,16 +299,18 @@ export default function ConnectionSequence({
           {phase === 'success' && !reducedMotion && <Loading type="animation" text="正在建立神经连接" />}
         </div>
 
-        {networkVisible && (
-          <div className={styles['network-stage']}>
-            <ConnectionNetwork reducedMotion={reducedMotion} />
-            <div className={styles['station-plate']}>
-              <span>接驳点</span>
-              <strong>{location}</strong>
-              <div><sup>#</sup>0</div>
-            </div>
-            <div className={styles['network-link']} aria-hidden="true"><span /><span /></div>
-            <p>正在尝试与 BINES Network 进行认知同步</p>
+        {verified && (
+          <div className={styles['network-stage']} aria-hidden={!networkVisible}>
+            <ConnectionNetwork reducedMotion={reducedMotion} onReady={handleNetworkReady} />
+            {networkReady && <>
+              <div className={styles['station-plate']}>
+                <span>接驳点</span>
+                <strong>{location}</strong>
+                <div><sup>#</sup>0</div>
+              </div>
+              <div className={styles['network-link']} aria-hidden="true"><span /><span /></div>
+              <p>正在尝试与 BINES Network 进行认知同步</p>
+            </>}
           </div>
         )}
         <div className={styles['exit-shade']} aria-hidden="true" />

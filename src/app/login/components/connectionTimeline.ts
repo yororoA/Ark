@@ -2,7 +2,7 @@
 export const CONNECTION_TIMING = {
   boot: 4400,
   terminal: 4600,
-  identity: 1900,
-  sync: 1100,
+  identity: 2000,
+  sync: 1000,
   exit: 500,
 } as const;

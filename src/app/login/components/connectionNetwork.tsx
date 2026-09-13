@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import {
   BufferGeometry,
   Float32BufferAttribute,
@@ -19,10 +19,17 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
-export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: boolean }) {
+const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
+interface ConnectionNetworkProps {
+  reducedMotion: boolean;
+  onReady: () => void;
+}
+
+export default function ConnectionNetwork({ reducedMotion, onReady }: ConnectionNetworkProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -32,6 +39,7 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
     } catch {
       // The connection plate and progress remain usable without WebGL.
       canvas.dataset.renderer = 'unavailable';
+      onReady();
       return;
     }
 
@@ -44,13 +52,12 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
     const wireframe = new WireframeGeometry(geometry);
     const primaryGeometry = new LineSegmentsGeometry();
     primaryGeometry.setPositions(new Float32Array(wireframe.getAttribute('position').array));
-    const innerGeometry = new IcosahedronGeometry(1.25, 0);
-    const innerWireframe = new WireframeGeometry(innerGeometry);
-    const primaryMaterial = new LineMaterial({ color: 0xe8e76a, linewidth: 1.4, transparent: true, opacity: 0.78 });
-    const secondaryMaterial = new LineBasicMaterial({ color: 0xc5bb5e, transparent: true, opacity: 0.3 });
+    const primaryMaterial = new LineMaterial({ color: 0xe8e76a, linewidth: 1.3, transparent: true, opacity: 0.82 });
+    const secondaryMaterial = new LineBasicMaterial({ color: 0xd6d18a, transparent: true, opacity: 0.28 });
     const group = new Group();
     const outer = new LineSegments2(primaryGeometry, primaryMaterial);
-    const inner = new LineSegments(innerWireframe, secondaryMaterial);
+    const inner = new LineSegments(wireframe, secondaryMaterial);
+    inner.scale.setScalar(.9);
     group.add(outer, inner);
 
     const positions = geometry.getAttribute('position');
@@ -60,7 +67,10 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
       unique.set(point.map(value => value.toFixed(4)).join(','), point);
     }
     const pointGeometry = new BufferGeometry();
-    pointGeometry.setAttribute('position', new Float32BufferAttribute([...unique.values()].flat(), 3));
+    pointGeometry.setAttribute('position', new Float32BufferAttribute(
+      [...unique.values()].flat(),
+      3,
+    ));
     const pointMaterial = new PointsMaterial({ color: 0xfffba1, size: 0.035, transparent: true, opacity: 0.9 });
     outer.add(new Points(pointGeometry, pointMaterial));
     scene.add(group);
@@ -71,7 +81,7 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
       renderer.setSize(width, height, false);
       primaryMaterial.resolution.set(width, height);
       camera.aspect = width / height;
-      camera.position.z = width > height ? 4.9 : 6 * height / width;
+      camera.position.z = 5 * Math.max(1, height / width, height / 540);
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
     };
@@ -79,6 +89,7 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
     observer.observe(canvas);
     resize();
     canvas.dataset.renderer = 'ready';
+    onReady();
 
     let frame = 0;
     const startedAt = performance.now();
@@ -103,15 +114,13 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
       geometry.dispose();
       wireframe.dispose();
       primaryGeometry.dispose();
-      innerGeometry.dispose();
-      innerWireframe.dispose();
       pointGeometry.dispose();
       primaryMaterial.dispose();
       secondaryMaterial.dispose();
       pointMaterial.dispose();
       renderer.dispose();
     };
-  }, [reducedMotion]);
+  }, [onReady, reducedMotion]);
 
   return <canvas ref={canvasRef} data-testid="connection-network" aria-hidden="true" />;
 }
