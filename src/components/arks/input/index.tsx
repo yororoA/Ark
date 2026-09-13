@@ -29,6 +29,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {encrypt && (
           <button
             type="button"
+            aria-label={show ? '隐藏密码' : '显示密码'}
+            title={show ? '隐藏密码' : '显示密码'}
             className={cn(styles.toggleBtn)}
             onClick={() => setShow(!show)}
           >

@@ -6,10 +6,27 @@ import { ArrowLeft, TriangleAlert } from 'lucide-react';
 import Portal from '@/components/Portal';
 import { CONNECTION_TIMING as TIMING } from './connectionTimeline';
 import styles from './connectionSequence.module.scss';
+import Loading from '@/components/arks/loading';
 
 const ConnectionNetwork = dynamic(() => import('./connectionNetwork'), { ssr: false });
 const MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-const DECODE_LINES = ['XBNEQ / TYRMNLS', 'CNX47 / AU0HZD', 'BINES / NETWORK'];
+const DECODE_LINES = [
+  'RTQ17 / AKRHO4',
+  'XBNEQ / TYRMNLS',
+  'B7A01 / VN5KQ2',
+  'CNX47 / AU0HZD',
+  'QPR8S / NX0041',
+  'BINES / NETWORK',
+];
+const BRAND_FRAGMENTS = [
+  { x: -176, y: 18, delay: 0 },
+  { x: 124, y: -10, delay: 26 },
+  { x: -88, y: 9, delay: 44 },
+  { x: 158, y: -17, delay: 62 },
+  { x: -132, y: 13, delay: 78 },
+  { x: 94, y: -7, delay: 94 },
+  { x: -48, y: 4, delay: 108 },
+];
 const timelineStyle = {
   '--boot-duration': `${TIMING.boot}ms`,
   '--terminal-duration': `${TIMING.terminal}ms`,
@@ -111,7 +128,8 @@ export default function ConnectionSequence({
   const verified = phase === 'success' || phase === 'sync' || phase === 'exit';
   const failed = phase === 'error';
   const networkVisible = phase === 'sync' || phase === 'exit';
-  const nameSteps = Math.max(1, Math.min(Array.from(username).length, 24));
+  const usernameCharacters = Array.from(username).slice(0, 24);
+  const usernameTruncated = usernameCharacters.length < Array.from(username).length;
 
   return (
     <Portal black={false}>
@@ -141,13 +159,17 @@ export default function ConnectionSequence({
               <span className={styles['rail-packets']} />
               <div className={styles['decode-copy']}>
                 <div className={styles['decode-rows']}>
-                  {DECODE_LINES.map(line => <span key={line}>{line}</span>)}
+                  <div className={styles['decode-track']}>
+                    {DECODE_LINES.map((line, index) => <span key={line} style={{ '--decode-index': index } as CSSProperties}>{line}</span>)}
+                  </div>
                 </div>
                 <span>TERMINAL SERVICE</span>
                 <i />
               </div>
               <div className={styles['letter-matrix']}>
-                {'BINES'.split('').map((letter, index) => <span key={index}>{letter}</span>)}
+                {'BINES'.split('').map((letter, index) => (
+                  <span key={index} style={{ '--matrix-index': index } as CSSProperties}>{letter}</span>
+                ))}
               </div>
             </div>
             <div className={styles['outer-frame']} />
@@ -162,14 +184,30 @@ export default function ConnectionSequence({
         </div>
 
         <div className={styles['terminal-stage']} aria-hidden={phase === 'boot' || networkVisible}>
-          <span className={styles['corner-seed']} aria-hidden="true" />
+          <div className={styles['corner-seed']} aria-hidden="true">
+            {Array.from({ length: 4 }, (_, index) => <span key={index} />)}
+          </div>
           <div className={styles['terminal-content']}>
             <CornerMarks />
             <div className={styles['terminal-brand']}>
               <span className={styles['brand-rule']} />
               <h1 className={styles['brand-word']}>
                 <span className={styles['brand-label']}>BINES</span>
-                {[0, 1, 2].map(slice => <span key={slice} className={styles['brand-slice']} data-slice={slice} aria-hidden="true">BINES</span>)}
+                {BRAND_FRAGMENTS.map((fragment, slice) => (
+                  <span
+                    key={slice}
+                    className={styles['brand-slice']}
+                    data-slice={slice}
+                    style={{
+                      '--fragment-x': `${fragment.x}px`,
+                      '--fragment-y': `${fragment.y}px`,
+                      '--fragment-delay': `${fragment.delay}ms`,
+                    } as CSSProperties}
+                    aria-hidden="true"
+                  >
+                    BINES
+                  </span>
+                ))}
               </h1>
               <strong>YOROROICE ARK</strong>
               <span className={styles['brand-subtitle']}>TERMINAL SERVICE</span>
@@ -180,13 +218,24 @@ export default function ConnectionSequence({
               <div className={styles['identity-field']}>
                 <span className={styles['field-label']}>USERNAME</span>
                 <div className={styles['field-box']}>
-                  <span className={styles['field-value']} style={{ '--name-steps': nameSteps } as CSSProperties} title={username}>{username}</span>
+                  <span className={styles['field-value']} title={username} aria-label={username}>
+                    {usernameCharacters.map((character, index) => (
+                      <span className={styles['typed-character']} style={{ '--character-delay': `${index * 52}ms` } as CSSProperties} key={`${character}-${index}`} aria-hidden="true">
+                        {character === ' ' ? '\u00a0' : character}
+                      </span>
+                    ))}
+                    {usernameTruncated && <span className={styles['typed-ellipsis']} aria-hidden="true">...</span>}
+                  </span>
                 </div>
               </div>
               <div className={styles['identity-field']}>
                 <span className={styles['field-label']}>AUTHENTICATION</span>
                 <div className={styles['field-box']}>
-                  <span className={styles['auth-code']} aria-hidden="true">**********</span>
+                  <span className={styles['auth-code']} aria-hidden="true">
+                    {Array.from({ length: 10 }, (_, index) => (
+                      <span className={styles['typed-character']} style={{ '--character-delay': `${index * 82}ms` } as CSSProperties} key={index}>*</span>
+                    ))}
+                  </span>
                 </div>
               </div>
               <span className={styles['connection-note']} aria-hidden="true">{failed ? 'CONNECTION FAILED' : 'VERIFYING IDENTITY'}</span>
@@ -212,7 +261,7 @@ export default function ConnectionSequence({
             </div>
           )}
           <footer className={styles['terminal-footer']}>BINES NETWORK <span /></footer>
-          {verified && <div className={styles['connection-strip']} aria-hidden="true"><i />正在建立神经连接</div>}
+          {phase === 'success' && !reducedMotion && <Loading type="animation" text="正在建立神经连接" />}
         </div>
 
         {networkVisible && (

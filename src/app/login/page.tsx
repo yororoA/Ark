@@ -33,8 +33,6 @@ export default function Login() {
     ensureInitialized();
   }, [ensureInitialized]);
 
-  const nav = `from-[#3f3f3f]/99 from-60% to-[#3f3f3f]/80`
-
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
   const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
   const [connection, setConnection] = useState<ConnectionState | null>(null);
@@ -43,8 +41,6 @@ export default function Login() {
   const isConnecting = connection !== null;
   // 首次登录强制打开账号管理，连接期间让位于终端动效。
   const showAccountManagement = initialized && (details.length === 0 || isAccountManagementVisible) && !isConnecting;
-
-  const sphereClassName = 'translate-y-[-17rem] scale-[1.2] opacity-[0.5]';
 
   const { switchUser, register, login } = useAuth();
   const router = useRouter();
@@ -118,45 +114,45 @@ export default function Login() {
           onDismiss={handleDismissConnection}
         />
       )}
-      <div className={styles['login-scene']} inert={isConnecting}>
+      <div className={styles['login-scene']} inert={isConnecting || showAccountManagement || isDeclarationVisible}>
         {!isConnecting && <>
-          <Sphere className={sphereClassName} color='rgba(34,211,238,.5)' edges={10} edgeWidth={2} dotRadius={3} />
-          <Sphere className={cn(sphereClassName, 'rotate-z-[90deg] rotate-x-[20deg]')} color="rgba(192,132,252,0.8)" edges={6} edgeWidth={2} dotRadius={3} />
+          <Sphere wrapperClassName={styles['idle-sphere-layer']} size="min(30rem, 92vw)" className={styles['idle-sphere']} color='rgba(34,211,238,.5)' edges={10} edgeWidth={2} dotRadius={3} />
+          <Sphere wrapperClassName={styles['idle-sphere-layer']} size="min(30rem, 92vw)" className={cn(styles['idle-sphere'], styles['idle-sphere-secondary'])} color="rgba(192,132,252,0.8)" edges={6} edgeWidth={2} dotRadius={3} />
         </>}
-        <span className={cn(styles.light)} />
-        <span className={cn(styles.nav, 'bg-gradient-to-b', nav)} />
-        <div className={cn(styles.main, "relative w-full flex justify-center flex-1")} style={{ opacity: showAccountManagement ? 0 : 1, visibility: isConnecting ? 'hidden' : 'visible', pointerEvents: showAccountManagement || isConnecting ? 'none' : 'auto' }}>
-          <div className={cn(styles.bines_sign, 'absolute w-full pointer-events-none z-[0]')} style={{ aspectRatio: '16/8' }}>
-            <Image src="/bines_sign.png" loading="eager" fill alt="logo" className="object-contain" />
+        <div className={styles['top-band']} aria-hidden="true" />
+        <main className={styles.main} style={{ visibility: isConnecting || showAccountManagement ? 'hidden' : 'visible' }}>
+          <div className={styles['brand-mark']}>
+            <Image src="/bines_sign.png" loading="eager" fill alt="Bines" sizes="(max-width: 600px) 90vw, 620px" className={styles['brand-image']} />
           </div>
           {initialized && <>
-            <span className={cn(styles.pro_tag, 'font-batang z-[1]')}>{'YOROROICE ARK'}</span>
-            <Button size="large" className="font-song z-[1]" onClick={() => handleConnect({ action: 'switch' })}>{'建立连接'}</Button>
-            <div className={cn(styles.tag)}>
-              <span className={cn(styles.tag_prefix, 'z-[1]')}>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '访客' : '用户'}</span>
-              <span className={cn(styles.tag_suffix, 'relative z-[1]')}>{details[0]?.username}</span>
+            <span className={cn(styles['project-tag'], 'font-batang')}>- YOROROICE ARK -</span>
+            <Button size="large" className={cn(styles['connect-button'], 'font-song')} onClick={() => handleConnect({ action: 'switch' })}>建立连接</Button>
+            <div className={styles['account-tag']}>
+              <span className={styles['account-role']}>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '访客' : '用户'}</span>
+              <span className={styles['account-name']} title={details[0]?.username}>{details[0]?.username || 'Guest'}</span>
             </div>
           </>}
-        </div>
+        </main>
         {showAccountManagement && <AccountManagement details={details} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
-        <span className={cn(styles.nav, 'relative bg-gradient-to-t', nav, 'translate-y-[10px]')} >
-          <div className={cn(styles.gap, 'relative h-full grid grid-cols-[auto_auto_1fr] items-center justify-center')}>
-            <div className="row-span-2 relative h-full" style={{ aspectRatio: '1720/785' }}>
-              <Image src="/logo_white.png" loading="eager" fill alt="logo" sizes="30vw" className="object-contain" />
+        <footer className={styles.footer}>
+          <div className={styles['footer-brands']}>
+            <div className={styles['footer-logo']}>
+              <Image src="/logo_white.png" loading="eager" fill alt="YororoIce" sizes="110px" className="object-contain" />
             </div>
-            <div className="row-span-2 relative h-full" style={{ aspectRatio: '1192/368' }}>
-              <Image src="/sign_white.png" loading="eager" fill alt="sign" sizes="40vw" className="object-contain" />
+            <div className={styles['footer-sign']}>
+              <Image src="/sign_white.png" loading="eager" fill alt="山眠包" sizes="120px" className="object-contain" />
             </div>
-            <span className={cn(styles.copyright, 'font-ibm')}>©2026 YororoIce. All code rights reserved.</span>
-            <span className={styles.copyright}>本网站部分 UI 仿刻于游戏《明日方舟》，仅用于个人使用，不涉及任何商业用途</span>
           </div>
-
-          {initialized && <div className={cn(styles.gap, 'relative h-full w-full flex items-center justify-end')} style={{ visibility: isConnecting ? 'hidden' : 'visible' }}>
-            <Button size="small" onClick={() => setIsAccountManagementVisible(true)}>{'账号管理'}</Button>
-            <Button size="small" onClick={() => setIsDeclarationVisible(true)}>{'查看声明'}</Button>
+          <div className={styles.copyright}>
+            <span className="font-ibm">©2026 YororoIce. All code rights reserved.</span>
+            <span>本网站部分 UI 仿刻于游戏《明日方舟》，仅用于个人使用，不涉及任何商业用途</span>
+          </div>
+          {initialized && <div className={styles['footer-actions']} style={{ visibility: isConnecting ? 'hidden' : 'visible' }}>
+            <Button size="small" onClick={() => setIsAccountManagementVisible(true)}>账号管理</Button>
+            <Button size="small" onClick={() => setIsDeclarationVisible(true)}>查看声明</Button>
           </div>}
-        </span>
+        </footer>
       </div>
     </>
   );

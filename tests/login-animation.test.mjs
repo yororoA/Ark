@@ -281,3 +281,164 @@ test('a narrow error screen does not overlap the terminal or lose keyboard focus
   await page.getByRole('button', { name: '返回登录' }).click();
   assert.equal(await page.getByRole('dialog', { name: 'BINES 连接终端' }).count(), 0);
 });
+
+async function checkControlBounds(page) {
+  const overflow = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('button, input, [role="dialog"], [role="menu"]')).flatMap(element => {
+      if (element.closest('[inert]') || getComputedStyle(element).visibility !== 'visible') return [];
+      const rect = element.getBoundingClientRect();
+      if (!rect.width || !rect.height) return [];
+      return rect.left < -1 || rect.right > innerWidth + 1
+        ? [{ name: element.getAttribute('aria-label') || element.textContent?.slice(0, 40), left: rect.left, right: rect.right }]
+        : [];
+    })
+  );
+  assert.deepEqual(overflow, [], 'All usable controls stay within the screen width');
+}
+
+for (const viewport of [
+  { width: 320, height: 640 },
+  { width: 390, height: 844 },
+  { width: 768, height: 1024 },
+  { width: 844, height: 390 },
+  { width: 1440, height: 900 },
+]) {
+  test(`initial login and account controls fit ${viewport.width}x${viewport.height}`, async (t) => {
+    const { page } = await session(t, {
+      viewport,
+      accounts: [account, { ...account, uid: 'second-fixture', username: 'Second fixture with a long display name' }],
+    });
+    await checkControlBounds(page);
+    const entryGeometry = await page.evaluate(() => {
+      const connect = [...document.querySelectorAll('button')].find(button => button.textContent?.trim() === '建立连接');
+      const canvases = [...document.querySelectorAll('canvas')];
+      const band = [...document.querySelectorAll('div')].find(element => getComputedStyle(element).backgroundColor === 'rgb(63, 63, 63)');
+      const connectRect = connect?.getBoundingClientRect();
+      const canvasRects = canvases.map(canvas => canvas.getBoundingClientRect());
+      return {
+        connect: connectRect && { width: connectRect.width, height: connectRect.height },
+        canvas: canvasRects.map(rect => ({ left: rect.left, top: rect.top, width: rect.width, height: rect.height })),
+        band: band && { bottom: band.getBoundingClientRect().bottom, z: Number(getComputedStyle(band).zIndex) },
+        sphereZ: canvases[0] ? Number(getComputedStyle(canvases[0].parentElement?.parentElement).zIndex) : null,
+      };
+    });
+    assert.ok(entryGeometry.connect.width >= 176 && entryGeometry.connect.width <= 220);
+    assert.ok(entryGeometry.connect.height >= 44 && entryGeometry.connect.height <= 56);
+    for (const canvas of entryGeometry.canvas) {
+      assert.ok(Math.abs(canvas.left + canvas.width / 2 - viewport.width / 2) < 1, 'Idle spheres stay horizontally centered');
+      assert.ok(canvas.top < entryGeometry.band.bottom && canvas.top + canvas.height > entryGeometry.band.bottom, 'Top band overlaps part of the sphere');
+    }
+    assert.ok(entryGeometry.sphereZ < entryGeometry.band.z, 'Top band renders above the idle spheres');
+    await shot(page, `entry-${viewport.width}x${viewport.height}`);
+    await page.getByRole('button', { name: '账号管理', exact: true }).click();
+    await checkControlBounds(page);
+    await page.getByRole('button', { name: '选择账号' }).click();
+    await page.getByRole('menu').waitFor();
+    await checkControlBounds(page);
+    await page.getByRole('menuitem').filter({ hasText: 'Second fixture' }).click();
+    await page.getByRole('button', { name: '选择账号' }).click();
+    await page.getByRole('button', { name: `删除 ${account.username} 的登录记录` }).click();
+    await page.getByRole('button', { name: '取消', exact: true }).waitFor();
+    await checkControlBounds(page);
+    await page.getByRole('button', { name: '取消', exact: true }).click();
+    await page.getByRole('button', { name: '其他账号登录', exact: true }).click();
+    await page.locator('#code').scrollIntoViewIfNeeded();
+    await checkControlBounds(page);
+    await shot(page, `register-${viewport.width}x${viewport.height}`);
+    await page.getByRole('button', { name: '关闭账号管理', exact: true }).click();
+    await page.getByRole('button', { name: '查看声明', exact: true }).click();
+    await checkControlBounds(page);
+    await shot(page, `declaration-${viewport.width}x${viewport.height}`);
+    await page.getByRole('button', { name: '我知道了', exact: true }).click();
+    await page.getByRole('button', { name: '建立连接', exact: true }).waitFor();
+  });
+}
+
+test('first visit and a short keyboard-sized viewport keep registration reachable', async (t) => {
+  const { page } = await session(t, { viewport: { width: 320, height: 480 }, accounts: [] });
+  await checkControlBounds(page);
+  await page.getByRole('button', { name: '其他账号登录', exact: true }).click();
+  await page.locator('#code').scrollIntoViewIfNeeded();
+  await checkControlBounds(page);
+  await shot(page, 'first-visit-short-viewport');
+  const registration = page.getByRole('button', { name: '注册', exact: true }).last();
+  await registration.scrollIntoViewIfNeeded();
+  assert.equal(await registration.isVisible(), true);
+});
+
+test('connection composition fills the viewport and Loading ends before synchronization', async (t) => {
+  const { page } = await session(t, { viewport: { width: 960, height: 540 } });
+  await page.getByRole('button', { name: '建立连接', exact: true }).click();
+  await phase(page, 'terminal').waitFor();
+  await page.waitForTimeout(2800);
+  const stage = await page.locator('[class*="terminal-stage"]').boundingBox();
+  assert.deepEqual(stage, { x: 0, y: 0, width: 960, height: 540 });
+  const layout = await page.locator('[class*="terminal-content"]').boundingBox();
+  assert.ok(layout && layout.width > 800 && layout.width < 900);
+  await shot(page, 'reference-960-terminal');
+  await phase(page, 'success').waitFor();
+  const loadingText = page.getByText('正在建立神经连接', { exact: true });
+  await loadingText.waitFor();
+  const loadingBounds = await loadingText.boundingBox();
+  assert.ok(loadingBounds && loadingBounds.x >= 0 && loadingBounds.x + loadingBounds.width <= 960);
+  await phase(page, 'sync').waitFor();
+  assert.equal(await page.getByText('正在建立神经连接', { exact: true }).count(), 0);
+  await page.waitForTimeout(350);
+  await shot(page, 'reference-960-network');
+  await page.waitForURL('**/home');
+});
+
+test('terminal details split smoothly into a trapezoid and type characters progressively', async (t) => {
+  let finish;
+  const pending = new Promise(resolve => { finish = resolve; });
+  const { page } = await session(t, {
+    viewport: { width: 1280, height: 720 },
+    respond: async route => {
+      await pending;
+      await route.fulfill({ json: account });
+    },
+  });
+  await page.getByRole('button', { name: '建立连接', exact: true }).click();
+  await phase(page, 'terminal').waitFor();
+  const terminalStartedAt = Date.now();
+  const corners = page.locator('[class*="terminal-content"] [class*="corner-marks"] > span');
+  const positions = [];
+  for (let index = 0; index < 6; index++) {
+    await page.waitForTimeout(90);
+    positions.push(await corners.first().evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      return `${Math.round(rect.x)}:${Math.round(rect.y)}`;
+    }));
+  }
+  assert.ok(new Set(positions).size >= 5, 'Corner splitting should have continuous intermediate positions');
+  await page.waitForTimeout(220);
+  const bounds = await corners.evaluateAll(elements => elements.map(element => {
+    const rect = element.getBoundingClientRect();
+    return { x: rect.x, y: rect.y };
+  }));
+  const topWidth = bounds[1].x - bounds[0].x;
+  const bottomWidth = bounds[3].x - bounds[2].x;
+  assert.ok(topWidth < bottomWidth, 'The four corners must form a top-narrow trapezoid');
+  const fragments = page.locator('[class*="brand-slice"]');
+  assert.equal(await fragments.count(), 7);
+  const fragmentDurations = await fragments.evaluateAll(elements =>
+    elements.map(element => element.getAnimations()[0]?.effect.getTiming().duration)
+  );
+  assert.deepEqual(fragmentDurations, Array(7).fill(650), 'Fragment motion is accelerated without changing the terminal phase');
+
+  const firstField = page.locator('[class*="field-box"]').first();
+  await page.waitForTimeout(260);
+  const fieldPositions = [];
+  for (let index = 0; index < 6; index++) {
+    fieldPositions.push(Math.round((await firstField.boundingBox()).x));
+    await page.waitForTimeout(70);
+  }
+  assert.ok(new Set(fieldPositions).size >= 4, 'The input frame should move through multiple smooth positions');
+  await page.waitForTimeout(Math.max(0, 2300 - (Date.now() - terminalStartedAt)));
+  const characters = page.locator('[class*="field-value"] [class*="typed-character"]');
+  const earlyVisible = await characters.evaluateAll(elements => elements.filter(element => Number(getComputedStyle(element).opacity) > .5).length);
+  await page.waitForTimeout(360);
+  const laterVisible = await characters.evaluateAll(elements => elements.filter(element => Number(getComputedStyle(element).opacity) > .5).length);
+  assert.ok(laterVisible > earlyVisible, 'Username characters should appear progressively');
+  finish();
+});

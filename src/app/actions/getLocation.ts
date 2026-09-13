@@ -22,7 +22,7 @@ export async function getLocation(): Promise<IPinfoLite | IPBogon | null> {
   
   // 提取真实 IP，如果没有获取到，则兜底为 8.8.8.8 (Google DNS，用于防报错)
   const ip = forwarded?.split(',')[0]?.trim() || realIp?.trim() || '8.8.8.8'
-
+  
   try {
     return await client.lookupIp(ip)
   } catch (error) {

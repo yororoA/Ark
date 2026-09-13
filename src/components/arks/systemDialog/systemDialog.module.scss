@@ -14,15 +14,16 @@ $confirmBGC: color-mix(in srgb, $white 10%, $black);
 
 .DialogWrap {
   min-height: $sd-height;
-  width: $sd-width;
-  font-size: 0.5rem;
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  font-size: 14px;
   display: flex;
   flex-direction: column;
   box-shadow: inset 0 .1rem .5rem rgba(0, 0, 0, 0.5);
   // border: 1.5px solid color-mix(in srgb, $white 60%, $black);
   background-color: $wrapBGC;
   border-radius: .3rem;
-  overflow: hidden;
+  overflow-y: auto;
 
   .DialogTitle {
     position: relative;
@@ -80,6 +81,9 @@ $confirmBGC: color-mix(in srgb, $white 10%, $black);
 
     p {
       margin: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      text-align: center;
     }
 
     .OpeBtns {
@@ -97,6 +101,10 @@ $confirmBGC: color-mix(in srgb, $white 10%, $black);
 
       >* {
         flex: 1;
+        min-width: 0;
+        min-height: 40px;
+        padding: 8px 12px;
+        font-size: 14px;
         border: none;
         box-shadow: none;
         border-radius: 5rem;

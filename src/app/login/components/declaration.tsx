@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
 import Portal from "@/components/Portal"
-import { cn } from "@/lib/utils"
 import Lenis from "lenis"
 import styles from "./components.module.scss"
 
@@ -22,10 +21,10 @@ export default function Declaration(props: { onClose: () => void }) {
   }, [wrapperEl])
 
   return (
-    <Portal className="flex justify-center items-center">
-      <div className={cn(styles.declaration)}>
-        <div ref={wrapperRef} className={cn(styles.declarationContentWrapper, "flex-1 overflow-hidden")}>
-          <h1 className="text-[.8rem] w-full text-center">{'免责声明'}</h1>
+    <Portal className={styles['dialog-overlay']}>
+      <div className={styles.declaration} role="dialog" aria-modal="true" aria-label="免责声明">
+        <div ref={wrapperRef} className={styles.declarationContentWrapper}>
+          <h1>免责声明</h1>
           <pre>{'【声明】\n'
             + '1、本网站HTML/CSS/JS交互代码 ©2026 YororoIce，保留所有权利。\n'
             + '2、网站部分UI视觉、图标、界面版式临摹自《明日方舟》，该游戏全部界面美术、图形作品著作权归属【鹰角网络】。本网站与原作开发厂商无任何合作、授权关联，并非官方衍生项目。\n'
@@ -46,7 +45,7 @@ export default function Declaration(props: { onClose: () => void }) {
           }
           </pre>
         </div>
-        <span onClick={onClose} className={cn(styles.declarationBtn)}>{'我知道了'}</span>
+        <button type="button" onClick={onClose} className={styles.declarationBtn}>我知道了</button>
       </div>
     </Portal>
   )

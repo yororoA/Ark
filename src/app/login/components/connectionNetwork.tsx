@@ -15,6 +15,9 @@ import {
   WebGLRenderer,
   WireframeGeometry,
 } from 'three';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
 export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,12 +42,15 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
     camera.position.z = 6;
     const geometry = new IcosahedronGeometry(1.35, 1);
     const wireframe = new WireframeGeometry(geometry);
-    const primaryMaterial = new LineBasicMaterial({ color: 0xe8e76a, transparent: true, opacity: 0.78 });
+    const primaryGeometry = new LineSegmentsGeometry();
+    primaryGeometry.setPositions(new Float32Array(wireframe.getAttribute('position').array));
+    const innerGeometry = new IcosahedronGeometry(1.25, 0);
+    const innerWireframe = new WireframeGeometry(innerGeometry);
+    const primaryMaterial = new LineMaterial({ color: 0xe8e76a, linewidth: 1.4, transparent: true, opacity: 0.78 });
     const secondaryMaterial = new LineBasicMaterial({ color: 0xc5bb5e, transparent: true, opacity: 0.3 });
     const group = new Group();
-    const outer = new LineSegments(wireframe, primaryMaterial);
-    const inner = new LineSegments(wireframe, secondaryMaterial);
-    inner.scale.setScalar(0.9);
+    const outer = new LineSegments2(primaryGeometry, primaryMaterial);
+    const inner = new LineSegments(innerWireframe, secondaryMaterial);
     group.add(outer, inner);
 
     const positions = geometry.getAttribute('position');
@@ -55,7 +61,7 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
     }
     const pointGeometry = new BufferGeometry();
     pointGeometry.setAttribute('position', new Float32BufferAttribute([...unique.values()].flat(), 3));
-    const pointMaterial = new PointsMaterial({ color: 0xfffba1, size: 0.025, transparent: true, opacity: 0.9 });
+    const pointMaterial = new PointsMaterial({ color: 0xfffba1, size: 0.035, transparent: true, opacity: 0.9 });
     outer.add(new Points(pointGeometry, pointMaterial));
     scene.add(group);
 
@@ -63,8 +69,9 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
       const { width, height } = canvas.getBoundingClientRect();
       if (!width || !height) return;
       renderer.setSize(width, height, false);
+      primaryMaterial.resolution.set(width, height);
       camera.aspect = width / height;
-      camera.position.z = 6 * Math.max(1, height / width, height / 680);
+      camera.position.z = width > height ? 4.9 : 6 * height / width;
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
     };
@@ -95,6 +102,9 @@ export default function ConnectionNetwork({ reducedMotion }: { reducedMotion: bo
       document.removeEventListener('visibilitychange', onVisibility);
       geometry.dispose();
       wireframe.dispose();
+      primaryGeometry.dispose();
+      innerGeometry.dispose();
+      innerWireframe.dispose();
       pointGeometry.dispose();
       primaryMaterial.dispose();
       secondaryMaterial.dispose();

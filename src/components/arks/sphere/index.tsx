@@ -12,6 +12,7 @@ interface SphereCanvasProps {
   edges?: number
   edgeWidth?: number | string
   dotRadius?: number | string
+  size?: string
   enableBlinking?: boolean // 新增：是否开启顶点闪烁
 }
 
@@ -31,6 +32,7 @@ export default function SphereCanvas({
   edges = 16,
   edgeWidth = 2,
   dotRadius = 4,
+  size = '30rem',
   enableBlinking = true, // 默认开启闪烁
 }: SphereCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -204,7 +206,7 @@ export default function SphereCanvas({
     >
       <div
         className={className}
-        style={{ width: '30rem', height: '30rem', position: 'relative' }}
+        style={{ width: size, height: size, position: 'relative' }}
       >
         <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
       </div>

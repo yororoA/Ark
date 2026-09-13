@@ -95,29 +95,29 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   }
 
   return (
-    <Portal className="flex justify-center items-center">
+    <Portal className={styles['dialog-overlay']}>
       {detailToDelete && (
         <DeleteLoginRecord
           onCancel={() => setDetailToDelete(undefined)}
           detail={detailToDelete}
         />
       )}
-      <div className={cn(styles.accountManagement)} style={{ opacity: `${detailToDelete ? 0 : 1}` }} ref={setBoundaryEl}>
+      <div className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }} ref={setBoundaryEl}>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
-          {otherVisable && <ChevronLeft size={24} strokeWidth={1.3} onClick={() => setOtherVisable(false)} className="iconBtn absolute" />}
-          <h1 className="ml-[1.5rem]">{'账号管理'}</h1>
-          {details.length > 0 && <X size={24} strokeWidth={1.3} className="iconBtn" onClick={onClose} />}
+          {otherVisable && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
+          <h1>账号管理</h1>
+          {details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="关闭账号管理" title="关闭账号管理" onClick={onClose}><X size={22} strokeWidth={1.3} /></button>}
         </div>
         {!otherVisable ?
           <>
-            <div className="flex-1">
+            <div className={styles['account-body']}>
               {details.length > 0 ?
                 <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                  <DropdownMenuTrigger className="block w-full relative group">
+                  <DropdownMenuTrigger className="block w-full relative group" aria-label="选择账号">
                     <div className={cn(styles.account)}>
-                      <span className={cn(styles.avatar, styles.big, 'row-span-2')}>{selectedDetail?.username?.charAt(0).toUpperCase() || 'G'}</span>
-                      <span className={cn(styles.desc, 'text-[.8rem] font-[500]')}>{selectedDetail?.username || 'Guest'}</span>
-                      <span className={cn(styles.desc, "text-gray-400 text-[.5rem] font-[400]")}>
+                      <span className={cn(styles.avatar, 'row-span-2')}>{selectedDetail?.username?.charAt(0).toUpperCase() || 'G'}</span>
+                      <span className={cn(styles.desc, styles['account-name'])}>{selectedDetail?.username || 'Guest'}</span>
+                      <span className={cn(styles.desc, styles['account-meta'])}>
                         {`${selectedDetail?.continent_code && selectedDetail?.country_code ? `${selectedDetail?.continent_code}/${selectedDetail?.country_code}` : selectedDetail?.continent_code || selectedDetail?.country_code || 'Unknown'}`}
                         <span className="inline-block w-[5px] h-[5px] rounded-full bg-gray-400 mx-[.2rem]" />
                         {selectedDetail?.lastLoginAt ? new Date(selectedDetail.lastLoginAt).toLocaleString() : '未知'}
@@ -125,9 +125,9 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                         {selectedDetail?.isAdmin ? '管理员' : selectedDetail?.isGuest ? '访客' : '用户'}
                       </span>
                     </div>
-                    <ChevronRight size={30} strokeWidth={1.3} className='absolute right-[2rem] top-1/2 -translate-y-1/2 transition-transform duration-200 group-data-[state=open]:rotate-90' />
+                    <ChevronRight size={24} strokeWidth={1.3} className={cn(styles['account-arrow'], 'transition-transform duration-200 group-data-[state=open]:rotate-90')} />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent ref={wrapperRef} collisionBoundary={boundaryEl} className={cn(styles.accountManagementContent, 'w-[var(--radix-dropdown-menu-trigger-width)] h-screen')}>
+                  <DropdownMenuContent ref={wrapperRef} collisionBoundary={boundaryEl} className={styles.accountManagementContent}>
                     {
                       details.map((detail, index) => {
                         const location = detail.continent_code && detail.country_code
@@ -136,34 +136,35 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
 
                         return (
                           <DropdownMenuItem className={cn(styles.account)} key={detail.uid} onSelect={() => setSelectedUid(detail.uid)}>
-                            <span className={cn(styles.avatar, styles.small, 'row-span-2')}>{detail.username?.charAt(0).toUpperCase() || 'G'}</span>
-                            <span className={cn(styles.desc, 'text-[.6rem] font-[500]')}>
+                            <span className={cn(styles.avatar, 'row-span-2')}>{detail.username?.charAt(0).toUpperCase() || 'G'}</span>
+                            <span className={cn(styles.desc, styles['account-name'])}>
                               {detail.username || 'Guest'}
                               {index === 0 &&
-                                <span className={cn(styles.desc, "text-gray-400 text-[.4rem] before:w-[.2rem] before:h-[.2rem] before:bg-[#228B22]/70 before:mx-[.2rem] font-[400]")}>{'最近登录'}</span>}
+                                <span className={styles['recent-label']}>最近登录</span>}
                             </span>
-                            <span className={cn(styles.desc, "text-gray-400 text-[.375rem] font-[400]")}>
+                            <span className={cn(styles.desc, styles['account-meta'])}>
                               {`${location}`}
                               <span className="inline-block w-[3px] h-[3px] rounded-full bg-gray-400 mx-[.15rem]" />
                               {detail.lastLoginAt ? new Date(detail.lastLoginAt).toLocaleString() : '未知'}
                               <span className="inline-block w-[3px] h-[3px] rounded-full bg-gray-400 mx-[.15rem]" />
                               {detail.isAdmin ? '管理员' : detail.isGuest ? '访客' : '用户'}
                             </span>
-                            <span className="absolute right-0 mr-[.9rem] pointer-events-auto group"
+                            <button type="button" aria-label={`删除 ${detail.username || 'Guest'} 的登录记录`} title="删除登录记录" className={cn(styles['delete-button'], styles['icon-button'])}
                               onClick={(e) => {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 setDetailToDelete(detail);
                                 setDropdownOpen(false);
                               }}>
-                              <Trash2 strokeWidth={1.3} className="group-hover:stroke-red-500" />
-                            </span>
+                              <Trash2 size={18} strokeWidth={1.3} />
+                            </button>
                           </DropdownMenuItem>
                         )
                       })
                     }
                   </DropdownMenuContent>
                 </DropdownMenu>
-                : <span className='w-full h-full flex items-center justify-center text-[.6rem]'>{'无法获取到历史登录记录，请点击『其他账号登录』'}</span>
+                : <span className={styles['empty-accounts']}>暂无登录记录</span>
               }
             </div>
             <div className={cn(styles.accountManagementFooter)}>
