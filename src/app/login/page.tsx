@@ -125,7 +125,7 @@ export default function Login() {
             <Image src="/bines_sign.png" loading="eager" fill alt="Bines" sizes="(max-width: 600px) 90vw, 620px" className={styles['brand-image']} />
           </div>
           {initialized && <>
-            <span className={cn(styles['project-tag'], 'font-batang')}>- YOROROICE ARK -</span>
+            <span className={cn(styles['project-tag'], 'font-batang')}>- YOROROIC ARK -</span>
             <Button size="large" className={cn(styles['connect-button'], 'font-song')} onClick={() => handleConnect({ action: 'switch' })}>建立连接</Button>
             <div className={styles['account-tag']}>
               <span className={styles['account-role']}>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '访客' : '用户'}</span>

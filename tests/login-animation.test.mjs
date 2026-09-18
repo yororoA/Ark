@@ -320,6 +320,26 @@ for (const [label, viewport] of [
         assert.ok(rail.visibleSquares > 0 && rail.visibleSquares < rail.squareCount, 'The right square loader advances one complete cell at a time');
         assert.equal(rail.slashTransform, 'none', 'The left cells are never stretched');
         assert.equal(rail.squareTransform, 'none', 'The right cells are never stretched');
+        if (label === 'desktop') {
+          const plaque = await page
+            .locator('[class*="boot-plane"]:not([class*="boot-projection"]) [class*="boot-plaque"]')
+            .boundingBox();
+          assert.ok(plaque && plaque.width / viewport.width >= .16, 'The opening plaque scales up on desktop');
+        }
+      }
+      if (label === 'desktop' && name === 'fields') {
+        const content = await page.locator('[class*="terminal-content"]').boundingBox();
+        assert.ok(
+          content && content.width / viewport.width >= .75,
+          'The terminal composition uses most of a desktop viewport',
+        );
+      }
+      if (label === 'desktop' && name === 'welcome') {
+        const confirmation = await page.locator('[class*="identity-confirmation"]').boundingBox();
+        assert.ok(
+          confirmation && confirmation.width / viewport.width >= .5,
+          'The identity confirmation does not collapse into excess whitespace',
+        );
       }
     }
     assert.match(await page.getByRole('dialog').textContent(), /ADMINISTRATOR/);
@@ -337,8 +357,8 @@ for (const [label, viewport] of [
     const networkWidthRatio = (first.maxX - first.minX + 1) / first.width;
     if (label === 'desktop') {
       const networkWidth = first.maxX - first.minX + 1;
-      assert.ok(networkWidth >= 280 && networkWidth <= 440, 'The wireframe keeps a bounded desktop footprint');
-      assert.ok(networkWidthRatio < .3, 'The wireframe does not scale with a large desktop viewport');
+      assert.ok(networkWidth >= 480 && networkWidth <= 760, 'The wireframe fills the desktop without overflowing');
+      assert.ok(networkWidthRatio >= .32 && networkWidthRatio <= .55, 'The wireframe keeps a substantial bounded footprint');
     }
     await page.waitForURL('**/home');
   });

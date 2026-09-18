@@ -20,6 +20,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 
 const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+const MAX_VIEWPORT_SCALE = 1.75;
 
 interface ConnectionNetworkProps {
   onReady: () => void;
@@ -80,7 +81,9 @@ export default function ConnectionNetwork({ onReady }: ConnectionNetworkProps) {
       renderer.setSize(width, height, false);
       primaryMaterial.resolution.set(width, height);
       camera.aspect = width / height;
-      camera.position.z = 5 * Math.max(1, height / width, height / 540);
+      const viewportScale = Math.min(width / 960, height / 540);
+      const oversizeScale = Math.max(1, viewportScale / MAX_VIEWPORT_SCALE);
+      camera.position.z = 5 * Math.max(1, height / width, oversizeScale);
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
     };

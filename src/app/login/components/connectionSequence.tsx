@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowLeft, TriangleAlert } from 'lucide-react';
 import Portal from '@/components/Portal';
 import { CONNECTION_TIMING as TIMING } from './connectionTimeline';
@@ -30,12 +30,15 @@ const LEFT_RAIL_CELLS = Array.from({ length: 44 }, (_, index) =>
   Math.round(TIMING.boot * .48 + index * (TIMING.boot * .2 / 43)));
 const RIGHT_RAIL_CELLS = Array.from({ length: 30 }, (_, index) =>
   Math.round(TIMING.boot * .68 + index * (TIMING.boot * .32 / 29)));
+const REFERENCE_VIEWPORT = { width: 960, height: 540 } as const;
+const MAX_SEQUENCE_SCALE = 1.75;
 const timelineStyle = {
   '--boot-duration': `${TIMING.boot}ms`,
   '--terminal-duration': `${TIMING.terminal}ms`,
   '--identity-duration': `${TIMING.identity}ms`,
   '--sync-duration': `${TIMING.sync}ms`,
   '--exit-duration': `${TIMING.exit}ms`,
+  '--sequence-scale': 1,
 } as CSSProperties;
 
 export interface ConnectionState {
@@ -109,7 +112,7 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
           <i />
         </div>
         <div className={styles['letter-matrix']}>
-          {'YOROROICE'.split('').map((letter, index) => (
+          {'YOROROIC'.split('').map((letter, index) => (
             <span key={index} style={{ '--matrix-index': index } as CSSProperties}>{letter}</span>
           ))}
         </div>
@@ -120,7 +123,7 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
         <span className={styles['plaque-rim']} />
         <span className={styles['plaque-crossline']} />
         <strong>BINES</strong>
-        <small>YOROROICE ARK</small>
+        <small>YOROROIC ARK</small>
       </div>
     </div>
   );
@@ -140,6 +143,21 @@ export default function ConnectionSequence({
   const [networkReady, setNetworkReady] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const handleNetworkReady = useCallback(() => setNetworkReady(true), []);
+
+  useLayoutEffect(() => {
+    const updateSequenceScale = () => {
+      const viewportScale = Math.min(
+        window.innerWidth / REFERENCE_VIEWPORT.width,
+        window.innerHeight / REFERENCE_VIEWPORT.height,
+      );
+      const scale = Math.min(MAX_SEQUENCE_SCALE, Math.max(1, viewportScale));
+      dialogRef.current?.style.setProperty('--sequence-scale', scale.toFixed(3));
+    };
+
+    updateSequenceScale();
+    window.addEventListener('resize', updateSequenceScale);
+    return () => window.removeEventListener('resize', updateSequenceScale);
+  }, []);
 
   useEffect(() => {
     dialogRef.current?.focus({ preventScroll: true });
@@ -228,7 +246,7 @@ export default function ConnectionSequence({
                   </span>
                 ))}
               </h1>
-              <strong>YOROROICE ARK</strong>
+              <strong>YOROROIC ARK</strong>
               <span className={styles['brand-subtitle']}>TERMINAL SERVICE</span>
               <span className={styles['brand-rule']} />
             </div>
