@@ -313,7 +313,7 @@ for (const [label, viewport] of [
             squareTransform: getComputedStyle(plane?.querySelector('[class*="rail-upper-nodes"]')).transform,
           };
         });
-        assert.equal(rail.matrix, 'YOROROIC');
+        assert.equal(rail.matrix, 'YOROROICE');
         assert.equal(rail.decodeText, 'BINES NETWORK');
         assert.ok(rail.decodeOffset <= -109, 'The decoder settles on the BINES NETWORK row');
         assert.equal(rail.visibleSlashes, rail.slashCount, 'The left slash loader completes before the square loader');
@@ -346,10 +346,27 @@ for (const [label, viewport] of [
     const network = page.getByTestId('connection-network');
     await page.locator('[data-testid="connection-network"][data-renderer="ready"]').waitFor({ state: 'attached' });
     await phase(page, 'sync').waitFor();
-    await page.waitForTimeout(80);
     const first = await networkPixels(await canvasBuffer(page, network));
     await page.waitForTimeout(80);
     const second = await networkPixels(await canvasBuffer(page, network));
+    const progress = page.getByTestId('connection-progress');
+    const initialProgressState = await progress.evaluate(element => ({
+      phase: element.closest('[data-phase]')?.getAttribute('data-phase'),
+      value: Number(element.getAttribute('data-progress')),
+    }));
+    if (initialProgressState.phase === 'sync') {
+      assert.ok(initialProgressState.value >= 0 && initialProgressState.value <= 80);
+      assert.equal(await progress.locator('i').count(), 2, 'Both progress fronts display the percentage');
+    } else {
+      assert.equal(initialProgressState.phase, 'exit');
+      assert.equal(initialProgressState.value, 100);
+      assert.equal(await progress.locator('i').count(), 0, 'The percentage clears after completion');
+    }
+    assert.equal(
+      await progress.locator('span').first().evaluate(element => getComputedStyle(element).backgroundColor),
+      'rgb(236, 232, 115)',
+      'The restored progress keeps the current yellow color',
+    );
     await shot(page, `${label}-reference-network`);
     assert.ok(first.count > 500, 'The yellow wireframe is not blank');
     assert.ok(second.count > 500, 'The wireframe remains visible');
@@ -357,8 +374,8 @@ for (const [label, viewport] of [
     const networkWidthRatio = (first.maxX - first.minX + 1) / first.width;
     if (label === 'desktop') {
       const networkWidth = first.maxX - first.minX + 1;
-      assert.ok(networkWidth >= 480 && networkWidth <= 760, 'The wireframe fills the desktop without overflowing');
-      assert.ok(networkWidthRatio >= .32 && networkWidthRatio <= .55, 'The wireframe keeps a substantial bounded footprint');
+      assert.ok(networkWidth >= 430 && networkWidth <= 520, 'The wireframe restores the historical desktop footprint');
+      assert.ok(networkWidthRatio >= .28 && networkWidthRatio <= .38, 'The wireframe keeps the historical bounded scale');
     }
     await page.waitForURL('**/home');
   });
@@ -472,6 +489,9 @@ test('first visit and a short keyboard-sized viewport keep registration reachabl
 
 test('connection composition fills the viewport and Loading ends before synchronization', async (t) => {
   const { page } = await session(t, { viewport: { width: 960, height: 540 } });
+  await page.evaluate(() => {
+    Math.random = () => .99;
+  });
   await page.getByRole('button', { name: '建立连接', exact: true }).click();
   await phase(page, 'terminal').waitFor();
   await page.waitForTimeout(2800);
@@ -487,7 +507,12 @@ test('connection composition fills the viewport and Loading ends before synchron
   assert.ok(loadingBounds && loadingBounds.x >= 0 && loadingBounds.x + loadingBounds.width <= 960);
   await phase(page, 'sync').waitFor();
   assert.equal(await page.getByText('正在建立神经连接', { exact: true }).count(), 0);
+  const progress = page.getByTestId('connection-progress');
+  const initialProgress = Number(await progress.getAttribute('data-progress'));
+  assert.ok(initialProgress >= 0 && initialProgress <= 4);
   await page.waitForTimeout(350);
+  assert.ok(Number(await progress.getAttribute('data-progress')) >= initialProgress + 8);
+  assert.equal(await progress.locator('i').count(), 2);
   await shot(page, 'reference-960-network');
   await page.waitForURL('**/home');
 });

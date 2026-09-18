@@ -112,7 +112,7 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
           <i />
         </div>
         <div className={styles['letter-matrix']}>
-          {'YOROROIC'.split('').map((letter, index) => (
+          {'YOROROICE'.split('').map((letter, index) => (
             <span key={index} style={{ '--matrix-index': index } as CSSProperties}>{letter}</span>
           ))}
         </div>
@@ -123,7 +123,7 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
         <span className={styles['plaque-rim']} />
         <span className={styles['plaque-crossline']} />
         <strong>BINES</strong>
-        <small>YOROROIC ARK</small>
+        <small>YOROROICE ARK</small>
       </div>
     </div>
   );
@@ -141,6 +141,7 @@ export default function ConnectionSequence({
   const [stage, setStage] = useState<'boot' | 'terminal' | 'sync' | 'exit'>('boot');
   const [introComplete, setIntroComplete] = useState(false);
   const [networkReady, setNetworkReady] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
   const dialogRef = useRef<HTMLElement>(null);
   const handleNetworkReady = useCallback(() => setNetworkReady(true), []);
 
@@ -176,15 +177,39 @@ export default function ConnectionSequence({
 
   useEffect(() => {
     if (!introComplete || status !== 'success') return;
-    const sync = window.setTimeout(() => setStage('sync'), TIMING.identity);
-    const exit = window.setTimeout(() => setStage('exit'), TIMING.identity + TIMING.sync);
-    const complete = window.setTimeout(onComplete, TIMING.identity + TIMING.sync + TIMING.exit);
+    const sync = window.setTimeout(() => {
+      setSyncProgress(0);
+      setStage('sync');
+    }, TIMING.identity);
+    return () => window.clearTimeout(sync);
+  }, [introComplete, status]);
+
+  useEffect(() => {
+    if (stage !== 'sync') return;
+
+    const interval = window.setInterval(() => {
+      setSyncProgress(previous => {
+        if (previous >= 80) return 80;
+        const increment = Math.floor(Math.random() * 5);
+        return Math.min(80, previous + increment);
+      });
+    }, 100);
+    const exit = window.setTimeout(() => {
+      setSyncProgress(100);
+      setStage('exit');
+    }, TIMING.sync);
+
     return () => {
-      window.clearTimeout(sync);
+      window.clearInterval(interval);
       window.clearTimeout(exit);
-      window.clearTimeout(complete);
     };
-  }, [introComplete, status, onComplete]);
+  }, [stage]);
+
+  useEffect(() => {
+    if (stage !== 'exit') return;
+    const complete = window.setTimeout(onComplete, TIMING.exit);
+    return () => window.clearTimeout(complete);
+  }, [stage, onComplete]);
 
   const phase = status === 'error' ? 'error'
     : stage === 'sync' || stage === 'exit' ? stage
@@ -246,7 +271,7 @@ export default function ConnectionSequence({
                   </span>
                 ))}
               </h1>
-              <strong>YOROROIC ARK</strong>
+              <strong>YOROROICE ARK</strong>
               <span className={styles['brand-subtitle']}>TERMINAL SERVICE</span>
               <span className={styles['brand-rule']} />
             </div>
@@ -311,7 +336,16 @@ export default function ConnectionSequence({
                 <strong>{location}</strong>
                 <div><sup>#</sup>0</div>
               </div>
-              <div className={styles['network-link']} aria-hidden="true"><span /><span /></div>
+              <div
+                className={styles['network-link']}
+                style={{ '--network-progress': `${syncProgress / 2}%` } as CSSProperties}
+                data-testid="connection-progress"
+                data-progress={syncProgress}
+                aria-hidden="true"
+              >
+                <span>{syncProgress < 100 && <i>{syncProgress}%</i>}</span>
+                <span>{syncProgress < 100 && <i>{syncProgress}%</i>}</span>
+              </div>
               <p>正在尝试与 BINES Network 进行认知同步</p>
             </>}
           </div>
