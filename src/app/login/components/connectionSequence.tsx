@@ -270,73 +270,75 @@ export default function ConnectionSequence({
           <div className={styles['corner-seed']} aria-hidden="true">
             {Array.from({ length: 4 }, (_, index) => <span key={index} />)}
           </div>
-          <div className={styles['terminal-content']}>
-            <CornerMarks />
-            <div className={styles['terminal-brand']}>
-              <span className={styles['brand-rule']} />
-              <h1 className={styles['brand-word']}>
-                <span className={styles['brand-label']}>BINES</span>
-                {BRAND_FRAGMENTS.map((fragment, slice) => (
-                  <span
-                    key={slice}
-                    className={styles['brand-slice']}
-                    data-slice={slice}
-                    style={{
-                      '--fragment-x': `${fragment.x}px`,
-                      '--fragment-y': `${fragment.y}px`,
-                      '--fragment-delay': `${fragment.delay}ms`,
-                    } as CSSProperties}
-                    aria-hidden="true"
-                  >
-                    BINES
-                  </span>
-                ))}
-              </h1>
-              <strong>YOROROICE ARK</strong>
-              <span className={styles['brand-subtitle']}>TERMINAL SERVICE</span>
-              <span className={styles['brand-rule']} />
-            </div>
-            <div className={styles.divider} aria-hidden="true"><span /><span /></div>
-            <div className={styles['identity-panel']}>
-              <div className={styles['identity-field']}>
-                <span className={styles['field-label']}>USERNAME</span>
-                <div className={styles['field-box']}>
-                  <span className={styles['field-value']} title={username} aria-label={username}>
-                    {usernameCharacters.map((character, index) => (
-                      <span className={styles['typed-character']} style={{ '--character-delay': `${index * 52}ms` } as CSSProperties} key={`${character}-${index}`} aria-hidden="true">
-                        {character === ' ' ? '\u00a0' : character}
-                      </span>
-                    ))}
-                    {usernameTruncated && <span className={styles['typed-ellipsis']} aria-hidden="true">...</span>}
-                  </span>
-                </div>
-              </div>
-              <div className={styles['identity-field']}>
-                <span className={styles['field-label']}>AUTHENTICATION</span>
-                <div className={styles['field-box']}>
-                  <span className={styles['auth-code']} aria-hidden="true">
-                    {Array.from({ length: 10 }, (_, index) => (
-                      <span className={styles['typed-character']} style={{ '--character-delay': `${index * 82}ms` } as CSSProperties} key={index}>*</span>
-                    ))}
-                  </span>
-                </div>
-              </div>
-              <span className={styles['connection-note']} aria-hidden="true">{failed ? 'CONNECTION FAILED' : 'VERIFYING IDENTITY'}</span>
-              <span className={styles['terminal-code']} aria-hidden="true">BX-01 / SECURE CHANNEL</span>
-            </div>
-          </div>
-
-          {verified && (
-            <div className={styles['identity-confirmation']}>
+          <div className={styles['terminal-motion']}>
+            <div className={styles['terminal-content']}>
               <CornerMarks />
-              <div className={styles['welcome-copy']}>
-                <span className={styles['welcome-role']}>{role}</span>
-                <span className={styles['welcome-identified']}>IDENTIFIED</span>
-                <strong>WELCOME</strong>
+              <div className={styles['terminal-brand']}>
+                <span className={styles['brand-rule']} />
+                <h1 className={styles['brand-word']}>
+                  <span className={styles['brand-label']}>BINES</span>
+                  {BRAND_FRAGMENTS.map((fragment, slice) => (
+                    <span
+                      key={slice}
+                      className={styles['brand-slice']}
+                      data-slice={slice}
+                      style={{
+                        '--fragment-x': `${fragment.x}px`,
+                        '--fragment-y': `${fragment.y}px`,
+                        '--fragment-delay': `${fragment.delay}ms`,
+                      } as CSSProperties}
+                      aria-hidden="true"
+                    >
+                      BINES
+                    </span>
+                  ))}
+                </h1>
+                <strong>YOROROICE ARK</strong>
+                <span className={styles['brand-subtitle']}>TERMINAL SERVICE</span>
+                <span className={styles['brand-rule']} />
               </div>
-              <CredentialScan username={username} />
+              <div className={styles.divider} aria-hidden="true"><span /><span /></div>
+              <div className={styles['identity-panel']}>
+                <div className={styles['identity-field']}>
+                  <span className={styles['field-label']}>USERNAME</span>
+                  <div className={styles['field-box']}>
+                    <span className={styles['field-value']} title={username} aria-label={username}>
+                      {usernameCharacters.map((character, index) => (
+                        <span className={styles['typed-character']} style={{ '--character-delay': `${index * 52}ms` } as CSSProperties} key={`${character}-${index}`} aria-hidden="true">
+                          {character === ' ' ? '\u00a0' : character}
+                        </span>
+                      ))}
+                      {usernameTruncated && <span className={styles['typed-ellipsis']} aria-hidden="true">...</span>}
+                    </span>
+                  </div>
+                </div>
+                <div className={styles['identity-field']}>
+                  <span className={styles['field-label']}>AUTHENTICATION</span>
+                  <div className={styles['field-box']}>
+                    <span className={styles['auth-code']} aria-hidden="true">
+                      {Array.from({ length: 10 }, (_, index) => (
+                        <span className={styles['typed-character']} style={{ '--character-delay': `${index * 82}ms` } as CSSProperties} key={index}>*</span>
+                      ))}
+                    </span>
+                  </div>
+                </div>
+                <span className={styles['connection-note']} aria-hidden="true">{failed ? 'CONNECTION FAILED' : 'VERIFYING IDENTITY'}</span>
+                <span className={styles['terminal-code']} aria-hidden="true">BX-01 / SECURE CHANNEL</span>
+              </div>
             </div>
-          )}
+
+            {verified && (
+              <div className={styles['identity-confirmation']}>
+                <CornerMarks />
+                <div className={styles['welcome-copy']}>
+                  <span className={styles['welcome-role']}>{role}</span>
+                  <span className={styles['welcome-identified']}>IDENTIFIED</span>
+                  <strong>WELCOME</strong>
+                </div>
+                <CredentialScan username={username} />
+              </div>
+            )}
+          </div>
           {failed && (
             <div className={styles['failure-detail']}>
               <TriangleAlert size={20} />

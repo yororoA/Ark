@@ -329,6 +329,17 @@
   background: linear-gradient(#c1d1de, var(--paper) 42%, #dfe4ea 62%, #bfd4e3);
 }
 
+.terminal-motion {
+  --drift-strength: 1;
+  --drift-unit: calc(1px * var(--sequence-scale) * var(--drift-strength));
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  transform-origin: center;
+  transform-style: preserve-3d;
+}
+
 .terminal-content {
   position: relative;
   display: grid;
@@ -850,6 +861,11 @@
 .sequence:not([data-phase='boot']) {
   .boot-stage { visibility: hidden; }
   .terminal-stage { visibility: visible; }
+  // A shared clock carries the plane's drift through the credential handoff.
+  .terminal-motion {
+    animation: terminal-float 8000ms cubic-bezier(.45, 0, .55, 1) infinite both;
+    will-change: transform;
+  }
   .corner-seed { animation: seed-presence 660ms linear both; }
   .corner-seed span { animation: seed-fission 520ms calc(var(--seed-index, 0) * 28ms) cubic-bezier(.2, .82, .16, 1) both; }
   .corner-seed span:nth-child(1) { --seed-index: 0; --seed-x: -18px; --seed-y: -11px; }
@@ -913,6 +929,7 @@
     gap: 22px;
     padding-block: 40px;
   }
+  .terminal-motion { flex-shrink: 0; transform: none; will-change: auto; }
   .terminal-content { flex-shrink: 0; margin-block: 0; pointer-events: none; scale: 1; }
   .failure-detail { position: static; transform: none; flex-shrink: 0; }
   .terminal-footer { position: static; align-self: flex-end; margin-right: 5%; }
@@ -1149,6 +1166,35 @@
   55% { opacity: 1; transform: translateY(1px) scaleX(1.08); filter: none; }
   100% { opacity: 1; transform: translateY(0) scaleX(1); filter: none; }
 }
+// Reference F340–F540: rightward drift, a shallow downward arc, then a rise
+// while the trapezoid turns slightly toward the viewer. The footer stays fixed.
+@keyframes terminal-float {
+  0%, 100% {
+    transform: perspective(1800px)
+      translate3d(calc(-6 * var(--drift-unit)), calc(-4 * var(--drift-unit)), 0)
+      rotateX(calc(5deg * var(--drift-strength)));
+  }
+  12.5% {
+    transform: perspective(1800px)
+      translate3d(calc(-6 * var(--drift-unit)), calc(-2 * var(--drift-unit)), 0)
+      rotateX(calc(5deg * var(--drift-strength)));
+  }
+  35% {
+    transform: perspective(1800px)
+      translate3d(calc(-1 * var(--drift-unit)), calc(5 * var(--drift-unit)), 0)
+      rotateX(calc(1deg * var(--drift-strength)));
+  }
+  57.5% {
+    transform: perspective(1800px)
+      translate3d(calc(2 * var(--drift-unit)), calc(-1 * var(--drift-unit)), 0)
+      rotateX(calc(-3deg * var(--drift-strength)));
+  }
+  80% {
+    transform: perspective(1800px)
+      translate3d(0, calc(-5 * var(--drift-unit)), 0)
+      rotateX(0deg);
+  }
+}
 @keyframes terminal-dismantle {
   0%, 12% { opacity: 1; filter: none; }
   34% { opacity: 1; filter: blur(0); }
@@ -1277,6 +1323,7 @@
   .letter-matrix { left: 118px; width: 100px; height: 100px; font-size: 16px; }
   .decode-copy { width: 190px; font-size: 11px; }
   .decode-copy > span { font-size: 10px; }
+  .terminal-motion { --drift-strength: .35; }
   .terminal-content {
     grid-template-columns: minmax(0, 1fr);
     width: min(88%, 390px);
