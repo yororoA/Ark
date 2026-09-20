@@ -51,14 +51,18 @@
 }
 
 .boot-plane {
-  --plaque-size: 144px;
-  --frame-size: 132px;
+  --plaque-size: 120px;
+  --frame-size: 108px;
   --rail-offset: 94px;
+  --rail-track-length: max(420px, calc(50vw / var(--sequence-scale) - 46px));
+  --plaque-angle: 50deg;
+  --label-angle: -30deg;
   position: absolute;
   z-index: 1;
   inset: -8%;
   scale: var(--sequence-scale);
-  transform: rotateX(17deg) rotateZ(-16deg);
+  // Previously 17deg / -16deg: too frontal and left the diamond nearly upright.
+  transform: rotateX(32deg) rotateZ(-20deg);
   transform-origin: center;
   transform-style: preserve-3d;
 }
@@ -66,11 +70,11 @@
 .boot-projection {
   z-index: 0;
   opacity: .46;
-  filter: blur(8px);
+  filter: blur(4px);
   mix-blend-mode: screen;
   -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 52%, #000 100%);
   mask-image: linear-gradient(to bottom, transparent 38%, #000 52%, #000 100%);
-  transform: translateY(34px) rotateX(17deg) rotateZ(-16deg);
+  transform: translateY(24px) rotateX(32deg) rotateZ(-20deg);
 }
 
 .boot-plaque {
@@ -87,7 +91,7 @@
   background: #cbd0d0;
   box-shadow: 7px 10px 0 #0004, 0 16px 16px #0004;
   backdrop-filter: blur(2px);
-  transform: rotate(32deg);
+  transform: rotate(var(--plaque-angle));
   animation: plaque-develop var(--boot-duration) linear both;
 
   &::before {
@@ -100,17 +104,38 @@
 
   strong {
     z-index: 1;
-    font-size: 34px;
+    font-size: 28px;
     font-weight: 900;
     font-style: italic;
-    transform: rotate(-16deg);
+    transform: rotate(var(--label-angle));
   }
 
   small {
     z-index: 1;
-    font-size: 8px;
-    transform: rotate(-16deg);
+    font-size: 7px;
+    transform: rotate(var(--label-angle));
   }
+}
+
+.plaque-base-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  i {
+    position: absolute;
+    background: #e2e4e4;
+    animation: plaque-edge-release var(--boot-duration) linear both;
+  }
+
+  i:nth-child(1),
+  i:nth-child(3) { left: 0; width: 100%; height: 7px; }
+  i:nth-child(1) { top: 0; transform-origin: right; }
+  i:nth-child(3) { bottom: 0; transform-origin: left; }
+  i:nth-child(2),
+  i:nth-child(4) { top: 0; height: 100%; width: 7px; animation-name: plaque-side-release; }
+  i:nth-child(2) { right: 0; }
+  i:nth-child(4) { left: 0; }
 }
 
 .plaque-rim {
@@ -118,9 +143,9 @@
   position: absolute;
   inset: 6px;
   box-sizing: border-box;
-  padding: 7px;
+  padding: 10px;
   background: conic-gradient(
-    from 90deg,
+    from 45deg,
     transparent 0deg,
     transparent calc(360deg - var(--rim-sweep)),
     var(--signal) calc(360deg - var(--rim-sweep)),
@@ -139,12 +164,12 @@
 
 .plaque-crossline {
   position: absolute;
-  top: 69%;
+  top: 75%;
   left: 26%;
   right: 26%;
   height: 1px;
   background: #fff;
-  transform: rotate(-16deg);
+  transform: rotate(var(--label-angle));
   transform-origin: center;
   animation: crossline-in var(--boot-duration) linear both;
 }
@@ -156,7 +181,7 @@
   left: calc(50% - var(--frame-size) / 2);
   width: var(--frame-size);
   height: var(--frame-size);
-  border: 1px solid var(--signal);
+  border: 2px solid var(--signal);
   opacity: 0;
   animation: frame-expansion var(--boot-duration) linear both;
 }
@@ -182,9 +207,9 @@
   position: absolute;
   top: 0;
   width: 100vw;
-  height: 2px;
+  height: 3px;
   background: var(--signal);
-  box-shadow: 0 3px 0 #e9ed4230, 0 7px 6px #e9ed4230;
+  box-shadow: 0 5px 0 #e9ed4230, 0 10px 6px #e9ed4250;
   animation: rail-extend var(--boot-duration) linear both;
 }
 
@@ -203,11 +228,11 @@
 
 .rail-ticks {
   right: calc(var(--rail-offset) + 8px);
-  bottom: 10px;
+  bottom: 9px;
   display: grid;
   grid-template-columns: repeat(44, minmax(0, 1fr));
-  width: 378px;
-  height: 18px;
+  width: var(--rail-track-length);
+  height: 15px;
   background: none;
   animation: none;
 
@@ -218,32 +243,32 @@
     height: 100%;
     opacity: 0;
     background: var(--signal);
-    transform: skewX(-20deg);
+    transform: skewX(25deg);
     animation: rail-cell-reveal 1ms var(--cell-delay) linear both;
   }
 }
 .rail-stripes {
   top: 8px;
-  left: 310px;
-  width: 160px;
-  height: 44px;
-  background: repeating-linear-gradient(110deg, white 0 7px, transparent 7px 17px);
+  left: 280px;
+  width: 150px;
+  height: 52px;
+  background: repeating-linear-gradient(140deg, white 0 7px, transparent 7px 17px);
   transform-origin: left;
   animation-name: stripes-reveal;
 }
 .rail-upper-nodes {
-  left: calc(var(--rail-offset) + 18px);
-  bottom: 25px;
+  left: var(--rail-offset);
+  bottom: 12px;
   display: grid;
-  grid-template-columns: repeat(30, minmax(0, 1fr));
-  width: 368px;
-  height: 9px;
+  grid-template-columns: repeat(18, minmax(0, 1fr));
+  width: var(--rail-track-length);
+  height: 11px;
   background: none;
   animation: none;
 
   > i {
     justify-self: center;
-    width: min(78%, 10px);
+    width: 11px;
     height: 100%;
     opacity: 0;
     background: var(--signal);
@@ -257,20 +282,20 @@
   top: 12px;
   width: 260px;
   text-align: right;
-  font-size: 18px;
+  font-size: 20px;
   animation: decode-in var(--boot-duration) linear both;
 
   > span {
     display: block;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 400;
   }
   i {
     display: block;
-    width: 104px;
-    height: 10px;
+    width: 120px;
+    height: 12px;
     margin: 5px 0 0 auto;
-    background: repeating-linear-gradient(90deg, #fff 0 8px, transparent 8px 13px);
+    background: repeating-linear-gradient(90deg, #fff 0 12px, transparent 12px 18px);
   }
 }
 
@@ -297,13 +322,13 @@
 .letter-matrix {
   position: absolute;
   top: 12px;
-  left: calc(var(--rail-offset) + 36px);
+  left: calc(var(--rail-offset) + 20px);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   place-items: center;
-  width: 152px;
-  height: 152px;
+  width: 136px;
+  height: 136px;
   padding: 10px;
   font-size: 22px;
   text-align: center;
@@ -313,7 +338,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    border: 1px solid #fff;
+    border: 2px solid #fff;
     animation: matrix-border var(--boot-duration) linear both;
   }
   > span { animation: matrix-glyph var(--boot-duration) steps(1, end) both; }
@@ -331,7 +356,8 @@
 
 .terminal-motion {
   --drift-strength: 1;
-  --drift-unit: calc(1px * var(--sequence-scale) * var(--drift-strength));
+  // Preserve the measured arc; amplify its travel so the float reads at speed.
+  --drift-unit: calc(2.5px * var(--sequence-scale) * var(--drift-strength));
   position: relative;
   display: grid;
   place-items: center;
@@ -983,22 +1009,33 @@
   100% { transform: translate(0, 0) scale(1.03); opacity: 1; }
 }
 @keyframes plaque-develop {
-  0%, 13% { transform: rotate(32deg) scaleX(.03); opacity: 0; }
-  18% { transform: rotate(32deg) scaleX(-.4); opacity: .5; }
-  22% { transform: rotate(32deg) scaleX(1); }
+  0%, 13% { transform: rotate(var(--plaque-angle)) scaleX(.03); opacity: 0; }
+  18% { transform: rotate(var(--plaque-angle)) scaleX(-.4); opacity: .5; }
+  22% { transform: rotate(var(--plaque-angle)) scaleX(1); }
   24%, 27% { background: #dedede; color: #111; }
   25.5% { background: #929999; }
   39% { background: #ddd; color: #111; }
   43%, 100% {
-    transform: rotate(32deg) scaleX(1);
+    transform: rotate(var(--plaque-angle)) scaleX(1);
     opacity: 1;
     color: #fff;
-    background: rgb(20 23 25 / 38%);
+    background: rgb(20 23 25 / 22%);
   }
 }
 @keyframes plaque-base-frame {
   0%, 39% { opacity: 1; }
   43%, 100% { opacity: 0; }
+}
+@keyframes plaque-edge-release {
+  0%, 38% { opacity: 1; transform: scaleX(1); }
+  40% { opacity: 1; transform: scaleX(.45); }
+  42%, 100% { opacity: 0; transform: scaleX(0); }
+}
+@keyframes plaque-side-release {
+  0%, 39% { opacity: 1; transform: translateY(0) scaleY(1); }
+  43% { opacity: 1; transform: translateY(0) scaleY(.28); }
+  47% { opacity: .85; transform: translateY(0) scaleY(.08); }
+  50%, 100% { opacity: 0; transform: translateY(0) scaleY(0); }
 }
 @property --rim-sweep {
   syntax: '<angle>';
@@ -1008,33 +1045,36 @@
 @keyframes rim-lock {
   0%, 38% { --rim-sweep: 0deg; opacity: 0; }
   39% { --rim-sweep: 0deg; opacity: 1; }
-  58%, 100% { --rim-sweep: 360deg; opacity: 1; }
+  44% { --rim-sweep: 245deg; opacity: 1; }
+  58% { --rim-sweep: 330deg; opacity: 1; }
+  67%, 100% { --rim-sweep: 360deg; opacity: 1; }
 }
 @keyframes crossline-in {
   0%, 39% { opacity: 0; }
-  42% { opacity: 1; transform: rotate(-16deg) scaleX(4); }
-  52%, 100% { opacity: 1; transform: rotate(-16deg) scaleX(1); }
+  42% { opacity: .6; transform: rotate(var(--label-angle)) scaleX(1.25); }
+  48%, 100% { opacity: 1; transform: rotate(var(--label-angle)) scaleX(1); }
 }
 @keyframes rail-extend {
-  0%, 33% { transform: scaleX(0); opacity: 0; }
-  35% { transform: scaleX(.015); opacity: 1; }
-  44%, 100% { transform: scaleX(1); opacity: 1; }
+  0%, 30% { transform: scaleX(0); opacity: 0; }
+  33% { transform: scaleX(.035); opacity: 1; }
+  36% { transform: scaleX(.07); opacity: 1; }
+  40%, 100% { transform: scaleX(1); opacity: 1; }
 }
 @keyframes frame-expansion {
-  0%, 39% { transform: rotate(32deg) scale(1); opacity: 0; }
+  0%, 39% { transform: rotate(var(--plaque-angle)) scale(1); opacity: 0; border-width: 2px; }
   40% { opacity: 1; }
-  46% { transform: rotate(32deg) scale(2.65); opacity: .44; }
-  55%, 69% { transform: rotate(32deg) scale(2.9); opacity: 0; }
-  70% { transform: rotate(32deg) scale(1.08); opacity: .75; }
-  76% { transform: rotate(32deg) scale(2.65); opacity: .42; }
-  84%, 100% { transform: rotate(32deg) scale(2.95); opacity: 0; }
+  46% { transform: rotate(var(--plaque-angle)) scale(2.35); opacity: .72; }
+  58%, 69% { transform: rotate(var(--plaque-angle)) scale(2.9); opacity: 0; border-width: 1px; }
+  70% { transform: rotate(var(--plaque-angle)) scale(1.08); opacity: .75; }
+  76% { transform: rotate(var(--plaque-angle)) scale(2.35); opacity: .6; }
+  90%, 100% { transform: rotate(var(--plaque-angle)) scale(2.95); opacity: 0; }
 }
 @keyframes frame-haze {
-  0%, 40% { transform: rotate(32deg) scale(1); opacity: 0; }
-  46% { transform: rotate(32deg) scale(2.8); opacity: .24; }
-  56%, 70% { transform: rotate(32deg) scale(3.3); opacity: 0; }
-  76% { transform: rotate(32deg) scale(2.75); opacity: .2; }
-  85%, 100% { transform: rotate(32deg) scale(3.45); opacity: 0; }
+  0%, 40% { transform: rotate(var(--plaque-angle)) scale(1); opacity: 0; }
+  46% { transform: rotate(var(--plaque-angle)) scale(2.8); opacity: .24; }
+  58%, 70% { transform: rotate(var(--plaque-angle)) scale(3.3); opacity: 0; }
+  76% { transform: rotate(var(--plaque-angle)) scale(2.75); opacity: .2; }
+  90%, 100% { transform: rotate(var(--plaque-angle)) scale(3.45); opacity: 0; }
 }
 @keyframes track-reveal {
   0%, 50% { transform: scaleX(0); opacity: 0; }
@@ -1045,8 +1085,9 @@
   to { opacity: 1; }
 }
 @keyframes stripes-reveal {
-  0%, 43% { transform: scaleX(0); opacity: 0; }
-  60%, 100% { transform: scaleX(1); opacity: 1; }
+  0%, 42% { clip-path: inset(0 0 0 100%); opacity: 0; }
+  43% { clip-path: inset(0 0 0 75%); opacity: 1; }
+  54%, 100% { clip-path: inset(0); opacity: 1; }
 }
 @keyframes decode-in {
   0%, 50% { opacity: 0; clip-path: inset(0 0 0 100%); }
@@ -1172,22 +1213,22 @@
   0%, 100% {
     transform: perspective(1800px)
       translate3d(calc(-6 * var(--drift-unit)), calc(-4 * var(--drift-unit)), 0)
-      rotateX(calc(5deg * var(--drift-strength)));
+      rotateX(calc(5.5deg * var(--drift-strength)));
   }
   12.5% {
     transform: perspective(1800px)
       translate3d(calc(-6 * var(--drift-unit)), calc(-2 * var(--drift-unit)), 0)
-      rotateX(calc(5deg * var(--drift-strength)));
+      rotateX(calc(5.5deg * var(--drift-strength)));
   }
   35% {
     transform: perspective(1800px)
       translate3d(calc(-1 * var(--drift-unit)), calc(5 * var(--drift-unit)), 0)
-      rotateX(calc(1deg * var(--drift-strength)));
+      rotateX(calc(1.1deg * var(--drift-strength)));
   }
   57.5% {
     transform: perspective(1800px)
       translate3d(calc(2 * var(--drift-unit)), calc(-1 * var(--drift-unit)), 0)
-      rotateX(calc(-3deg * var(--drift-strength)));
+      rotateX(calc(-3.3deg * var(--drift-strength)));
   }
   80% {
     transform: perspective(1800px)
@@ -1309,8 +1350,13 @@
 
 @media (max-width: 600px) {
   .design-stage { inset: 0; width: 100%; height: 100%; transform: none; }
-  .boot-plane { --rail-offset: 82px; transform: rotateX(11deg) rotateZ(-16deg); }
-  .boot-projection { transform: translateY(24px) rotateX(11deg) rotateZ(-16deg); }
+  .boot-plane {
+    --rail-offset: 98px;
+    --plaque-angle: 45deg;
+    --label-angle: -27deg;
+    transform: rotateX(24deg) rotateZ(-18deg);
+  }
+  .boot-projection { transform: translateY(18px) rotateX(24deg) rotateZ(-18deg); }
   .boot-plaque,
   .outer-frame,
   .frame-haze { width: 90px; height: 90px; top: calc(50% - 45px); left: calc(50% - 45px); }
@@ -1319,11 +1365,11 @@
   .signal-rail { scale: .6; }
   .rail-left,
   .rail-right { width: 150vw; }
-  .rail-stripes { left: 280px; }
+  .rail-stripes { left: 252px; }
   .letter-matrix { left: 118px; width: 100px; height: 100px; font-size: 16px; }
   .decode-copy { width: 190px; font-size: 11px; }
   .decode-copy > span { font-size: 10px; }
-  .terminal-motion { --drift-strength: .35; }
+  .terminal-motion { --drift-strength: .5; }
   .terminal-content {
     grid-template-columns: minmax(0, 1fr);
     width: min(88%, 390px);

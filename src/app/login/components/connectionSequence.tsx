@@ -26,10 +26,11 @@ const BRAND_FRAGMENTS = [
   { x: 94, y: -7, delay: 94 },
   { x: -48, y: 4, delay: 108 },
 ];
+// Fixed cells decelerate along the rail; only their reveal times change.
 const LEFT_RAIL_CELLS = Array.from({ length: 44 }, (_, index) =>
-  Math.round(TIMING.boot * .48 + index * (TIMING.boot * .2 / 43)));
-const RIGHT_RAIL_CELLS = Array.from({ length: 30 }, (_, index) =>
-  Math.round(TIMING.boot * .68 + index * (TIMING.boot * .32 / 29)));
+  Math.round(TIMING.boot * (.48 + .2 * (index / 43) ** 3)));
+const RIGHT_RAIL_CELLS = Array.from({ length: 18 }, (_, index) =>
+  Math.round(TIMING.boot * (.69 + .3 * (index / 17) ** 1.6)));
 const REFERENCE_VIEWPORT = { width: 960, height: 540 } as const;
 const MAX_SEQUENCE_SCALE = 1.75;
 const timelineStyle = {
@@ -120,6 +121,9 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
       <div className={styles['frame-haze']} />
       <div className={styles['outer-frame']} />
       <div className={styles['boot-plaque']}>
+        <span className={styles['plaque-base-edges']}>
+          {Array.from({ length: 4 }, (_, index) => <i key={index} />)}
+        </span>
         <span className={styles['plaque-rim']} />
         <span className={styles['plaque-crossline']} />
         <strong>BINES</strong>

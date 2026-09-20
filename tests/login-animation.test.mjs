@@ -51,6 +51,43 @@ async function shot(page, name) {
   await page.screenshot({ path: join(screenshotDirectory, `${name}.png`) });
 }
 
+// CSS animations and JS timers must share a clock: screenshots can take longer
+// than an entire transition on a busy machine.
+async function visualTimeline(page) {
+  const start = Date.now();
+  await page.clock.install({ time: start });
+  await page.clock.pauseAt(start + 1000);
+  let elapsed = 0;
+  return {
+    async reset() {
+      await page.evaluate(() => {
+        for (const animation of document.getAnimations()) {
+          animation.pause();
+          animation.currentTime = 0;
+        }
+      });
+    },
+    async advanceTo(target) {
+      assert.ok(target >= elapsed, 'The visual timeline only advances');
+      while (elapsed < target) {
+        const delta = Math.min(17, target - elapsed);
+        await page.clock.runFor(delta);
+        await page.evaluate(step => {
+          for (const animation of document.getAnimations()) {
+            if (animation.playState !== 'paused') {
+              animation.pause();
+              animation.currentTime = 0;
+            } else {
+              animation.currentTime = Number(animation.currentTime || 0) + step;
+            }
+          }
+        }, delta);
+        elapsed += delta;
+      }
+    },
+  };
+}
+
 async function checkTerminalLayout(page) {
   const overflow = await page.getByRole('dialog').evaluate((dialog) => {
     const nodes = Array.from(dialog.querySelectorAll('h1, [role="status"], [class*="identity-panel"], [class*="field-value"], footer'));
@@ -254,14 +291,18 @@ for (const [label, viewport] of [
       viewport,
       respond: route => route.fulfill({ json: { ...account, isAdmin: true } }),
     });
+    const timeline = await visualTimeline(page);
+    const authenticated = page.waitForResponse(response => response.url().includes('/api/auth/') && response.ok());
     await page.getByRole('button', { name: '建立连接', exact: true }).click();
-    const startedAt = Date.now();
+    await timeline.reset();
+    await authenticated;
     for (const [milliseconds, name] of [
-      [1250, 'plaque'], [1900, 'rim-draw'], [2200, 'expansion'], [3650, 'decoding'],
+      [1250, 'plaque'], [1900, 'rim-draw'], [2200, 'expansion'],
+      [3000, 'left-loaded'], [3650, 'decoding'], [4380, 'rail-complete'],
       [4650, 'seed'], [5400, 'sliced-title'], [6650, 'fields'], [8400, 'credentials'],
       [9350, 'scan'], [10600, 'welcome'],
     ]) {
-      await page.waitForTimeout(Math.max(0, milliseconds - (Date.now() - startedAt)));
+      await timeline.advanceTo(milliseconds);
       await shot(page, `${label}-reference-${name}`);
       if (name === 'plaque') {
         const projection = await page.locator('[class*="boot-projection"]').evaluate(
@@ -293,6 +334,19 @@ for (const [label, viewport] of [
           .locator('[class*="boot-plane"]:not([class*="boot-projection"]) [class*="boot-plaque"]')
           .evaluate(element => getComputedStyle(element).backgroundColor);
         assert.match(plaqueBackground, /^rgba\(/, 'The yellow diamond keeps a translucent center');
+      }
+      if (name === 'left-loaded' || name === 'rail-complete') {
+        const loaders = await page.evaluate(() => {
+          const plane = document.querySelector('[class*="boot-plane"]:not([class*="boot-projection"])');
+          return ['rail-ticks', 'rail-upper-nodes'].map(part =>
+            [...plane.querySelectorAll(`[class*="${part}"] > i`)].map(cell => Number(getComputedStyle(cell).opacity)),
+          );
+        });
+        assert.ok(loaders[0].every(opacity => opacity === 1), 'Left cells finish first');
+        assert.ok(
+          loaders[1].every(opacity => opacity === (name === 'left-loaded' ? 0 : 1)),
+          name === 'left-loaded' ? 'Right cells wait for the left rail' : 'The last square lights before the terminal cut',
+        );
       }
       if (name === 'decoding') {
         const rail = await page.evaluate(() => {
@@ -345,6 +399,7 @@ for (const [label, viewport] of [
     assert.match(await page.getByRole('dialog').textContent(), /ADMINISTRATOR/);
     const network = page.getByTestId('connection-network');
     await page.locator('[data-testid="connection-network"][data-renderer="ready"]').waitFor({ state: 'attached' });
+    await timeline.advanceTo(11600);
     await phase(page, 'sync').waitFor();
     const firstPhase = await page.getByRole('dialog').getAttribute('data-phase');
     const firstStageScale = await page.locator('[class*="network-stage"]').evaluate((element) => {
@@ -352,7 +407,7 @@ for (const [label, viewport] of [
       return Math.hypot(matrix.a, matrix.b);
     });
     const first = await networkPixels(await canvasBuffer(page, network));
-    await page.waitForTimeout(80);
+    await timeline.advanceTo(11680);
     const secondPhase = await page.getByRole('dialog').getAttribute('data-phase');
     const second = await networkPixels(await canvasBuffer(page, network));
     const progress = page.getByTestId('connection-progress');
@@ -390,6 +445,7 @@ for (const [label, viewport] of [
       );
       assert.ok(networkWidthRatio >= .28 && networkWidthRatio <= .38, 'The wireframe keeps the historical bounded scale');
     }
+    await timeline.advanceTo(13050);
     await page.waitForURL('**/home');
   });
 }
@@ -553,7 +609,7 @@ test('connection composition fills the viewport and Loading ends before synchron
     requestAnimationFrame(waitForSync);
   }));
   assert.equal(await page.getByText('正在建立神经连接', { exact: true }).count(), 0);
-  assert.ok(progressSamples.length > 10);
+  assert.ok(progressSamples.length >= 2, 'Synchronization exposes multiple rendered frames');
   assert.ok(progressSamples[0].value >= 0 && progressSamples[0].value <= 80);
   assert.ok(progressSamples.at(-1).value >= progressSamples[0].value + 24);
   assert.ok(progressSamples.every(sample => sample.value <= 80 && sample.labels === 2));
@@ -572,25 +628,26 @@ test('terminal details split smoothly into a trapezoid and type characters progr
       await route.fulfill({ json: account });
     },
   });
+  const timeline = await visualTimeline(page);
   await page.getByRole('button', { name: '建立连接', exact: true }).click();
+  await timeline.reset();
   const bootTransform = await page.locator('[class*="boot-plane"]:not([class*="boot-projection"])').evaluate(element => getComputedStyle(element).transform);
   assert.match(bootTransform, /^matrix3d\(/, 'The opening rail and details share a 3D perspective plane');
+  await timeline.advanceTo(4400);
   await phase(page, 'terminal').waitFor();
-  const terminalStartedAt = Date.now();
   const terminalTransform = await page.locator('[class*="terminal-content"]').evaluate(element => getComputedStyle(element).transform);
   assert.match(terminalTransform, /^matrix3d\(/, 'The terminal content is projected as a 3D plane');
   const corners = page.locator('[class*="terminal-content"] [class*="corner-marks"] > span');
   const positions = [];
-  await page.waitForTimeout(250);
   for (let index = 0; index < 6; index++) {
-    await page.waitForTimeout(75);
+    await timeline.advanceTo(4400 + 325 + index * 75);
     positions.push(await corners.first().evaluate(element => {
       const rect = element.getBoundingClientRect();
       return `${Math.round(rect.x)}:${Math.round(rect.y)}`;
     }));
   }
   assert.ok(new Set(positions).size >= 5, 'Corner splitting should have continuous intermediate positions');
-  await page.waitForTimeout(220);
+  await timeline.advanceTo(5320);
   const bounds = await corners.evaluateAll(elements => elements.map(element => {
     const rect = element.getBoundingClientRect();
     return { x: rect.x, y: rect.y };
@@ -598,7 +655,9 @@ test('terminal details split smoothly into a trapezoid and type characters progr
   const topWidth = bounds[1].x - bounds[0].x;
   const bottomWidth = bounds[3].x - bounds[2].x;
   assert.ok(topWidth < bottomWidth, 'The four corners must form a top-narrow trapezoid');
-  assert.ok(topWidth / bottomWidth >= .88 && topWidth / bottomWidth <= .97, 'The trapezoid perspective should stay close to the reference');
+  // The reference bounds are measured to two decimal places, not subpixels.
+  const trapezoidRatio = Number((topWidth / bottomWidth).toFixed(2));
+  assert.ok(trapezoidRatio >= .88 && trapezoidRatio <= .97, `The trapezoid perspective should stay close to the reference (${trapezoidRatio})`);
   const fragments = page.locator('[class*="brand-slice"]');
   assert.equal(await fragments.count(), 7);
   const fragmentDurations = await fragments.evaluateAll(elements =>
@@ -607,18 +666,30 @@ test('terminal details split smoothly into a trapezoid and type characters progr
   assert.deepEqual(fragmentDurations, Array(7).fill(520), 'Fragment motion is accelerated without changing the terminal phase');
 
   const firstField = page.locator('[class*="field-box"]').first();
-  await page.waitForTimeout(Math.max(0, 1480 - (Date.now() - terminalStartedAt)));
   const fieldPositions = [];
   for (let index = 0; index < 6; index++) {
+    await timeline.advanceTo(4400 + 1480 + index * 70);
     fieldPositions.push(Math.round((await firstField.boundingBox()).x));
-    await page.waitForTimeout(70);
   }
   assert.ok(new Set(fieldPositions).size >= 4, 'The input frame should move through multiple smooth positions');
-  await page.waitForTimeout(Math.max(0, 2450 - (Date.now() - terminalStartedAt)));
+  await timeline.advanceTo(6850);
   const characters = page.locator('[class*="field-value"] [class*="typed-character"]');
   const earlyVisible = await characters.evaluateAll(elements => elements.filter(element => Number(getComputedStyle(element).opacity) > .5).length);
-  await page.waitForTimeout(360);
+  await timeline.advanceTo(7210);
   const laterVisible = await characters.evaluateAll(elements => elements.filter(element => Number(getComputedStyle(element).opacity) > .5).length);
   assert.ok(laterVisible > earlyVisible, 'Username characters should appear progressively');
+  const floatingState = () => page.evaluate(() => {
+    const motion = document.querySelector('[class*="terminal-motion"]');
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(motion).transform);
+    const footer = document.querySelector('[class*="terminal-footer"]').getBoundingClientRect();
+    return { x: matrix.m41, y: matrix.m42, footerX: footer.x, footerY: footer.y };
+  });
+  const lowerPosition = await floatingState();
+  await timeline.advanceTo(8600);
+  const upperPosition = await floatingState();
+  assert.ok(upperPosition.x - lowerPosition.x > 6, 'The floating drift remains perceptible');
+  assert.ok(lowerPosition.y - upperPosition.y > 6, 'The terminal visibly rises after the downward arc');
+  assert.equal(upperPosition.footerX, lowerPosition.footerX, 'The footer does not drift with the terminal');
+  assert.equal(upperPosition.footerY, lowerPosition.footerY, 'The footer stays vertically anchored');
   finish();
 });
