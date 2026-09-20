@@ -76,7 +76,9 @@ export default function ConnectionNetwork({ onReady }: ConnectionNetworkProps) {
     scene.add(group);
 
     const resize = () => {
-      const { width, height } = canvas.getBoundingClientRect();
+      // CSS stage transitions must not alter the camera's viewport calculation.
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
       if (!width || !height) return;
       renderer.setSize(width, height, false);
       primaryMaterial.resolution.set(width, height);

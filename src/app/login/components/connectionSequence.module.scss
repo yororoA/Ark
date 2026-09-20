@@ -379,6 +379,8 @@
 }
 
 .terminal-content > .corner-marks {
+  transform-origin: center;
+
   span {
     right: auto;
     bottom: auto;
@@ -397,6 +399,7 @@
   width: min(100%, 320px);
   display: flex;
   flex-direction: column;
+  transform-origin: left center;
 
   > strong { font-size: 20px; font-weight: 800; }
 }
@@ -454,6 +457,7 @@
   align-self: stretch;
   min-height: 206px;
   overflow: hidden;
+  transform-origin: center;
 
   span {
     position: absolute;
@@ -474,6 +478,7 @@
   gap: 16px;
   min-width: 0;
   width: min(100%, 320px);
+  transform-origin: right center;
 }
 
 .identity-field {
@@ -701,15 +706,33 @@
   opacity: 0;
   color: #e5e6d8;
   background: #282a2c;
+  transform-origin: center;
+  will-change: transform, opacity;
+
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: 4;
+    inset: -20%;
+    pointer-events: none;
+    opacity: 0;
+    background:
+      linear-gradient(124deg, transparent 42%, #eff34ca8 47%, transparent 52%),
+      linear-gradient(54deg, transparent 43%, #b43a3675 48%, transparent 53%);
+    mix-blend-mode: screen;
+  }
 
   canvas {
     position: absolute;
+    z-index: 1;
     inset: 0;
     width: 100%;
     height: 100%;
   }
+
   > p {
     position: absolute;
+    z-index: 2;
     top: 88%;
     margin: 0;
     padding: 0 24px;
@@ -720,6 +743,7 @@
 
 .station-plate {
   position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -773,6 +797,7 @@
 .network-link {
   --network-progress: 0%;
   position: absolute;
+  z-index: 2;
   inset: 66% 0 auto;
   display: flex;
   justify-content: space-between;
@@ -816,6 +841,7 @@
     font-style: normal;
     line-height: 1;
     white-space: nowrap;
+    transition: opacity 100ms linear;
   }
 }
 
@@ -854,7 +880,17 @@
 }
 
 .sequence[data-phase='success'] {
-  .terminal-content { animation: terminal-dismantle 800ms 300ms both; }
+  .terminal-content { animation: terminal-dismantle var(--identity-duration) linear both; }
+  .terminal-brand { animation: terminal-brand-collapse var(--identity-duration) linear both; }
+  .identity-panel { animation: terminal-fields-collapse var(--identity-duration) linear both; }
+  .divider { animation: terminal-divider-collapse var(--identity-duration) linear both; }
+  .terminal-content > .corner-marks { animation: terminal-corners-release var(--identity-duration) linear both; }
+  .network-stage {
+    visibility: visible;
+    pointer-events: none;
+    opacity: .001;
+    transform: scale(1.85);
+  }
 }
 
 .sequence[data-phase='terminal'] .identity-panel::after {
@@ -887,14 +923,35 @@
   .connection-note { color: #9d2929; }
 }
 
-.sequence[data-phase='sync'],
-.sequence[data-phase='exit'] {
-  .terminal-stage { visibility: hidden; }
+.sequence[data-phase='sync'] {
+  .terminal-stage {
+    visibility: visible;
+    pointer-events: none;
+    will-change: transform, opacity;
+    animation: terminal-release 380ms ease-in both;
+  }
+
+  .terminal-content { visibility: hidden; opacity: 0; }
+  .identity-confirmation { animation: identity-release 380ms cubic-bezier(.4, 0, .8, .2) both; }
+
   .network-stage {
     visibility: visible;
-    animation: network-appear 240ms ease-out both;
+    animation: network-appear 520ms cubic-bezier(.16, .84, .3, 1) both;
   }
+
+  .network-stage::before { animation: network-flare 480ms ease-out both; }
 }
+
+.sequence[data-phase='exit'] {
+  .terminal-stage { visibility: hidden; opacity: 0; }
+  .network-stage {
+    visibility: visible;
+    animation: network-collapse var(--exit-duration) cubic-bezier(.4, 0, 1, 1) both;
+  }
+
+  .network-link i { opacity: 0; }
+}
+
 .sequence[data-phase='exit'] .exit-shade { animation: darken var(--exit-duration) ease-in both; }
 
 @keyframes backdrop-develop {
@@ -1093,12 +1150,38 @@
   100% { opacity: 1; transform: translateY(0) scaleX(1); filter: none; }
 }
 @keyframes terminal-dismantle {
-  0% { opacity: 1; clip-path: inset(0); }
-  55% { opacity: 1; clip-path: inset(0 0 45%); }
-  100% { opacity: 0; clip-path: inset(0 0 100%); }
+  0%, 12% { opacity: 1; filter: none; }
+  34% { opacity: 1; filter: blur(0); }
+  48% { opacity: .36; filter: blur(1px); }
+  56%, 100% { opacity: 0; filter: blur(2px); }
+}
+@keyframes terminal-brand-collapse {
+  0%, 24% { opacity: 1; transform: translateX(0) scale(1); clip-path: inset(0); }
+  31% { transform: translateX(-3%) scaleX(.94) scaleY(.34); clip-path: inset(31% 0 34%); }
+  38% { opacity: .82; transform: translateX(-10%) skewX(-9deg) scaleX(.72) scaleY(.1); clip-path: inset(41% 0 44%); }
+  45% { opacity: .25; transform: translateX(-18%) skewX(13deg) scaleX(.42) scaleY(.04); }
+  52%, 100% { opacity: 0; transform: translateX(-24%) scaleX(.2) scaleY(.02); clip-path: inset(48% 0); }
+}
+@keyframes terminal-fields-collapse {
+  0%, 10% { opacity: 1; transform: translateX(0) scaleX(1); clip-path: inset(0); }
+  18% { opacity: 1; transform: translateX(-4%) scaleX(.78); clip-path: inset(0 10% 0 0); }
+  24% { opacity: .34; transform: translateX(-15%) skewX(-7deg) scaleX(.18); clip-path: inset(0 58% 0 0); }
+  28%, 100% { opacity: 0; transform: translateX(-22%) scaleX(.04); clip-path: inset(0 100% 0 0); }
+}
+@keyframes terminal-divider-collapse {
+  0%, 12% { opacity: 1; transform: scaleY(1); }
+  28%, 100% { opacity: 0; transform: scaleY(.08); }
+}
+@keyframes terminal-corners-release {
+  0%, 18% { opacity: 1; transform: scale(1); }
+  45% { opacity: .72; transform: scale(.72); }
+  56%, 100% { opacity: 0; transform: scale(.66); }
 }
 @keyframes identity-compose {
-  0%, 38% { transform: translate(-45%, -50%) scale(var(--sequence-scale)) scale(1.2); }
+  0% { transform: translate(-45%, -50%) scale(var(--sequence-scale)) scale(1.24); }
+  12% { transform: translate(-46%, -50%) scale(var(--sequence-scale)) scale(1.16); }
+  20% { transform: translate(-44%, -50%) scale(var(--sequence-scale)) scale(1.2); }
+  38% { transform: translate(-45%, -50%) scale(var(--sequence-scale)) scale(1.16); }
   100% { transform: translate(-50%, -50%) scale(var(--sequence-scale)); }
 }
 @keyframes identity-corners { 0%, 39% { opacity: 0; } 60%, 100% { opacity: 1; } }
@@ -1108,20 +1191,21 @@
 }
 @keyframes identified-in {
   0%, 59% { opacity: 0; clip-path: inset(0 100% 0 0); }
-  65% { opacity: 1; clip-path: inset(0); background: #63d653; }
-  78%, 100% { opacity: 1; clip-path: inset(0); background: var(--ink); }
+  62% { opacity: 1; clip-path: inset(0); background: #63d653; }
+  69%, 100% { opacity: 1; clip-path: inset(0); background: var(--ink); }
 }
 @keyframes welcome-in {
   0%, 60% { opacity: 0; transform: translateY(12px); }
-  76%, 100% { opacity: 1; transform: translateY(0); }
+  69%, 100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes credential-travel {
-  0% { opacity: 0; transform: translateX(var(--scan-offset)) scale(1.08); }
-  7% { opacity: 1; }
-  12% { opacity: .25; }
-  17%, 40% { opacity: 1; transform: translateX(var(--scan-offset)) scale(1.08); }
-  58% { transform: translateX(0); color: var(--paper); background: var(--ink); }
-  66%, 100% { opacity: 1; transform: translateX(0); color: var(--ink); background: var(--paper); }
+  0%, 5% { opacity: 0; transform: translateX(var(--scan-offset)) scale(1.18); }
+  8% { opacity: 1; transform: translateX(var(--scan-offset)) scale(1.08); }
+  12% { opacity: .25; transform: translateX(calc(var(--scan-offset) - 8px)) scaleX(1.14); }
+  15% { opacity: 1; transform: translateX(calc(var(--scan-offset) + 5px)) scaleX(.96); }
+  20%, 40% { opacity: 1; transform: translateX(var(--scan-offset)) scale(1.08); }
+  46% { transform: translateX(0) scale(1); color: var(--paper); background: var(--ink); }
+  50%, 100% { opacity: 1; transform: translateX(0); color: var(--ink); background: var(--paper); }
 }
 @keyframes scan-outline {
   0% { opacity: 0; transform: scale(1.1); }
@@ -1138,11 +1222,39 @@
   91%, 100% { opacity: 1; clip-path: inset(0); transform: none; }
 }
 @keyframes credential-label { 0%, 77% { opacity: 0; } 90%, 100% { opacity: 1; } }
-@keyframes network-appear {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes terminal-release {
+  0% { opacity: 1; transform: scale(1); }
+  42% { opacity: .54; transform: scale(.94); }
+  100% { opacity: 0; transform: scale(.82); }
 }
-@keyframes darken { from { opacity: 0; } to { opacity: 1; } }
+@keyframes identity-release {
+  0% { opacity: 1; filter: blur(0); transform: translate(-50%, -50%) scale(var(--sequence-scale)); }
+  32% { opacity: .78; filter: blur(.6px); transform: translate(-50%, -50%) scale(var(--sequence-scale)) scale(.92); }
+  100% { opacity: 0; filter: blur(4px); transform: translate(-50%, -50%) scale(var(--sequence-scale)) scale(.68); }
+}
+@keyframes network-appear {
+  0% { opacity: 0; transform: scale(1.85); }
+  30% { opacity: .54; transform: scale(1.62); }
+  70% { opacity: .9; transform: scale(1.28); }
+  90% { opacity: 1; transform: scale(.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes network-flare {
+  0% { opacity: 0; transform: translateX(-18%) scale(1.08); }
+  18% { opacity: .9; }
+  52% { opacity: .42; transform: translateX(8%) scale(1); }
+  100% { opacity: 0; transform: translateX(18%) scale(.94); }
+}
+@keyframes network-collapse {
+  0% { opacity: 1; transform: scale(1); }
+  38% { opacity: .78; transform: scale(.985); }
+  100% { opacity: 0; transform: scale(.91); }
+}
+@keyframes darken {
+  0% { opacity: 0; }
+  15% { opacity: .88; }
+  30%, 100% { opacity: 1; }
+}
 @keyframes awaiting-result {
   0% { opacity: .3; transform: translateX(0); }
   50% { opacity: .7; transform: translateX(230%); }

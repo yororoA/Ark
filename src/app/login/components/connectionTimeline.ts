@@ -3,6 +3,6 @@ export const CONNECTION_TIMING = {
   boot: 4400,
   terminal: 4600,
   identity: 2000,
-  sync: 1000,
-  exit: 500,
+  sync: 800,
+  exit: 700,
 } as const;

@@ -141,9 +141,18 @@ export default function ConnectionSequence({
   const [stage, setStage] = useState<'boot' | 'terminal' | 'sync' | 'exit'>('boot');
   const [introComplete, setIntroComplete] = useState(false);
   const [networkReady, setNetworkReady] = useState(false);
-  const [syncProgress, setSyncProgress] = useState(0);
   const dialogRef = useRef<HTMLElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
   const handleNetworkReady = useCallback(() => setNetworkReady(true), []);
+  const updateNetworkProgress = useCallback((value: number) => {
+    const progress = progressRef.current;
+    if (!progress) return;
+    progress.style.setProperty('--network-progress', `${value / 2}%`);
+    progress.dataset.progress = `${value}`;
+    progress.querySelectorAll('i').forEach(label => {
+      label.textContent = `${value}%`;
+    });
+  }, []);
 
   useLayoutEffect(() => {
     const updateSequenceScale = () => {
@@ -178,32 +187,44 @@ export default function ConnectionSequence({
   useEffect(() => {
     if (!introComplete || status !== 'success') return;
     const sync = window.setTimeout(() => {
-      setSyncProgress(0);
+      updateNetworkProgress(0);
       setStage('sync');
     }, TIMING.identity);
     return () => window.clearTimeout(sync);
-  }, [introComplete, status]);
+  }, [introComplete, status, updateNetworkProgress]);
 
   useEffect(() => {
     if (stage !== 'sync') return;
 
-    const interval = window.setInterval(() => {
-      setSyncProgress(previous => {
-        if (previous >= 80) return 80;
-        const increment = Math.floor(Math.random() * 5);
-        return Math.min(80, previous + increment);
-      });
-    }, 100);
+    let progress = 0;
+    let frame = 0;
+    let renderedProgress = 0;
+    let nextStepAt = performance.now() + 100;
+    const advanceProgress = (now: number) => {
+      while (now >= nextStepAt && progress < 80) {
+        progress = Math.min(80, progress + 5 + Math.floor(Math.random() * 8));
+        nextStepAt += 100;
+      }
+      if (progress !== renderedProgress) {
+        updateNetworkProgress(progress);
+        renderedProgress = progress;
+      }
+      frame = requestAnimationFrame(advanceProgress);
+    };
+
+    updateNetworkProgress(0);
+    frame = requestAnimationFrame(advanceProgress);
     const exit = window.setTimeout(() => {
-      setSyncProgress(100);
+      progress = 100;
+      updateNetworkProgress(100);
       setStage('exit');
     }, TIMING.sync);
 
     return () => {
-      window.clearInterval(interval);
+      cancelAnimationFrame(frame);
       window.clearTimeout(exit);
     };
-  }, [stage]);
+  }, [stage, updateNetworkProgress]);
 
   useEffect(() => {
     if (stage !== 'exit') return;
@@ -305,7 +326,7 @@ export default function ConnectionSequence({
             </div>
           </div>
 
-          {verified && !networkVisible && (
+          {verified && (
             <div className={styles['identity-confirmation']}>
               <CornerMarks />
               <div className={styles['welcome-copy']}>
@@ -337,14 +358,14 @@ export default function ConnectionSequence({
                 <div><sup>#</sup>0</div>
               </div>
               <div
+                ref={progressRef}
                 className={styles['network-link']}
-                style={{ '--network-progress': `${syncProgress / 2}%` } as CSSProperties}
                 data-testid="connection-progress"
-                data-progress={syncProgress}
+                data-progress="0"
                 aria-hidden="true"
               >
-                <span>{syncProgress < 100 && <i>{syncProgress}%</i>}</span>
-                <span>{syncProgress < 100 && <i>{syncProgress}%</i>}</span>
+                <span><i>0%</i></span>
+                <span><i>0%</i></span>
               </div>
               <p>正在尝试与 BINES Network 进行认知同步</p>
             </>}

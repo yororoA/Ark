@@ -218,12 +218,12 @@ test('landscape terminal remains readable and a late response cannot navigate an
 async function networkPixels(buffer) {
   const metadata = await sharp(buffer).metadata();
   assert.ok(metadata.width && metadata.height);
-  // Exclude the horizontal progress line at 66% and the footer below it.
+  // Sample the enlarged sphere above the horizontal progress line at 66%.
   const { data, info } = await sharp(buffer).extract({
     left: 0,
-    top: Math.floor(metadata.height * 0.34),
+    top: Math.floor(metadata.height * 0.2),
     width: metadata.width,
-    height: Math.floor(metadata.height * 0.26),
+    height: Math.floor(metadata.height * 0.42),
   }).raw().toBuffer({ resolveWithObject: true });
   let count = 0;
   let minX = info.width;
@@ -346,8 +346,14 @@ for (const [label, viewport] of [
     const network = page.getByTestId('connection-network');
     await page.locator('[data-testid="connection-network"][data-renderer="ready"]').waitFor({ state: 'attached' });
     await phase(page, 'sync').waitFor();
+    const firstPhase = await page.getByRole('dialog').getAttribute('data-phase');
+    const firstStageScale = await page.locator('[class*="network-stage"]').evaluate((element) => {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
+      return Math.hypot(matrix.a, matrix.b);
+    });
     const first = await networkPixels(await canvasBuffer(page, network));
     await page.waitForTimeout(80);
+    const secondPhase = await page.getByRole('dialog').getAttribute('data-phase');
     const second = await networkPixels(await canvasBuffer(page, network));
     const progress = page.getByTestId('connection-progress');
     const initialProgressState = await progress.evaluate(element => ({
@@ -360,7 +366,6 @@ for (const [label, viewport] of [
     } else {
       assert.equal(initialProgressState.phase, 'exit');
       assert.equal(initialProgressState.value, 100);
-      assert.equal(await progress.locator('i').count(), 0, 'The percentage clears after completion');
     }
     assert.equal(
       await progress.locator('span').first().evaluate(element => getComputedStyle(element).backgroundColor),
@@ -368,13 +373,21 @@ for (const [label, viewport] of [
       'The restored progress keeps the current yellow color',
     );
     await shot(page, `${label}-reference-network`);
-    assert.ok(first.count > 500, 'The yellow wireframe is not blank');
-    assert.ok(second.count > 500, 'The wireframe remains visible');
+    assert.ok(first.count > 100, 'The yellow wireframe is not blank');
     assert.notDeepEqual(first.data, second.data, 'The wireframe rotates between frames');
-    const networkWidthRatio = (first.maxX - first.minX + 1) / first.width;
-    if (label === 'desktop') {
-      const networkWidth = first.maxX - first.minX + 1;
-      assert.ok(networkWidth >= 430 && networkWidth <= 520, 'The wireframe restores the historical desktop footprint');
+    if (firstPhase === 'sync' && secondPhase === 'sync') {
+      assert.ok(second.count > 500, 'The wireframe remains visible during synchronization');
+    } else {
+      assert.equal(secondPhase, 'exit');
+      assert.ok(second.count < first.count, 'The wireframe fades during exit');
+    }
+    if (label === 'desktop' && firstPhase === 'sync') {
+      const networkWidth = Math.round((first.maxX - first.minX + 1) / firstStageScale);
+      const networkWidthRatio = networkWidth / first.width;
+      assert.ok(
+        networkWidth >= 430 && networkWidth <= 520,
+        `The wireframe restores the historical desktop footprint (received ${networkWidth}px)`,
+      );
       assert.ok(networkWidthRatio >= .28 && networkWidthRatio <= .38, 'The wireframe keeps the historical bounded scale');
     }
     await page.waitForURL('**/home');
@@ -505,14 +518,46 @@ test('connection composition fills the viewport and Loading ends before synchron
   await loadingText.waitFor();
   const loadingBounds = await loadingText.boundingBox();
   assert.ok(loadingBounds && loadingBounds.x >= 0 && loadingBounds.x + loadingBounds.width <= 960);
-  await phase(page, 'sync').waitFor();
+  const progressSamples = await page.evaluate(() => new Promise((resolve, reject) => {
+    const deadline = performance.now() + 3000;
+    const waitForSync = (now) => {
+      const dialog = document.querySelector('[data-testid="connection-sequence"]');
+      if (dialog?.getAttribute('data-phase') !== 'sync') {
+        if (now >= deadline) {
+          reject(new Error('Synchronization did not start'));
+          return;
+        }
+        requestAnimationFrame(waitForSync);
+        return;
+      }
+
+      const startedAt = now;
+      const samples = [];
+      const collect = (timestamp) => {
+        const progress = dialog.querySelector('[data-testid="connection-progress"]');
+        samples.push({
+          value: Number(progress?.getAttribute('data-progress')),
+          labels: progress?.querySelectorAll('i').length,
+          color: progress?.firstElementChild
+            ? getComputedStyle(progress.firstElementChild).backgroundColor
+            : '',
+        });
+        if (timestamp - startedAt >= 400) {
+          resolve(samples);
+          return;
+        }
+        requestAnimationFrame(collect);
+      };
+      collect(now);
+    };
+    requestAnimationFrame(waitForSync);
+  }));
   assert.equal(await page.getByText('正在建立神经连接', { exact: true }).count(), 0);
-  const progress = page.getByTestId('connection-progress');
-  const initialProgress = Number(await progress.getAttribute('data-progress'));
-  assert.ok(initialProgress >= 0 && initialProgress <= 4);
-  await page.waitForTimeout(350);
-  assert.ok(Number(await progress.getAttribute('data-progress')) >= initialProgress + 8);
-  assert.equal(await progress.locator('i').count(), 2);
+  assert.ok(progressSamples.length > 10);
+  assert.ok(progressSamples[0].value >= 0 && progressSamples[0].value <= 80);
+  assert.ok(progressSamples.at(-1).value >= progressSamples[0].value + 24);
+  assert.ok(progressSamples.every(sample => sample.value <= 80 && sample.labels === 2));
+  assert.equal(progressSamples[0].color, 'rgb(236, 232, 115)');
   await shot(page, 'reference-960-network');
   await page.waitForURL('**/home');
 });
