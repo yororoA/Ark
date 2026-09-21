@@ -27,8 +27,8 @@ const BRAND_FRAGMENTS = [
   { x: -48, y: 4, delay: 108 },
 ];
 // Fixed cells decelerate along the rail; only their reveal times change.
-const LEFT_RAIL_CELLS = Array.from({ length: 44 }, (_, index) =>
-  Math.round(TIMING.boot * (.48 + .2 * (index / 43) ** 3)));
+const LEFT_RAIL_CELLS = Array.from({ length: 36 }, (_, index) =>
+  Math.round(TIMING.boot * (.48 + .2 * (index / 35) ** 3)));
 const RIGHT_RAIL_CELLS = Array.from({ length: 18 }, (_, index) =>
   Math.round(TIMING.boot * (.69 + .3 * (index / 17) ** 1.6)));
 const REFERENCE_VIEWPORT = { width: 960, height: 540 } as const;
@@ -84,8 +84,10 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
   return (
     <div className={className} aria-hidden="true">
       <div className={styles['signal-rail']}>
+        {/* Previous split rails:
         <span className={styles['rail-left']} />
-        <span className={styles['rail-right']} />
+        <span className={styles['rail-right']} /> */}
+        <span className={styles['rail-line']} />
         <span className={styles['rail-ticks']}>
           {LEFT_RAIL_CELLS.map((delay, index) => (
             <i
@@ -117,6 +119,7 @@ function BootPlane({ projection = false }: { projection?: boolean }) {
             <span key={index} style={{ '--matrix-index': index } as CSSProperties}>{letter}</span>
           ))}
         </div>
+        {/* The previous overlay mask was replaced by a transparent gap in the rail itself. */}
       </div>
       <div className={styles['frame-haze']} />
       <div className={styles['outer-frame']} />

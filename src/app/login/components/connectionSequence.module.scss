@@ -54,15 +54,17 @@
   --plaque-size: 120px;
   --frame-size: 108px;
   --rail-offset: 94px;
-  --rail-track-length: 260px;
-  --plaque-angle: 50deg;
+  --left-inner-edge: calc(var(--rail-offset) + 28px);
+  --right-inner-edge: calc(var(--rail-offset) + 10px);
+  --left-track-length: max(410px, calc(50vw / var(--sequence-scale) - 70px));
+  --right-track-length: max(450px, calc(50vw / var(--sequence-scale) + 36px));
+  --plaque-angle: 47.5deg;
   --label-angle: -30deg;
   position: absolute;
   z-index: 1;
   inset: -8%;
   scale: var(--sequence-scale);
-  // Previously 17deg / -16deg: too frontal and left the diamond nearly upright.
-  transform: rotateX(32deg) rotateZ(-20deg);
+  transform: rotateX(32deg) rotateZ(-17.5deg);
   transform-origin: center;
   transform-style: preserve-3d;
 }
@@ -74,11 +76,12 @@
   mix-blend-mode: screen;
   -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 52%, #000 100%);
   mask-image: linear-gradient(to bottom, transparent 38%, #000 52%, #000 100%);
-  transform: translateY(24px) rotateX(32deg) rotateZ(-20deg);
+  transform: translateY(24px) rotateX(32deg) rotateZ(-17.5deg);
 }
 
 .boot-plaque {
   position: absolute;
+  z-index: 3;
   top: calc(50% - var(--plaque-size) / 2);
   left: calc(50% - var(--plaque-size) / 2);
   display: flex;
@@ -202,19 +205,33 @@
   height: 0;
 }
 
-.rail-left,
-.rail-right {
+.rail-line {
   position: absolute;
   top: 0;
-  width: 100vw;
+  left: calc(-60vw / var(--sequence-scale));
+  width: calc(120vw / var(--sequence-scale));
   height: 3px;
   background: var(--signal);
   box-shadow: 0 5px 0 #e9ed4230, 0 10px 6px #e9ed4250;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    #000 0 calc(50% - var(--left-inner-edge)),
+    transparent calc(50% - var(--left-inner-edge)) calc(50% + var(--right-inner-edge)),
+    #000 calc(50% + var(--right-inner-edge)) 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    #000 0 calc(50% - var(--left-inner-edge)),
+    transparent calc(50% - var(--left-inner-edge)) calc(50% + var(--right-inner-edge)),
+    #000 calc(50% + var(--right-inner-edge)) 100%
+  );
+  transform-origin: center;
   animation: rail-extend var(--boot-duration) linear both;
 }
 
-.rail-left { right: var(--rail-offset); transform-origin: right; }
-.rail-right { left: var(--rail-offset); transform-origin: left; }
+// Previous split rail geometry:
+// .rail-left { right: var(--rail-offset); transform-origin: right; }
+// .rail-right { left: var(--rail-offset); transform-origin: left; }
 
 .rail-ticks,
 .rail-stripes,
@@ -227,12 +244,13 @@
 }
 
 .rail-ticks {
-  right: calc(var(--rail-offset) + 24px);
+  right: var(--left-inner-edge);
   bottom: 9px;
   display: grid;
-  grid-template-columns: repeat(44, minmax(0, 1fr));
-  width: var(--rail-track-length);
-  height: 15px;
+  grid-template-columns: repeat(36, minmax(0, 1fr));
+  width: var(--left-track-length);
+  height: 20px;
+  overflow: hidden;
   background: none;
   animation: none;
 
@@ -246,22 +264,27 @@
     transform: skewX(25deg);
     animation: rail-cell-reveal 1ms var(--cell-delay) linear both;
   }
+
+  > i:last-child {
+    justify-self: end;
+    transform: translateX(50%) skewX(25deg);
+  }
 }
 .rail-stripes {
   top: 8px;
-  left: 320px;
-  width: 120px;
+  left: 285px;
+  width: 145px;
   height: 52px;
-  background: repeating-linear-gradient(140deg, white 0 7px, transparent 7px 17px);
+  background: repeating-linear-gradient(140deg, white 0 7px, transparent 7px 16px);
   transform-origin: left;
   animation-name: stripes-reveal;
 }
 .rail-upper-nodes {
-  left: var(--rail-offset);
+  left: var(--right-inner-edge);
   bottom: 12px;
   display: grid;
   grid-template-columns: repeat(18, minmax(0, 1fr));
-  width: var(--rail-track-length);
+  width: var(--right-track-length);
   height: 11px;
   background: none;
   animation: none;
@@ -322,7 +345,7 @@
 .letter-matrix {
   position: absolute;
   top: 12px;
-  left: calc(var(--rail-offset) + 20px);
+  left: calc(var(--rail-offset) + 10px);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -1526,10 +1549,12 @@
   .boot-plaque strong { font-size: 23px; }
   .boot-plaque small { font-size: 6px; }
   .signal-rail { scale: .6; }
-  .rail-left,
-  .rail-right { width: 150vw; }
+  .rail-line {
+    left: calc(-125vw / var(--sequence-scale));
+    width: calc(250vw / var(--sequence-scale));
+  }
   .rail-stripes { left: 252px; }
-  .letter-matrix { left: 118px; width: 100px; height: 100px; font-size: 16px; }
+  .letter-matrix { left: var(--right-inner-edge); width: 100px; height: 100px; font-size: 16px; }
   .decode-copy { width: 190px; font-size: 11px; }
   .decode-copy > span { font-size: 10px; }
   .terminal-motion { --drift-strength: .5; }
