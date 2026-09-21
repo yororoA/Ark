@@ -26,11 +26,18 @@ const BRAND_FRAGMENTS = [
   { x: 94, y: -7, delay: 94 },
   { x: -48, y: 4, delay: 108 },
 ];
-// Fixed cells decelerate along the rail; only their reveal times change.
-const LEFT_RAIL_CELLS = Array.from({ length: 36 }, (_, index) =>
-  Math.round(TIMING.boot * (.48 + .2 * (index / 35) ** 3)));
-const RIGHT_RAIL_CELLS = Array.from({ length: 18 }, (_, index) =>
-  Math.round(TIMING.boot * (.69 + .3 * (index / 17) ** 1.6)));
+// Fixed cells stay in place; an S-curve controls their reveal cadence.
+const easeInOut = (progress: number) =>
+  progress * progress * (3 - 2 * progress);
+const createRailCells = (count: number, start: number, end: number) =>
+  Array.from({ length: count }, (_, index) => {
+    const progress = count === 1 ? 1 : index / (count - 1);
+    return Math.round(TIMING.boot * (
+      start + (end - start) * easeInOut(progress)
+    ));
+  });
+const LEFT_RAIL_CELLS = createRailCells(36, .45, .665);
+const RIGHT_RAIL_CELLS = createRailCells(18, .69, .975);
 const REFERENCE_VIEWPORT = { width: 960, height: 540 } as const;
 const MAX_SEQUENCE_SCALE = 1.75;
 const timelineStyle = {
