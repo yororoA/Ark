@@ -85,7 +85,7 @@ export default function ConnectionNetwork({ onReady }: ConnectionNetworkProps) {
       camera.aspect = width / height;
       const viewportScale = Math.min(width / 960, height / 540);
       const oversizeScale = Math.max(1, viewportScale / MAX_NETWORK_VIEWPORT_SCALE);
-      camera.position.z = 7.5 * Math.max(1, .565 * height / width, oversizeScale);
+      camera.position.z = 6.9 * Math.max(1, .565 * height / width, oversizeScale);
       camera.updateProjectionMatrix();
       renderer.render(scene, camera);
     };

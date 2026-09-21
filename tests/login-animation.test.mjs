@@ -300,7 +300,7 @@ for (const [label, viewport] of [
       [1250, 'plaque'], [1900, 'rim-draw'], [2200, 'expansion'],
       [3000, 'left-loaded'], [3650, 'decoding'], [4380, 'rail-complete'],
       [4650, 'seed'], [5400, 'sliced-title'], [6650, 'fields'], [8400, 'credentials'],
-      [9350, 'scan'], [10600, 'welcome'],
+      [9350, 'scan'], [10700, 'welcome'],
     ]) {
       await timeline.advanceTo(milliseconds);
       await shot(page, `${label}-reference-${name}`);
@@ -394,6 +394,11 @@ for (const [label, viewport] of [
           confirmation && confirmation.width / viewport.width >= .5,
           'The identity confirmation does not collapse into excess whitespace',
         );
+        assert.match(
+          await page.locator('[class*="credential-monogram"]').evaluate(element => getComputedStyle(element).backgroundImage),
+          /login_dark\.png/,
+          'The credential card resolves into the project portrait instead of a plain initial',
+        );
       }
     }
     assert.match(await page.getByRole('dialog').textContent(), /ADMINISTRATOR/);
@@ -416,7 +421,7 @@ for (const [label, viewport] of [
       value: Number(element.getAttribute('data-progress')),
     }));
     if (initialProgressState.phase === 'sync') {
-      assert.ok(initialProgressState.value >= 0 && initialProgressState.value <= 80);
+      assert.ok(initialProgressState.value >= 0 && initialProgressState.value <= 100);
       assert.equal(await progress.locator('i').count(), 2, 'Both progress fronts display the percentage');
     } else {
       assert.equal(initialProgressState.phase, 'exit');
@@ -445,6 +450,13 @@ for (const [label, viewport] of [
       );
       assert.ok(networkWidthRatio >= .28 && networkWidthRatio <= .38, 'The wireframe keeps the historical bounded scale');
     }
+    await timeline.advanceTo(12020);
+    await phase(page, 'exit').waitFor();
+    assert.ok(
+      await page.locator('[class*="exit-handoff"]').evaluate(element => Number(getComputedStyle(element).opacity)) > .5,
+      'The exit restores the triangular handoff frame before navigation',
+    );
+    await shot(page, `${label}-reference-handoff`);
     await timeline.advanceTo(13050);
     await page.waitForURL('**/home');
   });
@@ -610,9 +622,9 @@ test('connection composition fills the viewport and Loading ends before synchron
   }));
   assert.equal(await page.getByText('正在建立神经连接', { exact: true }).count(), 0);
   assert.ok(progressSamples.length >= 2, 'Synchronization exposes multiple rendered frames');
-  assert.ok(progressSamples[0].value >= 0 && progressSamples[0].value <= 80);
+  assert.ok(progressSamples[0].value >= 0 && progressSamples[0].value <= 100);
   assert.ok(progressSamples.at(-1).value >= progressSamples[0].value + 24);
-  assert.ok(progressSamples.every(sample => sample.value <= 80 && sample.labels === 2));
+  assert.ok(progressSamples.every(sample => sample.value <= 100 && sample.labels === 2));
   assert.equal(progressSamples[0].color, 'rgb(236, 232, 115)');
   await shot(page, 'reference-960-network');
   await page.waitForURL('**/home');
@@ -663,7 +675,7 @@ test('terminal details split smoothly into a trapezoid and type characters progr
   const fragmentDurations = await fragments.evaluateAll(elements =>
     elements.map(element => element.getAnimations()[0]?.effect.getTiming().duration)
   );
-  assert.deepEqual(fragmentDurations, Array(7).fill(520), 'Fragment motion is accelerated without changing the terminal phase');
+  assert.deepEqual(fragmentDurations, Array(7).fill(660), 'Fragment motion keeps the reference hold without changing the terminal phase');
 
   const firstField = page.locator('[class*="field-box"]').first();
   const fieldPositions = [];

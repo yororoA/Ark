@@ -203,12 +203,14 @@ export default function ConnectionSequence({
     let progress = 0;
     let frame = 0;
     let renderedProgress = 0;
-    let nextStepAt = performance.now() + 100;
+    const startedAt = performance.now();
+    let nextStepAt = startedAt + 100;
     const advanceProgress = (now: number) => {
-      while (now >= nextStepAt && progress < 80) {
-        progress = Math.min(80, progress + 5 + Math.floor(Math.random() * 8));
+      while (now >= nextStepAt && progress < 100) {
+        progress = Math.min(100, progress + 12 + Math.floor(Math.random() * 9));
         nextStepAt += 100;
       }
+      if (now - startedAt >= 600) progress = 100;
       if (progress !== renderedProgress) {
         updateNetworkProgress(progress);
         renderedProgress = progress;
@@ -378,6 +380,17 @@ export default function ConnectionSequence({
           </div>
         )}
         <div className={styles['exit-shade']} aria-hidden="true" />
+        <div className={styles['exit-handoff']} aria-hidden="true">
+          <span className={styles['handoff-line']} />
+          <div className={styles['handoff-emblem']}>
+            <span className={styles['handoff-tower']}><i /><i /></span>
+            <strong>BINES</strong>
+          </div>
+          <span className={styles['handoff-dots']}>
+            {Array.from({ length: 18 }, (_, index) => <i key={index} />)}
+          </span>
+          <p>BINES NEURAL INTERFACE</p>
+        </div>
       </section>
     </Portal>
   );
