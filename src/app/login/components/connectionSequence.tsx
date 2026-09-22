@@ -248,6 +248,74 @@ export default function ConnectionSequence({
     return () => window.clearTimeout(complete);
   }, [stage, onComplete]);
 
+  // #region debug-point A,B,C,D:network-motion-sampling
+  useEffect(() => {
+    if (stage !== 'sync' && stage !== 'exit') return;
+    const network = dialogRef.current?.querySelector<HTMLElement>(
+      `.${styles['network-stage']}`,
+    );
+    const shade = dialogRef.current?.querySelector<HTMLElement>(
+      `.${styles['exit-shade']}`,
+    );
+    if (!network || !shade) return;
+
+    const startedAt = performance.now();
+    const samples: Array<{
+      elapsed: number;
+      scale: number;
+      opacity: number;
+      shadeOpacity: number;
+    }> = [];
+    let frame = 0;
+    let previousFrame = startedAt;
+    let nextSampleAt = 0;
+    let maxFrameGap = 0;
+    let slowFrames = 0;
+
+    const sample = (now: number) => {
+      const elapsed = now - startedAt;
+      const frameGap = now - previousFrame;
+      previousFrame = now;
+      maxFrameGap = Math.max(maxFrameGap, frameGap);
+      if (frameGap > 25) slowFrames += 1;
+
+      if (elapsed >= nextSampleAt) {
+        const networkStyle = getComputedStyle(network);
+        const matrix = new DOMMatrixReadOnly(networkStyle.transform);
+        samples.push({
+          elapsed: Math.round(elapsed),
+          scale: Number(Math.hypot(matrix.a, matrix.b).toFixed(4)),
+          opacity: Number(networkStyle.opacity),
+          shadeOpacity: Number(getComputedStyle(shade).opacity),
+        });
+        nextSampleAt += 50;
+      }
+
+      if (elapsed < 650) {
+        frame = requestAnimationFrame(sample);
+        return;
+      }
+
+      void fetch('http://127.0.0.1:7777/event', {
+        method: 'POST',
+        keepalive: true,
+        body: JSON.stringify({
+          sessionId: 'network-motion-smoothness',
+          runId: 'post-fix',
+          hypothesisId: 'A,B,C,D',
+          location: `connectionSequence.tsx:${stage}-motion`,
+          msg: `[DEBUG] ${stage} motion sampled`,
+          data: { maxFrameGap, slowFrames, samples },
+          ts: Date.now(),
+        }),
+      }).catch(() => {});
+    };
+
+    frame = requestAnimationFrame(sample);
+    return () => cancelAnimationFrame(frame);
+  }, [stage]);
+  // #endregion
+
   const phase = status === 'error' ? 'error'
     : stage === 'sync' || stage === 'exit' ? stage
       : introComplete && status === 'success' ? 'success' : stage;
