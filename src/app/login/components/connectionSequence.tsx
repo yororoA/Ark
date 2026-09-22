@@ -83,10 +83,18 @@ function CredentialScan({ username }: { username: string }) {
   );
 }
 
-function BootPlane({ projection = false }: { projection?: boolean }) {
-  const className = projection
-    ? `${styles['boot-plane']} ${styles['boot-projection']}`
-    : styles['boot-plane'];
+function BootPlane({
+  projection = false,
+  defocused = false,
+}: {
+  projection?: boolean;
+  defocused?: boolean;
+}) {
+  const className = defocused
+    ? styles['boot-defocus-plane']
+    : projection
+      ? `${styles['boot-plane']} ${styles['boot-projection']}`
+      : styles['boot-plane'];
 
   return (
     <div className={className} aria-hidden="true">
@@ -346,7 +354,12 @@ export default function ConnectionSequence({
           <div className={styles['boot-backdrop']} />
           <div className={styles['boot-composition']}>
             <BootPlane projection />
-            <BootPlane />
+            <div className={styles['boot-defocus-layer']}>
+              <BootPlane defocused />
+            </div>
+            <div className={styles['boot-primary-layer']}>
+              <BootPlane />
+            </div>
           </div>
         </div>
 

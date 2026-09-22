@@ -50,7 +50,8 @@
   animation: camera-settle var(--boot-duration) linear both;
 }
 
-.boot-plane {
+.boot-plane,
+.boot-defocus-plane {
   --plaque-size: 120px;
   --frame-size: 108px;
   --rail-offset: 94px;
@@ -77,6 +78,55 @@
   -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 52%, #000 100%);
   mask-image: linear-gradient(to bottom, transparent 38%, #000 52%, #000 100%);
   transform: translateY(24px) rotateX(32deg) rotateZ(-17.5deg);
+}
+
+.boot-defocus-layer,
+.boot-primary-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.boot-defocus-layer {
+  z-index: 1;
+  filter: blur(9px) brightness(1.08);
+  will-change: filter;
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 54% at center,
+    transparent 0 28%,
+    rgb(0 0 0 / 15%) 42%,
+    rgb(0 0 0 / 72%) 72%,
+    #000 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 54% at center,
+    transparent 0 28%,
+    rgb(0 0 0 / 15%) 42%,
+    rgb(0 0 0 / 72%) 72%,
+    #000 100%
+  );
+  animation: spatial-blur-develop var(--boot-duration) ease-out both;
+}
+
+.boot-primary-layer {
+  z-index: 2;
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 54% at center,
+    #000 0 28%,
+    rgb(0 0 0 / 85%) 42%,
+    rgb(0 0 0 / 28%) 72%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 54% at center,
+    #000 0 28%,
+    rgb(0 0 0 / 85%) 42%,
+    rgb(0 0 0 / 28%) 72%,
+    transparent 100%
+  );
 }
 
 .boot-plaque {
@@ -218,28 +268,9 @@
   left: 50%;
   width: 0;
   height: 0;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: -13px;
-    left: calc(-60vw / var(--sequence-scale));
-    width: calc(120vw / var(--sequence-scale));
-    height: 28px;
-    pointer-events: none;
-    opacity: 0;
-    background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(239 243 76 / 34%) 44%,
-      rgb(239 243 76 / 20%) 58%,
-      transparent
-    );
-    filter: blur(10px);
-    transform-origin: center;
-    animation: rail-haze-reveal var(--boot-duration) ease-out both;
-  }
 }
+
+// The previous rail-local glow could not reproduce the reference's spatial defocus.
 
 .rail-line {
   position: absolute;
@@ -1601,10 +1632,9 @@
   82% { opacity: 1; }
   100% { opacity: .12; filter: blur(.8px); transform: scale(1); }
 }
-@keyframes rail-haze-reveal {
-  0%, 33.5% { opacity: 0; transform: scaleX(0); }
-  42% { opacity: .34; transform: scaleX(1); }
-  100% { opacity: .24; transform: scaleX(1); }
+@keyframes spatial-blur-develop {
+  0%, 26% { filter: blur(2px) brightness(1.02); }
+  48%, 100% { filter: blur(9px) brightness(1.08); }
 }
 @keyframes awaiting-result {
   0% { opacity: .3; transform: translateX(0); }
