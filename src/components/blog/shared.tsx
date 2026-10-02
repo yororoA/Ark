@@ -119,12 +119,12 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
   const item = files[active]
   return <Modal title={item.desc || t('preview')} close={close}><div className={styles['preview-media']} data-compact={compact}>{item.mime.startsWith('video') ? <video key={item.url} src={item.url} controls autoPlay /> : <img src={item.url} alt={item.desc || item.filename} />}</div><div className={styles['dialog-footer']}><button className={styles['secondary-button']} disabled={active === 0} onClick={() => setActive(active - 1)}>{t('previous')}</button><span>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span><button className={styles['secondary-button']} disabled={active === files.length - 1} onClick={() => setActive(active + 1)}>{t('next')}</button></div></Modal>
 }
-export function MediaGrid({ files, compact = false }: { files: Media[]; compact?: boolean }) {
+export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Media[]; compact?: boolean; onMediaLoad?: () => void }) {
   const [preview, setPreview] = useState<number | null>(null)
   if (!files.length) return null
   const hasVideo = files.some(file => file.mime.startsWith('video'))
   const hasImage = files.some(file => !file.mime.startsWith('video'))
-  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <div className={styles['media-item']} data-kind="video" key={file.url}><video src={file.url} controls preload="metadata" /></div> : <button className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
+  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <div className={styles['media-item']} data-kind="video" key={file.url}><video src={file.url} controls preload="metadata" onLoadedMetadata={onMediaLoad} /></div> : <button className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
 export function FilePicker({ files, setFiles, max = 16, imageOnly = false }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean }) {
   const { t, notify } = useBlog()

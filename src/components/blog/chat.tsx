@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useSWRInfinite from 'swr/infinite'
 import { Reply, Send, X } from 'lucide-react'
@@ -37,6 +37,10 @@ function ConversationView({ conversation }: { conversation: Conversation }) {
   const messages = [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a._id.localeCompare(b._id))
   const latest = messages.at(-1)?._id
   const hasMore = data?.at(-1)?.hasMore
+  const keepLatestVisible = useCallback(() => {
+    const scroller = messagesRef.current
+    if (scroller && stickToBottom.current) scroller.scrollTop = scroller.scrollHeight
+  }, [])
   useEffect(() => {
     const onMessage = (event: Event) => {
       const payload = (event as CustomEvent<ChatEvent>).detail
@@ -93,7 +97,7 @@ function ConversationView({ conversation }: { conversation: Conversation }) {
       {messages.map(message => {
         const urls = Array.isArray(message.imgurl) ? message.imgurl : message.imgurl ? [message.imgurl] : []
         const media: Media[] = urls.filter(url => /^https?:\/\//.test(url)).map(url => ({ url, filename: url.split('/').pop() || '', mime: /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg' }))
-        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid} data-media={media.length ? 'true' : 'false'}><small title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>{message.replyto && <blockquote>{message.replyto}</blockquote>}{message.text && <p>{message.text}</p>}<MediaGrid files={media} compact /><button className={styles['icon-button']} aria-label={`${t('reply')} ${message.username}`} onClick={() => { setReply(message); inputRef.current?.focus() }}><Reply size={14} /></button></article>
+        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid} data-media={media.length ? 'true' : 'false'}><small title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>{message.replyto && <blockquote>{message.replyto}</blockquote>}{message.text && <p>{message.text}</p>}<MediaGrid files={media} compact onMediaLoad={keepLatestVisible} /><button className={styles['icon-button']} aria-label={`${t('reply')} ${message.username}`} onClick={() => { setReply(message); inputRef.current?.focus() }}><Reply size={14} /></button></article>
       })}
     </div>
     <form className={styles['chat-compose']} onSubmit={submit}>
