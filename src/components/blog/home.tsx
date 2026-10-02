@@ -48,6 +48,8 @@ export default function Home() {
   const github = useBlogData<Envelope<{ reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }>>('github/summary')
   const featured = articles.data?.data[0]
   const recent = articles.data?.data.slice(1, 4) || []
+  const isOnline = status.data?.data.online
+  const statusLabel = isOnline === undefined ? 'unknown' : isOnline ? 'online' : 'offline'
   const dates = new Set(moments.data?.data.map(entry => entry.createdAt.slice(0, 10)))
   const calendarStart = new Date()
   calendarStart.setUTCDate(calendarStart.getUTCDate() - 83)
@@ -67,7 +69,15 @@ export default function Home() {
         <p>{t('introBody')}</p>
         <div className={styles['hero-actions']}><Link href="/articles" className={styles['primary-button']}>{t('read')}<ArrowUpRight size={18} /></Link><Link href="/moments" className={styles['text-link']}>{t('explore')}<ArrowRight size={17} /></Link></div>
       </div>
-      <div className={styles['hero-bottom']}><span className={styles['status']} data-online={status.data?.data.online}><i />BINES · {status.data ? t(status.data.data.online ? 'online' : 'offline') : t('unknown')}</span><span className={styles['hero-index']}>Ad astra, per memoriam.</span><a href="#recent">SCROLL TO DISCOVER <ArrowDown size={12} style={{ display: 'inline', marginLeft: 12 }} /></a></div>
+      <div className={styles['hero-bottom']}>
+        <span className={styles['status']} data-online={isOnline}>
+          <i />BINES · {t(statusLabel)}
+        </span>
+        {/* The former Latin ornament looked like an advertising label. */}
+        <a className={styles['scroll-link']} href="#recent">
+          {t('latest')}<ArrowDown size={12} />
+        </a>
+      </div>
     </section>
     <section id="recent" className={styles['home-section']}>
       <div className={styles['section-heading']}><div><div className={styles['eyebrow']}>01 / RECENT WRITINGS</div><h2>{t('latest')}</h2></div><Link href="/articles" className={styles['text-link']}>{t('all')}<ArrowUpRight size={18} /></Link></div>

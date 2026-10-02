@@ -5,10 +5,11 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useSWR, { useSWRConfig } from 'swr'
-import { ArrowLeft, ArrowUpRight, MessageSquare, Plus, Reply, Share2, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, MessageSquare, Plus, Reply, Share2, X } from 'lucide-react'
 import { Comment, dateLabel, Entry, Envelope, excerpt, Media, mediaFor, safeUrl } from '@/lib/blog'
 import { send, useBlog, useBlogData } from './blog-provider'
-import { FilePicker, LikeButton, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
+import { DeleteButton, FilePicker, LikeButton, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
+import { DateField } from './controls'
 
 function useMomentMedia(entry: Entry) {
   const direct = mediaFor(entry)
@@ -50,7 +51,7 @@ export function MomentList() {
   }
   return <div className={styles['page']}>
     <PageHeading title="moments" english="Fragments" number="02">{session && !session.isGuest && <Link className={styles['primary-button']} href="/moments/new"><Plus size={16} />{t('newMoment')}</Link>}</PageHeading>
-    <div className={styles['toolbar']}><span className={styles['eyebrow']}>{entries.length} / {t('entries')}</span><div className={styles['form-actions']}><label className={styles['small-field']}>{t('date')}<input type="date" value={date} onChange={e => filter('date', e.target.value)} /></label>{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div></div>
+    <div className={styles['toolbar']}><span className={styles['eyebrow']}>{entries.length} / {t('entries')}</span><div className={styles['form-actions']}><DateField value={date} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div></div>
     <State loading={isLoading} error={error} empty={!!data && !entries.length} retry={() => mutate()} />
     <div className={styles['moments-grid']}>{entries.slice((page - 1) * 12, page * 12).map(entry => <MomentCard key={entry._id} entry={entry} />)}</div>
     <Pagination page={page} pages={Math.ceil(entries.length / 12)} change={value => filter('page', String(value))} />
@@ -101,7 +102,6 @@ function MomentReader({ entry, refresh }: { entry: Entry; refresh: () => Promise
   const media = useMomentMedia(entry)
   const viewed = useRef('')
   const [views, setViews] = useState(entry.views || 0)
-  const [deleting, setDeleting] = useState(false)
   const canDelete = session?.uid === entry.uid || session?.isAdmin
   useEffect(() => {
     if (viewed.current === entry._id) return
@@ -109,17 +109,13 @@ function MomentReader({ entry, refresh }: { entry: Entry; refresh: () => Promise
     void send<Envelope<{ views: number }>>('moments/view', { momentId: entry._id }).then(result => setViews(result.data.views)).catch(() => {})
   }, [entry._id])
   async function remove() {
-    if (!confirm(t('confirmDelete'))) return
-    setDeleting(true)
-    try {
-      await send('moments/delete', { momentId: entry._id, moment_uid: entry.uid }, 'DELETE')
-      await mutate('/api/blog/moments/get?isEditing=false')
-      router.push('/moments')
-    } catch (error) { notify((error as Error).message); setDeleting(false) }
+    await send('moments/delete', { momentId: entry._id, moment_uid: entry.uid }, 'DELETE')
+    await mutate('/api/blog/moments/get?isEditing=false')
+    router.push('/moments')
   }
   return <><header className={styles['reader-header']}><div className={styles['eyebrow']}>02 / FRAGMENTS</div><h1>{entry.title}</h1><div className={styles['entry-meta']}><span>{entry.username || 'YororoIce'}</span><time>{dateLabel(entry.createdAt, locale)}</time><span>↗ {views}</span></div></header>
     <Markdown content={entry.content} /><MediaGrid files={media.files} /><State loading={media.isLoading} error={media.error} retry={() => media.mutate()} />
-    <div className={styles['reader-actions']}><LikeButton kind="moment" id={entry._id} count={entry.likes} /><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{canDelete && <button disabled={deleting} className={styles['secondary-button']} onClick={remove}><Trash2 size={15} />{t('delete')}</button>}</div>
+    <div className={styles['reader-actions']}><LikeButton kind="moment" id={entry._id} count={entry.likes} /><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{canDelete && <DeleteButton name={entry.title} onDelete={remove} />}</div>
     <Comments entry={entry} refresh={refresh} />
   </>
 }

@@ -7,6 +7,7 @@ import { Entry, Envelope } from '@/lib/blog'
 import { useBlog, useBlogData } from './blog-provider'
 import { useAllArticles } from './content-data'
 import { PageHeading, State, styles } from './shared'
+import { BlogSelect } from './controls'
 
 export default function Archive() {
   const { t } = useBlog()
@@ -24,7 +25,7 @@ export default function Archive() {
   const ready = !!articles.data && !!moments.data
   return <div className={styles['page']}>
     <PageHeading title="archive" english="Traces of time" number="04"><span className={styles['form-note']}>{ready ? entries.length : '—'} {t('entries')}</span></PageHeading>
-    <div className={styles['toolbar']}><div className={styles['filters']}>{(['all', 'articles', 'moments'] as const).map(value => <button key={value} aria-pressed={value === type} onClick={() => setType(value)}>{t(value)}</button>)}</div><label className={styles['small-field']}>{t('year')}<select value={year} onChange={e => setYear(e.target.value)}><option value="all">{t('all')}</option>{years.map(value => <option key={value}>{value}</option>)}</select></label></div>
+    <div className={styles['toolbar']}><div className={styles['filters']}>{(['all', 'articles', 'moments'] as const).map(value => <button key={value} aria-pressed={value === type} onClick={() => setType(value)}>{t(value)}</button>)}</div><BlogSelect label={t('year')} value={year} onChange={setYear} compact options={[{ value: 'all', label: t('all') }, ...years.map(value => ({ value, label: value }))]} /></div>
     <State loading={articles.isLoading || moments.isLoading} error={articles.error || moments.error} empty={ready && !filtered.length} retry={() => { void articles.mutate(); void moments.mutate() }} />
     {Array.from(groups, ([year, rows]) => <section className={styles['archive-year']} key={year}><h2>{year}</h2><div>{rows.map(entry => <Link href={`/${entry.kind}/${entry._id}`} prefetch={false} key={`${entry.kind}-${entry._id}`} className={styles['archive-row']}><time dateTime={entry.createdAt}>{entry.createdAt.slice(5, 10).replace('-', '.')}</time><strong>{entry.title}</strong><small>{t(entry.kind)}</small><ArrowUpRight size={16} /></Link>)}</div></section>)}
   </div>

@@ -1,10 +1,10 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Migrated media has arbitrary dimensions and hosts; preserve its original aspect ratio. */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowUpRight, Heart, Upload, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Trash2, Upload, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
@@ -50,7 +50,9 @@ export function LikeButton({ kind, id, count = 0 }: { kind: 'article' | 'moment'
   }
   return <button className={styles['secondary-button']} disabled={busy || (!!session && !session.isGuest && !data)} onClick={toggle} aria-pressed={liked}><Heart size={15} fill={liked ? 'currentColor' : 'none'} />{t(liked ? 'liked' : 'like')} {value?.base === count ? value.likes : count}</button>
 }
-export function Modal({ title, children, close }: { title: string; children: React.ReactNode; close: () => void }) {
+export function Modal({ title, children, close, variant = 'default', descriptionId }: {
+  title: string; children: React.ReactNode; close: () => void; variant?: 'default' | 'confirm'; descriptionId?: string
+}) {
   const ref = useRef<HTMLDialogElement>(null)
   const { t } = useBlog()
   useEffect(() => {
@@ -65,7 +67,41 @@ export function Modal({ title, children, close }: { title: string; children: Rea
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus()
     }
   }, [])
-  return <dialog ref={ref} className={styles['dialog']} aria-label={title} onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); close() } }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
+  return <dialog ref={ref} className={styles['dialog']} data-variant={variant} role={variant === 'confirm' ? 'alertdialog' : undefined} aria-label={title} aria-describedby={descriptionId} onKeyDown={e => {
+    const isNestedControl = e.target instanceof HTMLElement && !!e.target.closest('[data-blog-control-popup]')
+    if (e.key === 'Escape' && !e.defaultPrevented && !isNestedControl) { e.preventDefault(); close() }
+  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
+}
+
+export function DeleteButton({ name, onDelete, iconOnly = false }: { name: string; onDelete: () => Promise<void>; iconOnly?: boolean }) {
+  const { t } = useBlog()
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const descriptionId = useId()
+  async function remove() {
+    if (busy) return
+    setBusy(true); setError('')
+    try { await onDelete(); setOpen(false) }
+    catch (error) { setError((error as Error).message) }
+    finally { setBusy(false) }
+  }
+  return <>
+    <button type="button" className={styles[iconOnly ? 'icon-button' : 'secondary-button']} aria-label={`${t('delete')} ${name}`} onClick={() => { setError(''); setOpen(true) }}>
+      <Trash2 size={15} />{!iconOnly && t('delete')}
+    </button>
+    {open && <Modal title={t('delete')} variant="confirm" descriptionId={descriptionId} close={() => { if (!busy) setOpen(false) }}>
+      <div className={styles['confirm-content']}>
+        <div className={styles['confirm-entry']}><Trash2 size={24} strokeWidth={1} /><strong>{name}</strong></div>
+        <p id={descriptionId}>{t('confirmDelete')}</p>
+        {error && <p className={styles['error']} role="alert">{error}</p>}
+      </div>
+      <div className={styles['dialog-footer']}>
+        <button type="button" autoFocus className={styles['secondary-button']} disabled={busy} onClick={() => setOpen(false)}>{t('cancel')}</button>
+        <button type="button" className={styles['danger-button']} disabled={busy} onClick={remove}>{busy ? <LoaderCircle size={15} className={styles['busy-icon']} /> : <Trash2 size={15} />}{t(busy ? 'deleting' : 'delete')}</button>
+      </div>
+    </Modal>}
+  </>
 }
 export function MediaPreview({ files, index, close }: { files: Media[]; index: number; close: () => void }) {
   const [active, setActive] = useState(index)
@@ -96,14 +132,21 @@ export function FilePicker({ files, setFiles, max = 16, imageOnly = false }: { f
     if (invalidType || next.length > max || next.some(file => file.size > limit * 1024 * 1024)) { notify(`${t('upload')}: ≤ ${max} · ≤ ${limit} MB · ${imageOnly ? 'image' : 'image / video'}`); return }
     setFiles(next)
   }
-  return <div className={styles['file-drop']} data-dragging={dragging} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); choose(Array.from(e.dataTransfer.files)) }}>
+  return <div className={styles['file-drop']} data-dragging={dragging} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); choose(Array.from(e.dataTransfer.files)) }}>
     <input ref={input} type="file" hidden multiple accept={imageOnly ? 'image/*' : 'image/*,video/*'} onChange={e => { choose(Array.from(e.target.files || [])); e.target.value = '' }} />
-    <div className={styles['form-actions']}><button type="button" className={styles['secondary-button']} disabled={!max} onClick={() => input.current?.click()}><Upload size={16} />{t('upload')}</button>{!!files.length && <button type="button" className={styles['secondary-button']} onClick={() => setFiles([])}>{t('cancel')}</button>}</div>
-    <p className={styles['form-note']}>{files.length ? files.map(file => file.name).join(' · ') : `${t('mediaHint')} ${imageOnly ? '(10 MB)' : ''}`}</p>
+    <button type="button" className={styles['upload-trigger']} disabled={!max} onClick={() => input.current?.click()}>
+      <span className={styles['upload-symbol']}><Upload size={22} strokeWidth={1} /></span>
+      <span><strong>{t('upload')}</strong><small>{t('dropFiles')} · {imageOnly ? '10' : '50'} MB / {t('file')}</small></span>
+      <span className={styles['upload-count']}>{String(files.length).padStart(2, '0')}<small>/ {max}</small></span>
+    </button>
+    {!!files.length && <ul className={styles['upload-files']}>{files.map((file, index) => <li key={`${file.name}-${index}`}>
+      <FileImage size={14} /><span title={file.name}>{file.name}</span><small>{(file.size / 1024 / 1024).toFixed(1)} MB</small>
+      <button type="button" className={styles['icon-button']} aria-label={`${t('removeFile')} ${file.name}`} onClick={() => setFiles(files.filter((_, item) => item !== index))}><X size={14} /></button>
+    </li>)}</ul>}
   </div>
 }
 export function Pagination({ page, pages, change }: { page: number; pages: number; change: (page: number) => void }) {
   const { t } = useBlog()
   if (pages <= 1) return null
-  return <nav className={styles['pagination']}><button disabled={page <= 1} onClick={() => change(page - 1)}>{t('previous')}</button><span>{page} / {pages}</span><button disabled={page >= pages} onClick={() => change(page + 1)}>{t('next')}</button></nav>
+  return <nav className={styles['pagination']} aria-label={t('pagination')}><button disabled={page <= 1} onClick={() => change(page - 1)}><ArrowLeft size={15} />{t('previous')}</button><span><strong>{String(page).padStart(2, '0')}</strong><i>/</i>{String(pages).padStart(2, '0')}</span><button disabled={page >= pages} onClick={() => change(page + 1)}>{t('next')}<ArrowRight size={15} /></button></nav>
 }

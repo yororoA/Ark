@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowUpRight, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowUpRight, Pencil, Plus } from 'lucide-react'
 import { BlogLink, Comment, dateLabel, Envelope, PROFILE, safeUrl } from '@/lib/blog'
 import { send, useBlog, useBlogData } from './blog-provider'
-import { Markdown, Modal, PageHeading, Pagination, State, styles } from './shared'
+import { DeleteButton, Markdown, Modal, PageHeading, Pagination, State, styles } from './shared'
+import { BlogSelect } from './controls'
 
 const categories = ['friend', 'tool', 'development', 'other'] as const
 type AboutInfo = Partial<typeof PROFILE> & { bio?: string; twitter?: string; website?: string }
@@ -26,29 +27,26 @@ function LinkEditor({ entry, close, refresh }: { entry: Partial<BlogLink>; close
     <label className={styles['field']}>{t('url')}<input required type="url" pattern="https?://.*" value={value.url} onChange={e => setValue({ ...value, url: e.target.value })} /></label>
     <label className={styles['field']}>{t('description')}<textarea rows={3} maxLength={1000} value={value.description} onChange={e => setValue({ ...value, description: e.target.value })} /></label>
     <label className={styles['field']}>{t('image')} URL<input type="url" pattern="https?://.*" value={value.imgurl} onChange={e => setValue({ ...value, imgurl: e.target.value })} /></label>
-    <label className={styles['field']}>{t('category')}<select value={value.category} onChange={e => setValue({ ...value, category: e.target.value })}>{categories.map(category => <option key={category} value={category}>{t(category)}</option>)}</select></label>
+    <BlogSelect label={t('category')} value={value.category} onChange={category => setValue({ ...value, category })} options={categories.map(category => ({ value: category, label: t(category) }))} />
     {error && <p className={styles['error']} role="alert">{error}</p>}
     <div><button className={styles['primary-button']} disabled={busy}>{t(busy ? 'saving' : 'save')}</button></div>
   </form></Modal>
 }
 
 function Links() {
-  const { t, session, notify } = useBlog()
+  const { t, session } = useBlog()
   const [category, setCategory] = useState('all')
   const [editing, setEditing] = useState<Partial<BlogLink> | null>(null)
-  const [deleting, setDeleting] = useState('')
   const { data, error, isLoading, mutate } = useBlogData<Envelope<BlogLink[]>>('links')
   const links = (data?.data || []).filter(link => category === 'all' || link.category === category)
   async function remove(link: BlogLink) {
-    if (!confirm(t('confirmDelete'))) return
-    setDeleting(link._id)
-    try { await send(`admin/links/${link._id}`, {}, 'DELETE'); await mutate() }
-    catch (error) { notify((error as Error).message) } finally { setDeleting('') }
+    await send(`admin/links/${link._id}`, {}, 'DELETE')
+    await mutate()
   }
   return <section><div className={styles['section-heading']}><div><div className={styles['eyebrow']}>CONNECTIONS</div><h2>{t('links')}</h2></div>{session?.isAdmin && <button className={styles['secondary-button']} onClick={() => setEditing({})}><Plus size={16} />{t('newLink')}</button>}</div>
     <div className={styles['filters']}>{(['all', ...categories] as const).map(value => <button key={value} aria-pressed={category === value} onClick={() => setCategory(value)}>{t(value)}</button>)}</div>
     <State loading={isLoading} error={error} empty={!!data && !links.length} retry={() => mutate()} />
-    <div className={styles['link-grid']}>{links.map(link => <article className={styles['link-card']} key={link._id}><a href={safeUrl(link.url)} target="_blank" rel="noreferrer"><h3>{link.name}<ArrowUpRight size={20} /></h3><p>{link.description}</p></a>{session?.isAdmin && <div className={styles['form-actions']}><button className={styles['icon-button']} onClick={() => setEditing(link)} aria-label={`${t('edit')} ${link.name}`}><Pencil size={15} /></button><button className={styles['icon-button']} disabled={!!deleting} onClick={() => remove(link)} aria-label={`${t('delete')} ${link.name}`}><Trash2 size={15} /></button></div>}</article>)}</div>
+    <div className={styles['link-grid']}>{links.map(link => <article className={styles['link-card']} key={link._id}><a href={safeUrl(link.url)} target="_blank" rel="noreferrer"><h3>{link.name}<ArrowUpRight size={20} /></h3><p>{link.description}</p></a>{session?.isAdmin && <div className={styles['form-actions']}><button className={styles['icon-button']} onClick={() => setEditing(link)} aria-label={`${t('edit')} ${link.name}`}><Pencil size={15} /></button><DeleteButton name={link.name} iconOnly onDelete={() => remove(link)} /></div>}</article>)}</div>
     {editing && <LinkEditor entry={editing} close={() => setEditing(null)} refresh={mutate} />}
   </section>
 }
