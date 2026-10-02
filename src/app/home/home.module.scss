@@ -197,65 +197,6 @@ a.metaItem:hover {
   padding: 1.2em 0 1.4em;
 }
 
-// 制图线：圆、十字和轴标。只铺在刊名右侧，不盖住字
-.plot {
-  position: absolute;
-  z-index: 0;
-  top: 0;
-  right: 0;
-  width: min(46%, 28em);
-  height: 100%;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 42% 46%, transparent 0 34%, rgba($ink, 0.28) 34.3%, transparent 34.9%),
-    radial-gradient(circle at 42% 46%, transparent 0 7%, rgba($ink, 0.35) 7.4%, transparent 8.2%),
-    linear-gradient($ink, $ink) 42% 18% / 1px 62% no-repeat,
-    linear-gradient($ink, $ink) 18% 46% / 52% 1px no-repeat;
-
-  span {
-    position: absolute;
-    font-family: $font-num;
-    font-size: 0.72em;
-    letter-spacing: 0.08em;
-    color: $ink-faint;
-
-    &:first-child {
-      top: 8%;
-      left: 42%;
-      transform: translateX(-50%);
-    }
-
-    &:last-child {
-      top: 46%;
-      right: 6%;
-      transform: translateY(-50%);
-    }
-  }
-}
-
-.plate {
-  position: absolute;
-  z-index: 0;
-  top: 18%;
-  right: -1.4em;
-  width: min(26%, 15em);
-  height: 72%;
-  background: #17191b;
-  clip-path: polygon(16% 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.slash {
-  position: absolute;
-  z-index: 2;
-  top: 12%;
-  right: min(24%, 13.6em);
-  width: 3px;
-  height: 78%;
-  background: $cyan;
-  transform: skewX(-14deg);
-  pointer-events: none;
-}
-
 .mastheadInner {
   will-change: transform;
 }
@@ -305,25 +246,63 @@ a.metaItem:hover {
 }
 
 .signature {
-  position: absolute;
-  right: 3%;
-  bottom: -4%;
-  width: clamp(9em, 24vw, 30em);
+  display: block;
+  width: min(18em, 78%);
   height: auto;
-  z-index: 2;
-  transform: rotate(-7deg);
+  margin: 0 0 0.2em auto;
+  transform: rotate(-6deg);
   pointer-events: none;
 }
 
-// ------------------------------------ 正文三栏 ------------------------------------
+// ------------------------------------ 斜切石墨 ------------------------------------
 .body {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.25fr) minmax(0, 0.8fr);
-  gap: 2.4em;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+  gap: 2em;
   align-items: start;
-  align-content: start;
-  padding: 1.4em 0 1.6em;
+  padding: 1.5em 0 1.2em;
   border-top: 1px solid $ink;
+}
+
+.slab {
+  position: absolute;
+  z-index: 0;
+  top: 0.4em;
+  right: -2.6em;
+  bottom: -0.2em;
+  left: 34%;
+  background: #141618;
+  clip-path: polygon(9% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.cut {
+  position: absolute;
+  z-index: 2;
+  top: 0.4em;
+  right: -2.6em;
+  bottom: -0.2em;
+  left: 34%;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.dock {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.2em 0 0 1.6em;
+}
+
+.dockRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
+  gap: 1.1em;
+  align-items: start;
 }
 
 .feature {
@@ -392,8 +371,8 @@ a.metaItem:hover {
 
 // ------------------------------------ 目录 ------------------------------------
 .index {
-  padding-left: 2.4em;
-  border-left: 1px solid $hair;
+  min-width: 0;
+  padding-left: 0;
 
   ol {
     margin: 0;
@@ -402,17 +381,17 @@ a.metaItem:hover {
   }
 
   li + li {
-    margin-top: 0.28em;
+    margin-top: 0.45em;
   }
 }
 
 .indexHead {
   display: flex;
   justify-content: space-between;
-  padding-bottom: 0.5em;
-  border-bottom: 1px solid $ink;
+  padding: 0 0.8em 0.55em 1.3em;
+  border-bottom: 1px solid rgba($paper, 0.28);
   font-size: 0.86em;
-  color: $ink-soft;
+  color: rgba($paper, 0.55);
 }
 
 .indexLink {
@@ -421,27 +400,27 @@ a.metaItem:hover {
   grid-template-columns: 2.6em auto 1fr auto;
   align-items: center;
   gap: 1em;
-  padding: 0.42em 1.3em 0.42em 0.45em;
-  color: inherit;
+  padding: 0.5em 1.5em 0.5em 0.55em;
+  color: $ink;
   text-decoration: none;
-  background: rgba($ink, 0.045);
-  clip-path: polygon(0.7em 0, 100% 0, calc(100% - 0.7em) 100%, 0 100%);
+  background: $paper;
+  clip-path: polygon(1.15em 0, 100% 0, calc(100% - 1.15em) 100%, 0 100%);
   transition: transform $normal $ease, color $normal $ease, background-color $normal $ease;
 
   &:hover,
   &:focus-visible {
-    color: $paper;
-    background: $ink;
-    transform: translateX(4px);
+    color: #111;
+    background: $cyan;
+    transform: translateX(6px);
 
     .indexNo {
-      color: #111;
-      background: $cyan;
+      color: $cyan;
+      background: #111;
     }
 
     .indexLatin,
     .indexNote {
-      color: rgba($paper, 0.62);
+      color: rgba(17, 17, 17, 0.62);
     }
   }
 
@@ -495,7 +474,7 @@ a.metaItem:hover {
     position: absolute;
     width: 1.1em;
     height: 1.1em;
-    border: 0 solid $ink;
+    border: 0 solid rgba($paper, 0.75);
   }
 
   &::before {
@@ -535,13 +514,13 @@ a.metaItem:hover {
 .frameCaption {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.6em;
-  margin-left: 0.7em;
+  margin-top: 0.55em;
+  margin-left: 0.85em;
   padding: 0.28em 0.7em;
   font-size: 0.8em;
-  color: $paper;
-  background: $ink;
-  clip-path: polygon(0.55em 0, 100% 0, 100% 100%, 0 100%);
+  color: $ink;
+  background: $paper;
+  clip-path: polygon(0.55em 0, 100% 0, calc(100% - 0.55em) 100%, 0 100%);
 }
 
 // ------------------------------------ 月份刻度 ------------------------------------
@@ -616,13 +595,14 @@ a.metaItem:hover {
 // ------------------------------------ 书脊 ------------------------------------
 .spine {
   position: absolute;
-  top: 50%;
-  right: 0.9em;
+  top: 62%;
+  right: 0.85em;
+  z-index: 2;
   transform: translateY(-50%);
   writing-mode: vertical-rl;
   font-size: 0.72em;
   letter-spacing: 0.5em;
-  color: $ink-faint;
+  color: rgba($paper, 0.45);
 }
 
 // ------------------------------------ 窄屏 ------------------------------------
@@ -631,15 +611,13 @@ a.metaItem:hover {
     padding-right: 1.6em;
   }
 
-  .body {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  .slab,
+  .cut {
+    right: -1.6em;
   }
 
-  .index {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    padding-left: 0;
-    border-left: 0;
+  .dockRow {
+    grid-template-columns: 1fr;
   }
 
   .spine {
@@ -680,31 +658,25 @@ a.metaItem:hover {
     letter-spacing: 0.32em;
   }
 
-  .plot,
-  .slash {
+  .slab,
+  .cut {
     display: none;
   }
 
-  .plate {
-    top: auto;
-    bottom: 2.8em;
-    width: 48%;
-    height: 3.4em;
-  }
-
   .signature {
-    position: static;
-    display: block;
-    width: 44vw;
-    margin: 0.4em 0 -0.6em auto;
+    width: 46vw;
+    margin-bottom: 0.8em;
   }
 
   .body {
     grid-template-columns: 1fr;
   }
 
-  .index {
-    grid-row: auto;
+  .dock {
+    margin-top: 0.4em;
+    padding: 1.1em 0.9em 1.2em;
+    background: #141618;
+    clip-path: polygon(1em 0, 100% 0, 100% calc(100% - 1em), calc(100% - 1em) 100%, 0 100%);
   }
 
   .indexNote {

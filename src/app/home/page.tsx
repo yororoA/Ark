@@ -52,12 +52,6 @@ export default function Home() {
         <MetaLine />
 
         <section className={styles.masthead}>
-          <div className={styles.plot} aria-hidden>
-            <span>A</span>
-            <span>B</span>
-          </div>
-          <div className={styles.plate} aria-hidden />
-          <i className={styles.slash} aria-hidden />
           <div ref={mastheadRef} className={styles.mastheadInner}>
             <h1 className={styles.title}>
               YORORO
@@ -69,17 +63,13 @@ export default function Home() {
               <span className={styles.metaDim}>个人刊物</span>
             </div>
           </div>
-          <Image
-            src="/logo.png"
-            alt="YororoIce 签名"
-            width={1720}
-            height={785}
-            loading="eager"
-            className={styles.signature}
-          />
         </section>
 
         <section className={styles.body}>
+          <div className={styles.slab} aria-hidden />
+          <svg className={styles.cut} aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line x1="9" y1="0" x2="0" y2="100" stroke="#0098c8" strokeWidth="4" vectorEffect="non-scaling-stroke" />
+          </svg>
           <article className={styles.feature}>
             <span className={styles.kicker}>
               <i aria-hidden />
@@ -93,23 +83,34 @@ export default function Home() {
             </Link>
           </article>
 
-          <IndexList />
-
-          <figure ref={frameRef} className={styles.frame}>
-            <div className={styles.frameCut}>
-              <Image
-                src="/bines_sign.png"
-                alt="Bines"
-                width={2304}
-                height={1728}
-                className={styles.frameImage}
-              />
+          <div className={styles.dock}>
+            <Image
+              src="/logo.png"
+              alt="YororoIce 签名"
+              width={1720}
+              height={785}
+              loading="eager"
+              className={styles.signature}
+            />
+            <div className={styles.dockRow}>
+              <IndexList />
+              <figure ref={frameRef} className={styles.frame}>
+                <div className={styles.frameCut}>
+                  <Image
+                    src="/bines_sign.png"
+                    alt="Bines"
+                    width={2304}
+                    height={1728}
+                    className={styles.frameImage}
+                  />
+                </div>
+                <figcaption className={styles.frameCaption}>
+                  <span className={styles.mono}>FIG. 01</span>
+                  <span>Bines</span>
+                </figcaption>
+              </figure>
             </div>
-            <figcaption className={styles.frameCaption}>
-              <span className={styles.mono}>FIG. 01</span>
-              <span>Bines</span>
-            </figcaption>
-          </figure>
+          </div>
         </section>
 
         <MonthRail />
