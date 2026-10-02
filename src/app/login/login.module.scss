@@ -5,6 +5,7 @@
   --line: #cecec5;
   --accent: #bb3429;
   --soft: #e8e6de;
+  --display-font: var(--font-gowun-batang), "Bodoni 72", Didot, "Times New Roman", serif;
   position: relative;
   z-index: 1;
   display: flex;
@@ -59,7 +60,7 @@
 
   h1 {
     margin: 28px 0 30px;
-    font: 400 86px/.9 "Bodoni 72", Didot, "Times New Roman", var(--font-noto-serif), serif;
+    font: 400 86px/.9 var(--display-font);
   }
 
   h1 em {
@@ -75,6 +76,17 @@
     color: var(--muted);
     font: 19px/1.9 var(--font-noto-serif), "Songti SC", serif;
   }
+}
+
+.login-signature {
+  position: relative;
+  width: 300px;
+  height: 104px;
+  margin: 0 0 12px -18px;
+  overflow: hidden;
+  opacity: .82;
+
+  img { object-fit: cover; object-position: center 56%; filter: grayscale(1) contrast(1.45); }
 }
 
 .login-eyebrow {
@@ -132,7 +144,7 @@
     display: grid;
     place-items: center;
     color: color-mix(in srgb, currentColor 15%, transparent);
-    font: 180px/1 "Bodoni 72", Didot, serif;
+    font: 180px/1 var(--display-font);
   }
 
   small {
@@ -238,6 +250,7 @@
   .login-header nav a:first-child { display: none; }
   .login-main { grid-template-columns: minmax(0, 1fr); align-items: start; gap: 46px; padding: 52px 6% 60px; }
   .login-copy h1 { margin-block: 24px; font-size: 52px; }
+  .login-signature { width: 250px; height: 86px; margin-left: -12px; }
   .login-copy h1 em { margin-left: 8%; }
   .login-copy > p { font-size: 16px; }
   .login-orbit { top: 36%; left: 76%; width: 380px; opacity: .28; }

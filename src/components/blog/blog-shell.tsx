@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ArrowUp, ArrowUpRight, Menu, Monitor, Moon, Sun, X } from 'lucide-react'
@@ -8,7 +9,7 @@ import BlogProvider, { request, useBlog } from './blog-provider'
 import { Locale, sections } from '@/lib/blog'
 import { legacyDestination } from '@/lib/legacy-route'
 import { BlogSelect } from './controls'
-import ArkWordmark from '@/components/brand/ark-wordmark'
+import ArchiveLogo from '@/components/brand/archive-logo'
 import styles from './blog.module.scss'
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -37,7 +38,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
         <Link href="/home" className={styles['brand']} aria-label="YororoIce Ark">
-          <ArkWordmark />
+          <ArchiveLogo priority />
         </Link>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
           {sections.map(([key]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}>{t(key)}</Link>)}
@@ -55,7 +56,11 @@ function Shell({ children }: { children: React.ReactNode }) {
       {open && <nav className={styles['mobile-nav']} aria-label={t('menu')}>{sections.map(([key, number]) => <Link href={`/${key}`} key={key} onClick={() => setOpen(false)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span>{number}</span>{t(key)}<ArrowUpRight size={18} /></Link>)}<Link href="/chat" onClick={() => setOpen(false)} aria-current={pathname.startsWith('/chat') ? 'page' : undefined}><span>07</span>{t('chat')}<ArrowUpRight size={18} /></Link></nav>}
       <main id="main-content" className={styles['main-content']}>{children}</main>
       <footer className={styles['site-footer']}>
-        <div><Link href="/home" className={styles['footer-wordmark']}>Ark.</Link><p>TIME MENDS THE WOUNDS,<br />LOVE SOOTHES THE SCARS.</p></div>
+        <div className={styles['footer-signatures']}>
+          <Image src="/logo_white.png" width={172} height={79} alt="YororoIce" />
+          <i aria-hidden="true" />
+          <Image src="/sign_white.png" width={130} height={40} alt="山眠包" />
+        </div>
         <div className={styles['footer-links']}><Link href="/terms">{t('terms')}</Link><Link href="/notice">{t('notice')}</Link><a href="https://github.com/yororoA" target="_blank" rel="noreferrer">GitHub ↗</a><Link href="/about#guestbook">{t('guestbook')}</Link></div>
         <div className={styles['account-links']}>{session ? <><span>{session.username}</span><Link href="/login">{t('account')}</Link><button onClick={logout}>{t('logout')}</button></> : <Link href="/login">{t('login')} ↗</Link>}<small>© {new Date().getFullYear()} YOROROICE</small></div>
         <button className={styles['icon-button']} aria-label={t('toTop')} onClick={() => window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}><ArrowUp size={20} /></button>

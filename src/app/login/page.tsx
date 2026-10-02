@@ -1,5 +1,6 @@
 'use client'
 import { Suspense, useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowUpRight, BookOpen, CircleUserRound, ShieldCheck } from 'lucide-react'
 import { useGetLocation } from '@/hooks/useGetLocation';
@@ -11,7 +12,7 @@ import AccountManagement from "./components/accountManagement";
 import ConnectionSequence, { type ConnectionState } from "./components/connectionSequence";
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import ArkWordmark from '@/components/brand/ark-wordmark';
+import ArchiveLogo from '@/components/brand/archive-logo';
 import type { ConnectParams } from './types';
 
 function Login() {
@@ -115,11 +116,12 @@ function Login() {
       {/* The previous dark sphere composition remains available in commit 26f4085. */}
       <div className={styles['login-scene']} inert={isConnecting || showAccountManagement || isDeclarationVisible}>
         <header className={styles['login-header']}>
-          <Link href="/home" aria-label="YororoIce Ark"><ArkWordmark /></Link>
+          <Link href="/home" aria-label="YororoIce Ark"><ArchiveLogo priority /></Link>
           <nav aria-label="登录页导航"><Link href="/home">浏览首页</Link><Link href="/terms">社区约定</Link></nav>
         </header>
         <main className={styles['login-main']}>
           <section className={styles['login-copy']}>
+            <div className={styles['login-signature']} aria-hidden="true"><Image src="/bines_sign.png" alt="" fill sizes="300px" priority /></div>
             <div className={styles['login-eyebrow']}>PRIVATE ARCHIVE / ACCESS 09</div>
             <h1>Return to<br /><em>the archive.</em></h1>
             <p>登录后继续写作、记录片刻，并回到未完成的通信。</p>
