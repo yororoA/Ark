@@ -1,85 +1,592 @@
 @use '@/styles/variables' as *;
 
-$info-size: 6.8rem;
-$init-rotate: 22.5deg;
-$left-height: $info-size*1.2;
-$right-height: $left-height*3;
-$origin-left: 10%;
+// 层级：环境照片 → 视口纸面 → 石墨索引区 → 行与记录。
+// 线：区与区是 1px 实墨；行间是发丝；当前是 4px 黄；指向是 4px 青。
+// 切角只有 0.7em，只出现在当前行、记录框和视口右下角。
+$paper: #f3f2ee;
+$paper-dim: #dedcd5;
+$ink: #1b1d1f;
+$graphite: #141618;
+$ink-soft: rgba(27, 29, 31, 0.62);
+$ink-faint: rgba(27, 29, 31, 0.42);
+$hair: rgba(27, 29, 31, 0.16);
+$mist: rgba(243, 242, 238, 0.42);
+$mist-dim: rgba(243, 242, 238, 0.22);
+$line-dim: rgba(243, 242, 238, 0.14);
+$cyan: #0098c8;
+$yellow: #f0b800;
+$cut: 0.7em;
+$shear: -12deg;
 
-.utils,
-.info {
-  position: absolute;
-  z-index: 1;
-}
+$ease: cubic-bezier(0.2, 0, 0, 1);
+$normal: 200ms;
 
-.utils {
-  top: 0;
-  left: 0;
-  border: $button-border;
+$font-serif: var(--font-noto-serif), 'Songti SC', serif;
+$font-sans: var(--font-noto-sans), 'Noto Sans SC', sans-serif;
+$font-num: var(--font-orbitron), sans-serif;
+$font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   display: flex;
-  gap: $gap * .8;
-  padding: $gap*.7 $gap;
+  align-items: center;
+  padding-left: 8vw;
+  background: #000;
+  color: rgba(248, 248, 245, 0.68);
+  font: 13px/1 $font-mono;
+  letter-spacing: 0.16em;
 }
 
-.info {
-  height: $info-size;
-  width: $info-size;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba($color: $white, $alpha: 0.5);
-}
-
-.wrap {
+.sheet {
   position: relative;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  margin: 0.55rem;
+  border: 1px solid rgba(243, 242, 238, 0.35);
+  font-family: $font-sans;
+  font-size: clamp(13px, 0.46rem, 18px);
+  color: $ink;
+  background: $paper;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$cut * 2}), calc(100% - #{$cut * 2}) 100%, 0 100%);
+  transition: background-color $normal $ease;
+}
+
+.sheetDim {
+  background: $paper-dim;
+}
+
+// ------------------------------------ 状态条 ------------------------------------
+.meta {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid $ink;
+  font-family: $font-mono;
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+}
+
+.metaKey,
+.metaField,
+.clock,
+.metaCommand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 2.6em;
+  padding: 0 0.9em;
+  border-right: 1px solid $hair;
+  white-space: nowrap;
+}
+
+.metaKey {
+  font-family: $font-num;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.clock {
+  font-family: $font-num;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metaField a {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    box-shadow: inset 0 -1px 0 $ink;
+  }
+}
+
+.metaCommand {
+  border: 0;
+  border-right: 1px solid $hair;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+
+  &:hover {
+    box-shadow: inset 0 -1px 0 $ink;
+  }
+
+  &:last-child {
+    border-right: 0;
+  }
+
+  &[aria-pressed='true'] {
+    box-shadow: inset 0 -4px 0 $yellow;
+  }
+}
+
+button.metaCommand {
+  margin-left: auto;
+  border-left: 1px solid $ink;
+}
+
+.dotOn,
+.dotOff {
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+}
+
+.dotOn {
+  background: $ink;
+}
+
+.dotOff {
+  border: 1px solid $ink-faint;
+}
+
+// ------------------------------------ 页题 ------------------------------------
+.ident {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5em;
+  padding: 1.05em 1.2em 0.95em;
+  border-bottom: 4px solid $ink;
+}
+
+.identCode,
+.identEn {
+  margin: 0;
+  font-family: $font-mono;
+  font-size: 0.75em;
+  letter-spacing: 0.14em;
+  color: $ink-soft;
+}
+
+.identNo {
+  margin: 0.2em 0 0;
+  font-family: $font-num;
+  font-size: 2.4em;
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+}
+
+.identName {
+  margin: 0.05em 0 0;
+  font-family: $font-serif;
+  font-size: 1.7em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35em 0.2em;
+  margin: 0;
+}
+
+.stat {
+  min-width: 4.2em;
+  padding: 0.15em 0.45em 0.35em;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+
+  .statLabel {
+    display: flex;
+    flex-direction: column;
+    font-family: $font-sans;
+    font-size: 0.75em;
+    font-weight: 400;
+    color: inherit;
+
+    span {
+      font-family: $font-mono;
+      font-size: 0.85em;
+      letter-spacing: 0.08em;
+      color: $ink-faint;
+    }
+  }
+
+  .statValue {
+    display: block;
+    margin-top: 0.12em;
+    font-family: $font-num;
+    font-size: 1.35em;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &[data-cursor='true'] {
+    box-shadow: inset 0 -4px 0 $yellow;
+  }
+
+  &[aria-pressed='true'] {
+    background: $ink;
+    color: $paper;
+
+    .statLabel,
+    .statLabel span {
+      color: $mist;
+    }
+  }
+}
+
+// ------------------------------------ 石墨索引区 ------------------------------------
+.bay {
+  display: flex;
+  flex-direction: column;
+  color: $paper;
+  background: $graphite;
+}
+
+.bayHead {
   display: flex;
   justify-content: space-between;
-  transform-style: preserve-3d;
-  transform-origin: center top;
-  // transition: transform 0.5s ease-in-out;
+  padding: 0.7em 1.2em 0.55em;
+  border-bottom: 1px solid rgba($paper, 0.55);
+  font-family: $font-num;
+  font-size: 0.72em;
+  letter-spacing: 0.16em;
+}
 
-  animation-direction: alternate;
+.index {
+  margin: 0;
+  padding: 0.7em 1.2em 0.2em;
+  list-style: none;
+}
 
-  .leftContents,
-  .rightContents {
-    backface-visibility: hidden;
-    display: flex;
+.row,
+.rowCurrent {
+  a {
+    position: relative;
+    display: grid;
+    grid-template-columns: 3.4em minmax(0, 1fr) auto;
+    gap: 0.75em;
+    align-items: center;
+    min-height: 2.7em;
+    padding: 0.2em 0.8em 0.2em 0.35em;
+    color: inherit;
+    text-decoration: none;
+  }
+}
 
-    div {
-      flex: 1;
-      background-color: rgba($color: blue, $alpha: 0.5);
+.row {
+  border-bottom: 1px solid $line-dim;
+}
+
+.rowCurrent a {
+  min-height: 3.2em;
+  color: $ink;
+  background: $paper;
+  box-shadow: inset 4px 0 0 $yellow;
+}
+
+.rowNo {
+  font-family: $font-num;
+  font-weight: 700;
+  font-size: 0.95em;
+  color: $mist;
+  transform: skewX($shear);
+}
+
+.displayNo {
+  font-family: $font-num;
+  font-weight: 700;
+  font-size: 1.15em;
+  line-height: 1;
+  color: $ink;
+}
+
+.rowMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35em 0.75em;
+  min-width: 0;
+}
+
+.rowLabel {
+  font-family: $font-serif;
+  font-weight: 700;
+  font-size: 1.15em;
+}
+
+.rowLatin,
+.rowPath,
+.rowMeta {
+  font-family: $font-mono;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  color: $mist;
+}
+
+.rowMeta {
+  flex-basis: 100%;
+}
+
+.rowCurrent .rowLatin,
+.rowCurrent .rowPath,
+.rowCurrent .rowMeta {
+  color: $ink-soft;
+}
+
+.rowPath {
+  flex-basis: 100%;
+  color: $mist-dim;
+}
+
+.rowState {
+  font-family: $font-mono;
+  font-size: 0.72em;
+  letter-spacing: 0.12em;
+  color: $mist;
+}
+
+.rowState[data-state='CURRENT'] {
+  color: $ink;
+  box-shadow: inset 0 -4px 0 $yellow;
+}
+
+.rowState[data-state='OFFLINE'] {
+  color: rgba(227, 59, 59, 0.85);
+}
+
+.row[data-dim='true'],
+.rowCurrent[data-dim='true'] {
+  opacity: 0.28;
+}
+
+.row[data-hit='true'] a {
+  box-shadow: inset 4px 0 0 $paper;
+}
+
+.row a:hover .rowState,
+.row a:focus-visible .rowState {
+  color: $paper;
+}
+
+.row a:focus-visible,
+.rowCurrent a:focus-visible,
+.stat:focus-visible {
+  outline: 3px solid $yellow;
+  outline-offset: 2px;
+}
+
+.node {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.1em;
+  width: fit-content;
+  max-width: calc(100% - 3.4em);
+  margin: 0 0 0.35em 3.4em;
+  padding: 0.35em 0.6em;
+  border-left: 4px solid $yellow;
+  color: $mist;
+  font-family: $font-mono;
+  font-size: 0.72em;
+  letter-spacing: 0.06em;
+}
+
+.nodeCode {
+  color: $paper;
+}
+
+.nodeCursor {
+  color: $paper;
+  box-shadow: inset 0 -4px 0 $yellow;
+}
+
+.nodePreview {
+  width: 4.2em;
+  background: #fff;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 2.2em;
+    object-fit: cover;
+    object-position: center 40%;
+  }
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 16em minmax(0, 1fr);
+  gap: 1.2em;
+  align-items: end;
+  margin: 0.8em 1.2em 0;
+}
+
+.activity {
+  align-self: end;
+  padding-bottom: 0.4em;
+  border-top: 1px solid rgba($paper, 0.55);
+
+  p,
+  span {
+    margin: 0.35em 0 0;
+    font-family: $font-mono;
+    font-size: 0.72em;
+    letter-spacing: 0.06em;
+    color: $mist;
+  }
+
+  p {
+    letter-spacing: 0.14em;
+    color: $mist-dim;
+  }
+
+  strong {
+    display: block;
+    margin-top: 0.35em;
+    font-family: $font-num;
+    font-size: 1.05em;
+    letter-spacing: 0.12em;
+  }
+}
+
+.plot {
+  position: relative;
+  height: 7.5em;
+  background-image:
+    linear-gradient($line-dim 1px, transparent 1px),
+    linear-gradient(90deg, $line-dim 1px, transparent 1px);
+  background-size: calc(100% / 12) calc(100% / 6);
+}
+
+.dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: $font-num;
+  font-size: 0.62em;
+  letter-spacing: 0.04em;
+  color: $mist;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 7px;
+    height: 7px;
+    margin: 0 auto 0.15em;
+    background: $paper;
+  }
+
+  &[data-current='true'] {
+    color: $yellow;
+
+    &::before {
+      width: 11px;
+      height: 11px;
+      background: $yellow;
     }
   }
 
-  .leftContents {
-    order: 1;
-    width: $left-height*2.2;
-    height: $left-height;
-    margin-top: auto;
-    background-color: rgba($color: red, $alpha: 1);
-    transform: rotateY($init-rotate);
-    transform-origin: left center;
-    transform-origin: $origin-left center;
-    margin-bottom: $gap*4;
+  &[data-dim='true'] {
+    opacity: 0.2;
+  }
+}
 
-    >div {
-      margin-left: $origin-left;
-    }
+// ------------------------------------ 月历 ------------------------------------
+.rail {
+  display: grid;
+  grid-template-columns: 3.4em auto minmax(0, 1fr) 3.2em;
+  gap: 0.8em;
+  align-items: end;
+  margin-top: 0.8em;
+  padding: 0.65em 1.2em 0.8em;
+  border-top: 1px solid rgba($paper, 0.55);
+}
+
+.railKey {
+  font-family: $font-num;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: $paper;
+}
+
+.railNow {
+  font-family: $font-mono;
+  font-size: 0.75em;
+  color: $mist;
+}
+
+.railTicks {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tick,
+.tickToday {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 0.28em;
+  width: 1px;
+
+  &::before {
+    content: '';
+    width: 1px;
+    height: 7px;
+    background: $mist-dim;
   }
 
-  .rightContents {
-    order: 2;
-    width: 50%;
-    height: $right-height;
-    margin: auto 0;
-    background-color: rgba($color: $white, $alpha: 0.5);
-    transform: translateZ(6.6rem) rotateY(-$init-rotate);
-    transform-origin: right center;
-    transform-origin: 100%-$origin-left center;
+  span {
+    font-family: $font-mono;
+    font-size: 0.68em;
+    color: transparent;
+  }
+}
 
-    >div {
-      margin-right: $origin-left;
-    }
+.tickToday {
+  &::before {
+    width: 4px;
+    height: 14px;
+    background: $yellow;
+  }
+
+  span {
+    color: $paper;
+  }
+}
+
+@media (max-width: 900px) {
+  .ident {
+    display: grid;
+    align-items: start;
+  }
+
+  .field {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .meta {
+    flex-wrap: wrap;
+  }
+
+  .rowPath {
+    display: none;
+  }
+
+  .plot {
+    min-height: 8em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    transition: none;
   }
 }
