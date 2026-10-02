@@ -1,121 +1,71 @@
 'use client';
-import { useEffect, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { useMouse } from '@/hooks/useMouse';
 import { useBrightness } from '@/context/brightness-context';
 import { cn } from '@/lib/utils';
 import MetaLine from './components/metaLine';
 import IndexList from './components/indexList';
 import MonthRail from './components/monthRail';
 import RouteGate from './components/routeGate';
-import { EDITOR_NOTE } from './cover';
+import { INDEX_ENTRIES } from './cover';
 import styles from './home.module.scss';
 
+const mounted = INDEX_ENTRIES.filter((entry) => entry.state !== '未挂载').length;
+
 export default function Home() {
-  const mastheadRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<HTMLElement>(null);
-  const mouse = useMouse();
   const { isDimmed } = useBrightness();
-
-  // 刊名和标志框按鼠标做几像素的反向位移，只给细指针、未要求减弱动效的设备
-  useEffect(() => {
-    const finePointer = window.matchMedia('(pointer: fine)').matches;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!finePointer || reduced) return;
-
-    let raf: number;
-    let x = 0;
-    let y = 0;
-
-    const update = () => {
-      const ratioX = Math.max(-1, Math.min(1, (mouse.current.x - window.innerWidth / 2) / (window.innerWidth / 2)));
-      const ratioY = Math.max(-1, Math.min(1, (mouse.current.y - window.innerHeight / 2) / (window.innerHeight / 2)));
-      x += (ratioX - x) * 0.08;
-      y += (ratioY - y) * 0.08;
-
-      if (mastheadRef.current) mastheadRef.current.style.transform = `translate3d(${x * -8}px, ${y * -4}px, 0)`;
-      if (frameRef.current) frameRef.current.style.transform = `translate3d(${x * 5}px, ${y * 3}px, 0)`;
-
-      raf = requestAnimationFrame(update);
-    };
-
-    raf = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(raf);
-  }, [mouse]);
 
   return (
     <>
-      <RouteGate code="YORORO ARK / COVER · 01" />
+      <RouteGate code="ARK / COVER · 01" />
 
       <main className={cn(styles.sheet, isDimmed && styles.sheetDim)}>
         <MetaLine />
 
-        <section className={styles.masthead}>
-          <div ref={mastheadRef} className={styles.mastheadInner}>
-            <h1 className={styles.title}>
-              YORORO
-              <span className={styles.titleCn}>冰</span>
-            </h1>
-            <div className={styles.subline}>
-              <span className={styles.spaced}>YORORO ICE · ARK</span>
-              <span className={styles.hairline} aria-hidden />
-              <span className={styles.metaDim}>个人刊物</span>
-            </div>
+        <section className={styles.ident}>
+          <div>
+            <p className={styles.identCode}>SYS / ARK-COVER</p>
+            <h1 className={styles.identName}>YororoIce Ark</h1>
           </div>
+          <dl className={styles.stats}>
+            <div>
+              <dt>模块</dt>
+              <dd>{String(INDEX_ENTRIES.length).padStart(2, '0')}</dd>
+            </div>
+            <div>
+              <dt>在册</dt>
+              <dd>{String(mounted).padStart(2, '0')}</dd>
+            </div>
+            <div>
+              <dt>未挂载</dt>
+              <dd>{String(INDEX_ENTRIES.length - mounted).padStart(2, '0')}</dd>
+            </div>
+          </dl>
+          <p className={styles.log}>
+            栏目路由未挂载。点开 02–07 会进入 404，再回到封面。
+          </p>
         </section>
 
-        <section className={styles.body}>
-          <div className={styles.edge} aria-hidden />
-          <div className={styles.slab} aria-hidden />
-          <article className={styles.feature}>
-            <span className={styles.kicker}>
-              <i aria-hidden />
-              {EDITOR_NOTE.kicker}
-            </span>
-            <h2 className={styles.featureTitle}>{EDITOR_NOTE.title}</h2>
-            <p className={styles.featureBody}>{EDITOR_NOTE.body}</p>
-            <Link className={styles.featureLink} href={EDITOR_NOTE.href}>
-              {EDITOR_NOTE.linkLabel}
-              <span aria-hidden>→</span>
-            </Link>
-          </article>
+        <IndexList />
 
-          <div className={styles.dock}>
-            <div className={styles.dockRow}>
-              <div className={styles.dockMain}>
-                <Image
-                  src="/logo.png"
-                  alt="YororoIce 签名"
-                  width={1720}
-                  height={785}
-                  loading="eager"
-                  className={styles.signature}
-                />
-                <IndexList />
-              </div>
-              <figure ref={frameRef} className={styles.frame}>
-                <div className={styles.frameCut}>
-                  <Image
-                    src="/bines_sign.png"
-                    alt="Bines"
-                    width={2304}
-                    height={1728}
-                    className={styles.frameImage}
-                  />
-                </div>
-                <figcaption className={styles.frameCaption}>
-                  <span className={styles.mono}>FIG. 01</span>
-                  <span>Bines</span>
-                </figcaption>
-              </figure>
-            </div>
+        <section className={styles.asset} aria-label="在册标记">
+          <span className={styles.assetNo}>A1</span>
+          <div className={styles.assetCopy}>
+            <p className={styles.assetCode}>ASSET / BINES-01</p>
+            <p className={styles.assetName}>Bines</p>
+            <p className={styles.assetNote}>手写标记，在册。</p>
+          </div>
+          <div className={styles.assetWell}>
+            <Image
+              src="/bines_sign.png"
+              alt="Bines 手写标记"
+              width={2304}
+              height={1728}
+              className={styles.assetImage}
+            />
           </div>
         </section>
 
         <MonthRail />
-
-        <span className={styles.spine} aria-hidden>封面 · COVER</span>
       </main>
     </>
   );

@@ -3,6 +3,7 @@ import { useNow } from '@/hooks/useNow';
 import styles from '../home.module.scss';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const pad = (n: number) => String(n).padStart(2, '0');
 
 export default function MonthRail() {
   const today = useNow();
@@ -15,22 +16,22 @@ export default function MonthRail() {
   const current = today.getDate();
 
   return (
-    <footer className={styles.rail}>
-      <span className={styles.railLabel}>
-        {month + 1}月 <span className={styles.latin}>{MONTHS[month]}</span>
-      </span>
-      <ol className={styles.railTicks} aria-label={`${month + 1}月日历`}>
+    <footer className={styles.rail} aria-label={`${year}年${month + 1}月`}>
+      <span className={styles.railKey}>{MONTHS[month]}</span>
+      <span className={styles.railNow}>本日 {pad(current)}</span>
+      <ol className={styles.railTicks}>
         {Array.from({ length: days }, (_, i) => i + 1).map((day) => (
           <li
             key={day}
-            className={day === current ? styles.tickToday : day % 5 === 0 ? styles.tickMajor : styles.tick}
+            className={day === current ? styles.tickToday : styles.tick}
             aria-current={day === current ? 'date' : undefined}
+            title={`${month + 1}月${day}日`}
           >
-            {(day === current || day % 5 === 0) && <span>{String(day).padStart(2, '0')}</span>}
+            <span>{pad(day)}</span>
           </li>
         ))}
       </ol>
-      <span className={styles.railLabel}>© YororoIce</span>
+      <span className={styles.railNow}>{days} 日</span>
     </footer>
   );
 }

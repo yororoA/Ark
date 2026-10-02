@@ -8,7 +8,6 @@ import { GITHUB_USER } from '../cover';
 import styles from '../home.module.scss';
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-
 const pad = (n: number) => String(n).padStart(2, '0');
 
 function roleOf(detail?: AuthDetail) {
@@ -50,40 +49,28 @@ export default function MetaLine() {
 
   return (
     <header className={styles.meta}>
-      <div className={styles.metaLeft}>
-        <span className={styles.folio}>01</span>
-        <span className={styles.mono}>{date}</span>
-        <span className={styles.metaDim}>{weekday}</span>
-      </div>
-
-      <div className={styles.ruler} aria-hidden />
-
-      <div className={styles.metaRight}>
-        <span className={styles.clock}>{clock}</span>
-        <span className={styles.metaItem}>
-          <i className={role ? styles.dotOn : styles.dotOff} aria-hidden />
-          {role ?? '未连接'}
-        </span>
-        {repos !== null && (
-          <a
-            className={styles.metaItem}
-            href={`https://github.com/${GITHUB_USER}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            GH <span className={styles.mono}>{repos}</span>
-          </a>
-        )}
-        <button
-          type="button"
-          className={styles.metaButton}
-          aria-pressed={isDimmed}
-          onClick={() => setDimmed(!isDimmed)}
-        >
-          {isDimmed ? '夜读' : '亮度'}
-        </button>
-        <Link className={styles.metaButton} href="/login">账号</Link>
-      </div>
+      <span className={styles.metaKey}>ARK</span>
+      <span className={styles.metaField}>{date}</span>
+      <span className={styles.metaField}>{weekday}</span>
+      <span className={styles.clock}>{clock}</span>
+      <span className={styles.metaField}>
+        <i className={role ? styles.dotOn : styles.dotOff} aria-hidden />
+        {role ?? '未连接'}
+      </span>
+      <span className={styles.metaField}>
+        {repos !== null ? (
+          <a href={`https://github.com/${GITHUB_USER}`} target="_blank" rel="noreferrer">GH {repos}</a>
+        ) : 'GH —'}
+      </span>
+      <button
+        type="button"
+        className={styles.metaCommand}
+        aria-pressed={isDimmed}
+        onClick={() => setDimmed(!isDimmed)}
+      >
+        {isDimmed ? '夜读' : '亮度'}
+      </button>
+      <Link className={styles.metaCommand} href="/login">账号</Link>
     </header>
   );
 }

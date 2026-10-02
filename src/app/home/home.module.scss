@@ -1,13 +1,17 @@
 @use '@/styles/variables' as *;
 
+// 一条几何规则：切角只有 $cut，方向只有右低左高的平行四边形。
+// 1px 是结构线。4px 只表示状态：青 = 指向 / 在线，黄 = 当前。
 $paper: #f3f2ee;
 $paper-dim: #dedcd5;
 $ink: #1b1d1f;
 $ink-soft: rgba(27, 29, 31, 0.62);
-$ink-faint: rgba(27, 29, 31, 0.38);
-$hair: rgba(27, 29, 31, 0.18);
+$ink-faint: rgba(27, 29, 31, 0.4);
+$hair: rgba(27, 29, 31, 0.16);
 $cyan: #0098c8;
 $yellow: #f0b800;
+$cut: 0.7em;
+$shear: -12deg;
 
 $ease: cubic-bezier(0.2, 0, 0, 1);
 $fast: 120ms;
@@ -16,12 +20,8 @@ $normal: 200ms;
 $font-serif: var(--font-noto-serif), 'Songti SC', serif;
 $font-sans: var(--font-noto-sans), 'Noto Sans SC', sans-serif;
 $font-num: var(--font-orbitron), sans-serif;
-$font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, monospace;
+$font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-$cut-lg: 1.5em;
-$cut-md: 0.75em;
-
-// ------------------------------------ 进场 ------------------------------------
 .gate {
   position: fixed;
   inset: 0;
@@ -32,105 +32,60 @@ $cut-md: 0.75em;
   background: #000;
   color: rgba(248, 248, 245, 0.68);
   font: 13px/1 $font-mono;
-  letter-spacing: 0.18em;
-
-  span::before {
-    content: '';
-    display: inline-block;
-    width: 2.4em;
-    height: 1px;
-    margin-right: 1em;
-    vertical-align: middle;
-    background: currentColor;
-  }
+  letter-spacing: 0.16em;
 }
 
-// ------------------------------------ 纸面 ------------------------------------
 .sheet {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  gap: 1.15em;
   min-height: calc(100svh - 1.2rem);
   margin: 0.6rem;
-  padding: 0.9em 2.6em 0.9em 1.6em;
+  padding: 0.85em 1.3em 1em;
   font-family: $font-sans;
-  font-size: clamp(13px, 0.46rem, 20px);
+  font-size: clamp(13px, 0.46rem, 18px);
   color: $ink;
-  background:
-    linear-gradient($ink, $ink) 0.55em 0.55em / 12px 1px no-repeat,
-    linear-gradient($ink, $ink) 0.55em 0.55em / 1px 12px no-repeat,
-    linear-gradient($ink, $ink) right 0.55em top 0.55em / 12px 1px no-repeat,
-    linear-gradient($ink, $ink) right 0.55em top 0.55em / 1px 12px no-repeat,
-    linear-gradient($ink, $ink) left 0.55em bottom 0.55em / 12px 1px no-repeat,
-    linear-gradient($ink, $ink) left 0.55em bottom 0.55em / 1px 12px no-repeat,
-    $paper;
-  overflow-x: clip;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$cut-lg * 2}), calc(100% - #{$cut-lg * 2}) 100%, 0 100%);
+  background: $paper;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$cut * 2}), calc(100% - #{$cut * 2}) 100%, 0 100%);
   transition: background-color $normal $ease;
 }
 
 .sheetDim {
-  background-color: $paper-dim;
+  background: $paper-dim;
 }
 
-.mono {
-  font-family: $font-mono;
-  letter-spacing: 0.04em;
-}
-
-.latin {
-  font-size: 0.72em;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.metaDim {
-  color: $ink-soft;
-}
-
-// ------------------------------------ 顶栏 ------------------------------------
+// ------------------------------------ 状态条 ------------------------------------
 .meta {
   display: flex;
   align-items: center;
-  gap: 1.6em;
-  padding-bottom: 0.7em;
-  border-bottom: 1px solid $hair;
-  font-size: 0.86em;
+  gap: 0;
+  margin: -0.85em -1.3em 0;
+  padding: 0 1.3em;
+  border-bottom: 1px solid $ink;
+  font-family: $font-mono;
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
 }
 
-.metaLeft,
-.metaRight {
-  display: flex;
-  align-items: baseline;
-  gap: 1.1em;
+.metaKey,
+.metaField,
+.clock,
+.metaCommand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 2.5em;
+  padding: 0 0.9em;
+  border-right: 1px solid $hair;
   white-space: nowrap;
 }
 
-.metaRight {
-  margin-left: auto;
-}
-
-.folio {
-  display: inline-block;
-  padding: 0.12em 0.38em 0.06em;
+.metaKey {
   font-family: $font-num;
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.06em;
-  color: $paper;
-  background: $ink;
-  transform: skewX(-12deg);
-}
-
-.ruler {
-  flex: 0 1 18em;
-  height: 10px;
-  opacity: 0.55;
-  background:
-    linear-gradient(90deg, $ink 1px, transparent 1px) 0 0 / 30px 100% repeat-x,
-    linear-gradient(90deg, $ink 1px, transparent 1px) 0 100% / 6px 45% repeat-x;
+  letter-spacing: 0.14em;
 }
 
 .clock {
@@ -139,22 +94,47 @@ $cut-md: 0.75em;
   font-variant-numeric: tabular-nums;
 }
 
-.metaItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45em;
+.metaField a {
   color: inherit;
   text-decoration: none;
+
+  &:hover {
+    color: $cyan;
+  }
 }
 
-a.metaItem:hover {
-  color: $cyan;
+.metaCommand {
+  border: 0;
+  border-right: 1px solid $hair;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+
+  &:last-child {
+    border-right: 0;
+    border-left: 1px solid $hair;
+  }
+}
+
+button.metaCommand {
+  margin-left: auto;
+
+  &:hover {
+    color: $cyan;
+  }
+
+  &[aria-pressed='true'] {
+    box-shadow: inset 0 -4px 0 $yellow;
+  }
 }
 
 .dotOn,
 .dotOff {
-  width: 0.5em;
-  height: 0.5em;
+  width: 0.45em;
+  height: 0.45em;
   border-radius: 50%;
 }
 
@@ -166,383 +146,227 @@ a.metaItem:hover {
   border: 1px solid $ink-faint;
 }
 
-.metaButton {
-  padding: 0.18em 0.7em;
-  border: 1px solid $hair;
-  color: inherit;
-  font: inherit;
-  text-decoration: none;
-  cursor: pointer;
-  background: transparent;
-  clip-path: polygon(0.4em 0, 100% 0, 100% calc(100% - 0.4em), calc(100% - 0.4em) 100%, 0 100%);
-  transition: border-color $fast $ease, color $fast $ease, background-color $fast $ease;
-
-  &:hover {
-    border-color: $ink;
-  }
-
-  &:active {
-    background: rgba(27, 29, 31, 0.06);
-  }
-
-  &[aria-pressed='true'] {
-    border-color: $yellow;
-    box-shadow: inset 0 -2px 0 $yellow;
-  }
-}
-
-// ------------------------------------ 刊名 ------------------------------------
-.masthead {
-  position: relative;
-  padding: 1.2em 0 1.4em;
-}
-
-.mastheadInner {
-  will-change: transform;
-}
-
-.title {
-  margin: 0 0 0 -0.045em;
-  font-family: $font-serif;
-  font-weight: 700;
-  font-size: clamp(5.5rem, 17vw, 15rem);
-  line-height: 0.8;
-  letter-spacing: -0.045em;
-  white-space: nowrap;
-}
-
-.titleCn {
-  display: inline-grid;
-  place-items: center;
-  width: 1.2em;
-  height: 1.2em;
-  margin-left: 0.5em;
-  vertical-align: top;
-  font-size: 0.13em;
-  line-height: 1;
-  letter-spacing: 0;
-  color: $paper;
-  background: $ink;
-}
-
-.subline {
-  display: flex;
-  align-items: center;
-  gap: 1.2em;
-  margin-top: 1.1em;
-  font-size: 0.95em;
-}
-
-.spaced {
-  letter-spacing: 0.62em;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.hairline {
-  flex: 0 1 14em;
-  height: 1px;
-  background: $ink;
-}
-
-.signature {
-  display: block;
-  width: min(13em, 100%);
-  height: auto;
-  margin: 0 0 0.15em;
-  transform: rotate(-6deg);
-  transform-origin: left center;
-  pointer-events: none;
-}
-
-// ------------------------------------ 斜切石墨 ------------------------------------
-.body {
-  position: relative;
+// ------------------------------------ 系统名 ------------------------------------
+.ident {
   display: grid;
-  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
-  gap: 2em;
-  align-items: start;
-  padding: 1.5em 0 1.2em;
-  border-top: 1px solid $ink;
-}
-
-.slab,
-.edge {
-  position: absolute;
-  z-index: 0;
-  top: 0.4em;
-  right: -2.6em;
-  bottom: -0.2em;
-  left: 34%;
-  clip-path: polygon(9% 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.slab {
-  background: #141618;
-}
-
-.edge {
-  background: $cyan;
-  transform: translateX(-5px);
-}
-
-.dock {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding: 0.2em 0 0 1.6em;
-}
-
-.dockRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
-  gap: 1.1em;
+  grid-template-columns: minmax(0, 1.4fr) auto;
+  gap: 0.35em 2em;
   align-items: end;
-}
-
-.dockMain {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 0.8em;
-  min-width: 0;
-}
-
-.feature {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.8em;
-  max-width: 24em;
-  padding-left: 1em;
-  border-left: 4px solid $cyan;
-}
-
-.kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6em;
-  font-size: 0.86em;
-  color: $ink-soft;
-
-  i {
-    width: 0.55em;
-    height: 0.55em;
-    background: $yellow;
-  }
-}
-
-.featureTitle {
-  margin: 0;
-  font-family: $font-serif;
-  font-weight: 700;
-  font-size: 1.9em;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.featureBody {
-  margin: 0;
-  line-height: 1.75;
-  color: $ink-soft;
-}
-
-.featureLink {
-  align-self: flex-start;
-  display: inline-flex;
-  gap: 0.6em;
-  margin-top: 0.4em;
-  padding-bottom: 0.15em;
+  padding-bottom: 0.9em;
   border-bottom: 1px solid $ink;
-  color: inherit;
-  text-decoration: none;
-  transition: color $normal $ease, border-color $normal $ease;
+}
 
-  span {
-    transition: transform $normal $ease;
+.identCode,
+.log,
+.assetCode,
+.assetNote,
+.indexLatin,
+.indexPath {
+  margin: 0;
+  font-family: $font-mono;
+  font-size: 0.78em;
+  letter-spacing: 0.04em;
+  color: $ink-soft;
+}
+
+.identName {
+  margin: 0.1em 0 0;
+  font-family: $font-serif;
+  font-size: 2.15em;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.stats {
+  display: flex;
+  gap: 1.4em;
+  margin: 0;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
   }
 
-  &:hover {
-    color: $cyan;
-    border-color: $cyan;
+  dt {
+    font-family: $font-mono;
+    font-size: 0.72em;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: $ink-faint;
+  }
 
-    span {
-      transform: translateX(4px);
-    }
+  dd {
+    margin: 0;
+    font-family: $font-num;
+    font-size: 1.55em;
+    font-weight: 700;
+    line-height: 1;
   }
 }
 
-// ------------------------------------ 目录 ------------------------------------
-.index {
-  min-width: 0;
-  padding-left: 0;
+.log {
+  grid-column: 1 / -1;
+}
 
+// ------------------------------------ 模块表 ------------------------------------
+.index {
   ol {
     margin: 0;
     padding: 0;
     list-style: none;
   }
+}
 
-  li + li {
-    margin-top: 0.45em;
-  }
+.indexHead,
+.indexLink {
+  display: grid;
+  grid-template-columns: 3.2em 6em 8em minmax(0, 1fr) 5em;
+  align-items: center;
+  gap: 0.8em;
 }
 
 .indexHead {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 0.8em 0.55em 1.3em;
-  border-bottom: 1px solid rgba($paper, 0.28);
-  font-size: 0.86em;
-  color: rgba($paper, 0.55);
+  padding: 0 1.1em 0.45em 1.5em;
+  font-family: $font-mono;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  color: $ink-faint;
 }
 
 .indexLink {
-  position: relative;
-  display: grid;
-  grid-template-columns: 2.6em auto 1fr auto;
-  align-items: center;
-  gap: 1em;
-  padding: 0.5em 1.5em 0.5em 0.55em;
-  color: $ink;
+  min-height: 2.55em;
+  padding: 0.28em 1.1em 0.28em 0.7em;
+  color: inherit;
   text-decoration: none;
-  background: $paper;
-  clip-path: polygon(1.15em 0, 100% 0, calc(100% - 1.15em) 100%, 0 100%);
-  transition: transform $normal $ease, color $normal $ease, background-color $normal $ease;
+  background: transparent;
+  clip-path: polygon($cut 0, 100% 0, calc(100% - #{$cut}) 100%, 0 100%);
+  box-shadow: inset 0 -1px 0 $hair;
+  transition: transform $normal $ease, color $normal $ease;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0.35em;
+    bottom: 0.35em;
+    left: 0;
+    width: 4px;
+    background: $cyan;
+    transform: scaleY(0);
+    transform-origin: center;
+    transition: transform $normal $ease;
+  }
+
+  position: relative;
 
   &:hover,
   &:focus-visible {
-    color: #111;
-    background: $cyan;
-    transform: translateX(6px);
+    transform: translateX(4px);
 
-    .indexNo {
-      color: $cyan;
-      background: #111;
+    &::before {
+      transform: scaleY(1);
     }
 
-    .indexLatin,
-    .indexNote {
-      color: rgba(17, 17, 17, 0.62);
+    .indexNo {
+      color: #111;
+      background: $cyan;
     }
   }
 
   &:focus-visible {
     outline: 3px solid $yellow;
-    outline-offset: 3px;
+    outline-offset: 2px;
+  }
+
+  &[aria-current='page'] .stateOn {
+    box-shadow: inset 0 -4px 0 $yellow;
   }
 }
 
-.indexNo {
+.indexNo,
+.assetNo {
   justify-self: start;
-  padding: 0.16em 0.34em 0.08em;
+  padding: 0.16em 0.32em 0.08em;
   font-family: $font-num;
-  font-size: 0.78em;
-  line-height: 1;
+  font-size: 0.72em;
+  line-height: 1.1;
   color: $paper;
   background: $ink;
-  transform: skewX(-12deg);
-  transition: color $normal $ease, background-color $normal $ease;
+  transform: skewX($shear);
 }
 
-.indexLabel {
+.indexLabel,
+.assetName {
   font-family: $font-serif;
   font-weight: 700;
-  font-size: 1.45em;
+  font-size: 1.2em;
   letter-spacing: -0.02em;
 }
 
 .indexLatin {
-  font-size: 0.72em;
-  letter-spacing: 0.24em;
-  color: $ink-soft;
+  letter-spacing: 0.16em;
 }
 
-.indexNote {
-  font-size: 0.82em;
+.stateOn,
+.stateOff {
+  justify-self: start;
+  font-family: $font-mono;
+  font-size: 0.75em;
+}
+
+.stateOff {
   color: $ink-faint;
 }
 
-// ------------------------------------ 标志框 ------------------------------------
-.frame {
-  position: relative;
-  margin: 0;
-  padding: 0.5em;
-  will-change: transform;
-
-  // 角刻度：这一页唯一的一处
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    width: 1.1em;
-    height: 1.1em;
-    border: 0 solid rgba($paper, 0.75);
-  }
-
-  &::before {
-    top: 0;
-    right: 0;
-    border-top-width: 1px;
-    border-right-width: 1px;
-  }
-
-  &::after {
-    bottom: 1.9em;
-    left: 0;
-    border-bottom-width: 1px;
-    border-left-width: 1px;
-  }
+// ------------------------------------ 在册资产 ------------------------------------
+.asset {
+  display: grid;
+  grid-template-columns: 3.2em minmax(0, 1fr) 7.5em;
+  gap: 0.8em;
+  align-items: center;
+  padding: 0.55em 0.4em 0.55em 0.7em;
+  clip-path: polygon($cut 0, 100% 0, calc(100% - #{$cut}) 100%, 0 100%);
+  box-shadow: inset 0 -1px 0 $ink;
 }
 
-.frameCut {
-  padding: 1px;
-  background: $ink;
-  clip-path: polygon(#{$cut-md * 2} 0, 100% 0, 100% 100%, 0 100%, 0 #{$cut-md * 2});
-
-  > * {
-    clip-path: polygon(#{$cut-md * 2} 0, 100% 0, 100% 100%, 0 100%, 0 #{$cut-md * 2});
-  }
+.assetName {
+  margin: 0.05em 0;
 }
 
-.frameImage {
+.assetWell {
+  background: #fff;
+  clip-path: polygon($cut 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.assetImage {
   display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 3;
+  height: 4.6em;
   object-fit: cover;
-  background: #fff;
+  object-position: center 42%;
 }
 
-.frameCaption {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.55em;
-  margin-left: 0.85em;
-  padding: 0.28em 0.7em;
-  font-size: 0.8em;
-  color: $ink;
-  background: $paper;
-  clip-path: polygon(0.55em 0, 100% 0, calc(100% - 0.55em) 100%, 0 100%);
-}
-
-// ------------------------------------ 月份刻度 ------------------------------------
+// ------------------------------------ 月历 ------------------------------------
 .rail {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 3.4em 4.6em minmax(0, 1fr) 3.2em;
+  gap: 0.8em;
   align-items: end;
-  gap: 2em;
-  min-height: 2.6em;
-  padding-top: 0.8em;
-  border-top: 1px solid $hair;
-  font-size: 0.8em;
+  padding-top: 0.7em;
+  border-top: 1px solid $ink;
 }
 
-.railLabel {
+.railKey {
+  font-family: $font-num;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.railNow {
+  font-family: $font-mono;
+  font-size: 0.75em;
   color: $ink-soft;
-  white-space: nowrap;
 }
 
 .railTicks {
@@ -555,163 +379,95 @@ a.metaItem:hover {
 }
 
 .tick,
-.tickMajor,
 .tickToday {
-  position: relative;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
-  gap: 0.3em;
+  gap: 0.28em;
   width: 1px;
 
   &::before {
     content: '';
-    display: block;
     width: 1px;
-    height: 6px;
+    height: 7px;
     background: $ink-faint;
   }
 
   span {
     font-family: $font-mono;
-    font-size: 0.85em;
-    color: $ink-faint;
+    font-size: 0.68em;
+    color: transparent;
   }
-}
-
-.tickMajor::before {
-  height: 10px;
-  background: $ink-soft;
 }
 
 .tickToday {
   &::before {
-    width: 3px;
+    width: 4px;
     height: 14px;
     background: $yellow;
   }
 
   span {
     color: $ink;
-    font-weight: 700;
   }
 }
 
-// ------------------------------------ 书脊 ------------------------------------
-.spine {
-  position: absolute;
-  top: 62%;
-  right: 0.85em;
-  z-index: 2;
-  transform: translateY(-50%);
-  writing-mode: vertical-rl;
-  font-size: 0.72em;
-  letter-spacing: 0.5em;
-  color: rgba($paper, 0.45);
-}
-
-// ------------------------------------ 窄屏 ------------------------------------
-@media (max-width: 960px) {
-  .sheet {
-    padding-right: 1.6em;
+@media (max-width: 860px) {
+  .meta {
+    flex-wrap: wrap;
+    row-gap: 0;
   }
 
-  .slab,
-  .edge {
-    right: -1.6em;
-  }
-
-  .dockRow {
+  .ident {
     grid-template-columns: 1fr;
   }
 
-  .spine {
+  .indexHead {
     display: none;
+  }
+
+  .indexHead,
+  .indexLink {
+    grid-template-columns: 3em 4.5em minmax(0, 1fr) 4.2em;
+  }
+
+  .indexLatin {
+    display: none;
+  }
+
+  .asset {
+    grid-template-columns: 3em minmax(0, 1fr) 5.5em;
   }
 }
 
 @media (max-width: 640px) {
   .sheet {
     font-size: 14px;
-    clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$cut-md * 2}), calc(100% - #{$cut-md * 2}) 100%, 0 100%);
   }
 
-  .meta {
-    flex-wrap: wrap;
-    row-gap: 0.5em;
-  }
-
-  .ruler {
+  .indexPath,
+  .log {
     display: none;
   }
 
-  .metaRight {
-    margin-left: 0;
-    flex-wrap: wrap;
-    row-gap: 0.4em;
+  .indexHead,
+  .indexLink {
+    grid-template-columns: 2.8em minmax(0, 1fr) 4em;
   }
 
-  .title {
-    font-size: 19vw;
-  }
-
-  .subline {
-    flex-wrap: wrap;
-  }
-
-  .spaced {
-    letter-spacing: 0.32em;
-  }
-
-  .slab,
-  .edge {
+  .railTicks .tick span {
     display: none;
-  }
-
-  .signature {
-    width: 46vw;
-    margin-bottom: 0.8em;
-  }
-
-  .body {
-    grid-template-columns: 1fr;
-  }
-
-  .dock {
-    margin-top: 0.4em;
-    padding: 1.1em 0.9em 1.2em;
-    background: #141618;
-    clip-path: polygon(1em 0, 100% 0, 100% calc(100% - 1em), calc(100% - 1em) 100%, 0 100%);
-  }
-
-  .indexNote {
-    display: none;
-  }
-
-  .frame {
-    max-width: 18em;
-  }
-
-  .railTicks span {
-    display: none;
-  }
-
-  .tickToday span {
-    display: block;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .indexLink,
-  .indexLink::before,
-  .featureLink span {
+  .indexLink::before {
     transition: none;
   }
 
   .indexLink:hover,
-  .indexLink:focus-visible,
-  .featureLink:hover span {
+  .indexLink:focus-visible {
     transform: none;
   }
-
 }
