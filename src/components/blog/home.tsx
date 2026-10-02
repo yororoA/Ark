@@ -77,6 +77,7 @@ function OrbitRecords({ articles, moments, locale }: { articles: Entry[]; moment
         aria-label={`${typeLabel}: ${entry.title}`}
       >
         <span className={styles['orbit-planet']} aria-hidden="true" />
+        <span className={styles['orbit-code']} aria-hidden="true">{typeLabel.at(0)}·{String(index + 1).padStart(2, '0')}</span>
         <span className={styles['orbit-preview']}>
           <small>{String(index + 1).padStart(2, '0')} / {typeLabel}</small>
           <strong>{entry.title}</strong>

@@ -104,9 +104,9 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
         const media: Media[] = urls.filter(url => /^https?:\/\//.test(url)).map(url => ({ url, filename: url.split('/').pop() || '', mime: /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg' }))
         return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid}>
           <small className={styles['message-meta']} title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>
+          {message.replyto && <blockquote className={styles['message-quote']}>{message.replyto}</blockquote>}
           <div className={styles['message-line']}>
             <div className={styles['message-body']}>
-              {message.replyto && <blockquote>{message.replyto}</blockquote>}
               {message.text && <p>{message.text}</p>}
               <MediaGrid files={media} compact onMediaLoad={keepLatestVisible} />
             </div>
