@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Migrated media has arbitrary dimensions and hosts; preserve its original aspect ratio. */
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
@@ -108,38 +108,92 @@ export function DeleteButton({ name, onDelete, iconOnly = false }: { name: strin
 export function MediaPreview({ files, index, close, compact = false }: { files: Media[]; index: number; close: () => void; compact?: boolean }) {
   const [active, setActive] = useState(index)
   const [scale, setScale] = useState(1)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [panning, setPanning] = useState(false)
+  const mediaRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef({ active: false, pointerId: -1, x: 0, y: 0, panX: 0, panY: 0 })
   const { t, locale } = useBlog()
   const item = files[active]
   const isImage = !item.mime.startsWith('video')
+  const resetView = useCallback(() => {
+    dragRef.current.active = false
+    setPanning(false)
+    setScale(1)
+    setPan({ x: 0, y: 0 })
+  }, [])
   function changeMedia(offset: number) {
     setActive(value => Math.max(0, Math.min(files.length - 1, value + offset)))
-    setScale(1)
+    resetView()
   }
   function changeScale(offset: number) {
     setScale(value => Math.max(.5, Math.min(3, Number((value + offset).toFixed(2)))))
   }
+  function startPan(event: React.PointerEvent<HTMLDivElement>) {
+    if (!isImage || event.button !== 0) return
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    dragRef.current = { active: true, pointerId: event.pointerId, x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y }
+    setPanning(true)
+  }
+  function movePan(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current
+    if (!drag.active || drag.pointerId !== event.pointerId) return
+    event.preventDefault()
+    setPan({ x: drag.panX + event.clientX - drag.x, y: drag.panY + event.clientY - drag.y })
+  }
+  function endPan(event: React.PointerEvent<HTMLDivElement>) {
+    if (dragRef.current.pointerId !== event.pointerId) return
+    dragRef.current.active = false
+    setPanning(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+  }
+  useEffect(() => {
+    const media = mediaRef.current
+    if (!media || !isImage) return
+    const zoom = (event: WheelEvent) => {
+      event.preventDefault()
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? media.clientHeight : 1
+      const factor = Math.exp(-event.deltaY * unit * .002)
+      setScale(value => Math.max(.5, Math.min(3, Number((value * factor).toFixed(3)))))
+    }
+    media.addEventListener('wheel', zoom, { passive: false })
+    return () => media.removeEventListener('wheel', zoom)
+  }, [isImage])
   useEffect(() => {
     const navigate = (event: KeyboardEvent) => {
       if (event.key === 'ArrowLeft') {
         setActive(value => Math.max(0, value - 1))
-        setScale(1)
+        resetView()
       }
       if (event.key === 'ArrowRight') {
         setActive(value => Math.min(files.length - 1, value + 1))
-        setScale(1)
+        resetView()
       }
       if (!isImage) return
-      if (event.key === '-' || event.key === '_') changeScale(-.25)
-      if (event.key === '+' || event.key === '=') changeScale(.25)
-      if (event.key === '0') setScale(1)
+      if (event.key === '-' || event.key === '_') { event.preventDefault(); changeScale(-.25) }
+      if (event.key === '+' || event.key === '=') { event.preventDefault(); changeScale(.25) }
+      if (event.key === '0') { event.preventDefault(); resetView() }
     }
     window.addEventListener('keydown', navigate)
     return () => window.removeEventListener('keydown', navigate)
-  }, [files.length, isImage])
+  }, [files.length, isImage, resetView])
   return <Modal title={item.desc || t('preview')} close={close} variant="media">
-    <div className={styles['preview-media']} data-compact={compact} data-zoomed={isImage && scale !== 1}>
+    <div
+      ref={mediaRef}
+      className={styles['preview-media']}
+      data-compact={compact}
+      data-image={isImage}
+      data-panning={panning}
+      data-zoomed={isImage && scale !== 1}
+      role={isImage ? 'group' : undefined}
+      aria-label={isImage ? t('panZoomImage') : undefined}
+      onPointerDown={startPan}
+      onPointerMove={movePan}
+      onPointerUp={endPan}
+      onPointerCancel={endPan}
+    >
       {isImage
-        ? <div className={styles['preview-canvas']} style={{ height: `${scale * 100}%` }}><img key={item.url} src={item.url} alt={item.desc || item.filename} /></div>
+        ? <div className={styles['preview-canvas']} style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={item.desc || item.filename} style={{ transform: `scale(${scale})` }} /></div>
         : <video key={item.url} src={item.url} controls autoPlay />}
     </div>
     <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`}>
@@ -151,7 +205,7 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
       {isImage && <div className={styles['preview-zoom']} role="group" aria-label={t('preview')}>
         <button type="button" className={styles['icon-button']} disabled={scale <= .5} onClick={() => changeScale(-.25)} aria-label={t('zoomOut')} title={t('zoomOut')}><ZoomOut size={17} /></button>
         <output aria-live="polite">{Math.round(scale * 100)}%</output>
-        <button type="button" className={styles['icon-button']} disabled={scale === 1} onClick={() => setScale(1)} aria-label={t('resetZoom')} title={t('resetZoom')}><RotateCcw size={16} /></button>
+        <button type="button" className={styles['icon-button']} disabled={scale === 1 && pan.x === 0 && pan.y === 0} onClick={resetView} aria-label={t('resetZoom')} title={t('resetZoom')}><RotateCcw size={16} /></button>
         <button type="button" className={styles['icon-button']} disabled={scale >= 3} onClick={() => changeScale(.25)} aria-label={t('zoomIn')} title={t('zoomIn')}><ZoomIn size={17} /></button>
       </div>}
     </div>

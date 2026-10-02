@@ -79,6 +79,7 @@ const words = {
   zoomOut: ['缩小图片', 'Zoom out', '縮小', 'Verkleinern'],
   resetZoom: ['重置缩放', 'Reset zoom', '表示倍率を戻す', 'Zoom zurücksetzen'],
   zoomIn: ['放大图片', 'Zoom in', '拡大', 'Vergrößern'],
+  panZoomImage: ['滚轮缩放，拖拽平移图片', 'Scroll to zoom, drag to pan', 'スクロールで拡大、ドラッグで移動', 'Scrollen zum Zoomen, Ziehen zum Verschieben'],
   upload: ['上传媒体', 'Upload media', 'メディアを追加', 'Medien hochladen'],
   dropFiles: ['点击选择或拖入文件', 'Choose or drop files', 'ファイルを選択・ドロップ', 'Dateien wählen oder ablegen'],
   file: ['文件', 'file', 'ファイル', 'Datei'],

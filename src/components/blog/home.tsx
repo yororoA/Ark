@@ -9,16 +9,20 @@ import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
 
 const ORBIT_SLOTS = [
-  { left: '24%', top: '29%', align: 'start' },
-  { left: '69%', top: '19%', align: 'end' },
-  { left: '83%', top: '42%', align: 'end' },
-  { left: '72%', top: '68%', align: 'end' },
-  { left: '46%', top: '78%', align: 'start' },
-  { left: '19%', top: '63%', align: 'start' },
-  { left: '40%', top: '14%', align: 'start' },
-  { left: '91%', top: '56%', align: 'end' },
+  { track: 'outer', start: '8%', duration: '72s', delay: '-5.76s' },
+  { track: 'middle', start: '31%', duration: '64s', delay: '-19.84s' },
+  { track: 'inner', start: '54%', duration: '58s', delay: '-31.32s' },
+  { track: 'outer', start: '67%', duration: '76s', delay: '-50.92s' },
+  { track: 'middle', start: '82%', duration: '68s', delay: '-55.76s' },
+  { track: 'inner', start: '17%', duration: '62s', delay: '-10.54s' },
+  { track: 'outer', start: '91%', duration: '74s', delay: '-67.34s' },
+  { track: 'middle', start: '48%', duration: '70s', delay: '-33.6s' },
 ] as const
-type OrbitPositionStyle = CSSProperties & { '--orbit-left': string; '--orbit-top': string }
+type OrbitMotionStyle = CSSProperties & {
+  '--orbit-start': string
+  '--orbit-duration': string
+  '--orbit-delay': string
+}
 
 function OrbitalArtwork() {
   return <svg className={styles['orbital-art']} viewBox="0 0 900 820" fill="none" aria-hidden="true">
@@ -70,14 +74,17 @@ function OrbitRecords({ articles, moments, locale }: { articles: Entry[]; moment
         href={`/${kind === 'article' ? 'articles' : 'moments'}/${entry._id}`}
         prefetch={false}
         className={styles['orbit-node']}
-        data-align={slot.align}
         data-kind={kind}
+        data-track={slot.track}
         data-slot={index}
-        style={{ '--orbit-left': slot.left, '--orbit-top': slot.top } as OrbitPositionStyle}
+        style={{
+          '--orbit-start': slot.start,
+          '--orbit-duration': slot.duration,
+          '--orbit-delay': slot.delay,
+        } as OrbitMotionStyle}
         aria-label={`${typeLabel}: ${entry.title}`}
       >
         <span className={styles['orbit-planet']} aria-hidden="true" />
-        <span className={styles['orbit-code']} aria-hidden="true">{typeLabel.at(0)}·{String(index + 1).padStart(2, '0')}</span>
         <span className={styles['orbit-preview']}>
           <small>{String(index + 1).padStart(2, '0')} / {typeLabel}</small>
           <strong>{entry.title}</strong>
