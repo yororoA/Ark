@@ -21,7 +21,7 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     const isRead = method === 'GET'
     if (!routes[method]?.some(pattern => pattern.test(path))) return NextResponse.json({ message: '接口不存在' }, { status: 404 })
     if (!isRead && !sameOrigin(request)) return NextResponse.json({ message: '请求来源无效' }, { status: 403 })
-    const isDraft = path === 'moments/get' && request.nextUrl.searchParams.get('isEditing') === 'true'
+    const isDraft = path === 'moments/get' && request.nextUrl.searchParams.get('isEditing')?.toLowerCase() === 'true'
     const isPublic = (isRead && publicGets.test(path) && !isDraft) || path === 'moments/view' || (method === 'POST' && path === 'guestbook')
     const isReader = (isRead && path === 'links') || (method === 'POST' && path === 'moments/comment/get')
     const auth = !isPublic && !isReader ? await verifiedSession() : null
@@ -49,13 +49,18 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
       signal: path === 'sse/subscribe' ? request.signal : undefined,
     })
     if (credential && auth) await acceptRefresh(response, credential)
+    if (credential && isReader) {
+      const token = response.headers.get('x-refreshed-token')
+      if (token) rememberRenewal(credential, token)
+    }
     if (path === 'sse/subscribe' && response.ok && response.body && credential) {
       const decoder = new TextDecoder()
       const encoder = new TextEncoder()
       let pending = ''
       const stream = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
-          pending += decoder.decode(chunk, { stream: true }).replace(/\r\n/g, '\n')
+          // Normalize after concatenation: CR and LF can arrive in different chunks.
+          pending = (pending + decoder.decode(chunk, { stream: true })).replace(/\r\n/g, '\n')
           let boundary: number
           while ((boundary = pending.indexOf('\n\n')) >= 0) {
             const event = pending.slice(0, boundary)

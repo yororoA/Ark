@@ -32,6 +32,7 @@ export async function upstream(path: string, init: RequestInit = {}) {
 }
 
 export function rememberRenewal(credential: Credential, token: string) {
+  if (!token || token === credential.token) return
   const now = Date.now()
   for (const [key, entry] of renewals) if (entry.until < now) renewals.delete(key)
   if (renewals.size > 5000) renewals.clear()
@@ -75,7 +76,17 @@ export function credentialHeaders(credential: Credential) {
 }
 
 export async function acceptRefresh(response: Response, credential: Credential) {
-  const token = response.headers.get('x-refreshed-token')
+  let token = response.headers.get('x-refreshed-token')
+  // V2 returns its rotation in Set-Cookie. Only import this verified account's
+  // token, never the upstream active uid or an unrelated user's cookie entry.
+  for (const header of response.headers.getSetCookie()) {
+    const match = /^(?:blog_tokens|blog_guest_token)=([^;]*)/i.exec(header)
+    if (!match) continue
+    try {
+      const entry = decodeURIComponent(match[1]).split(',').find(value => value.startsWith(`${credential.uid}:`))
+      if (entry) token = entry.slice(credential.uid.length + 1)
+    } catch { /* Ignore malformed upstream cookie values. */ }
+  }
   if (token) rememberRenewal(credential, token)
   await saveCredential(credential)
 }
@@ -97,6 +108,7 @@ export async function verifiedSession(uid?: string): Promise<{ session: Session;
   if (!response.ok) return null
   const data = await response.json()
   if (!data.valid || data.uid !== credential.uid) return null
+  await acceptRefresh(response, credential)
   const admins = (process.env.ADMIN_UIDS || '').split(',').map(s => s.trim()).filter(Boolean)
   return {
     credential,
@@ -111,7 +123,8 @@ export async function publicReader() {
     state.arkPublicReaderUntil = Date.now() + 20 * 60_000
     state.arkPublicReader = upstream('/api/guest/login', { method: 'POST' }).then(async response => {
       if (!response.ok) throw new BackendError('暂时无法读取内容')
-      const data = await response.json()
+      const { data } = await response.json()
+      if (!data?.uid || !data?.token) throw new BackendError('暂时无法读取内容')
       return { uid: data.uid, token: data.token, guest: true }
     }).catch(error => { state.arkPublicReader = undefined; throw error })
   }
@@ -121,5 +134,13 @@ export async function publicReader() {
 export function sameOrigin(request: Request) {
   const origin = request.headers.get('origin')
   const isCrossSite = request.headers.get('sec-fetch-site') === 'cross-site'
-  return !isCrossSite && (!origin || origin === new URL(request.url).origin)
+  if (isCrossSite) return false
+  if (!origin) return true
+  try {
+    const source = new URL(origin)
+    // Next may normalize request.url to localhost internally. The browser's
+    // actual Host remains authoritative, including behind TLS termination.
+    const host = request.headers.get('host') || new URL(request.url).host
+    return /^https?:$/.test(source.protocol) && source.origin === origin && source.host === host
+  } catch { return false }
 }

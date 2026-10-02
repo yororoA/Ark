@@ -1,4 +1,5 @@
 import Portal from "@/components/Portal";
+import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import styles from "./components.module.scss";
 import Lenis from "lenis";
@@ -19,7 +20,7 @@ import type { ConnectParams } from '../types';
 
 
 
-export default function AccountManagement(props: { onClose: () => void, onConnect: (params: ConnectParams) => void, details: AuthDetail[] }) {
+export default function AccountManagement(props: { onClose: () => void, onConnect: (params: ConnectParams) => void, details: AuthDetail[], preferredMode?: 'register' | 'login' }) {
   const { sendCode } = useAuth();
   const { onClose, onConnect, details } = props;
 
@@ -46,9 +47,17 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   }, [wrapperEl]);
 
   // 表单
-  // todo: error toast
-  const [otherVisable, setOtherVisable] = useState(false);
-  const [activeTab, setActiveTab] = useState<'register' | 'login'>('register');
+  const [otherVisable, setOtherVisable] = useState(details.length === 0 || props.preferredMode === 'register');
+  const [activeTab, setActiveTab] = useState<'register' | 'login'>(props.preferredMode || 'login');
+  const [formError, setFormError] = useState('');
+  const [formBusy, setFormBusy] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  async function run(action: () => Promise<void>) {
+    if (formBusy) return;
+    setFormBusy(true); setFormError('');
+    try { await action(); } catch (error) { setFormError(error instanceof Error ? error.message : '请求失败，请重试'); }
+    finally { setFormBusy(false); }
+  }
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -58,12 +67,8 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
     if (!emailRef.current?.value) {
       throw new Error('请输入邮箱');
     }
-    try {
-      await sendCode(emailRef.current.value);
-    } catch (err) {
-      console.log(err);
-      throw err;
-    }
+    await sendCode(emailRef.current.value);
+    setCodeSent(true);
   }
   // 注册
   const handleRegister = async () => {
@@ -190,14 +195,21 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                   <>
                     <Input label="邮箱" id="email" required placeholder="请输入邮箱" ref={emailRef} />
                     <Input label="验证码" id="code" required placeholder="请输入验证码" ref={codeRef}>
-                      <Button size="small" onClick={handleSendCode}>获取验证码</Button>
+                      <Button size="small" disabled={formBusy} onClick={() => run(handleSendCode)}>{codeSent ? '重新发送' : '获取验证码'}</Button>
                     </Input>
                   </>
                 )}
               </div>
-              <Button size="small" className={cn(styles.loginBtn)} onClick={activeTab === 'register' ? handleRegister : handleLogin}>{activeTab === 'register' ? '注册' : '登录'}</Button>
+              {formError && <p role="alert">{formError}</p>}
+              {codeSent && activeTab === 'register' && <p role="status">验证码已发送，请查看邮箱。</p>}
+              <Button size="small" disabled={formBusy} className={cn(styles.loginBtn)} onClick={() => run(activeTab === 'register' ? handleRegister : handleLogin)}>{formBusy ? '正在连接…' : activeTab === 'register' ? '注册' : '登录'}</Button>
             </div>
           </>}
+        <div className={styles.accountManagementFooter}>
+          <Link href="/home">浏览首页 ↗</Link>
+          <Link href="/terms">社区约定 ↗</Link>
+          <Button size="small" disabled={formBusy} onClick={() => { onClose(); onConnect({ action: 'guest' }); }}>游客接入</Button>
+        </div>
       </div>
     </Portal>
   );

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { createHash } from 'crypto'
 import { z } from 'zod'
-import { Api } from '@/lib/server/api'
+import { Api, ApiError } from '@/lib/server/api'
 import { sameOrigin, verifiedSession, saveCredential } from '@/lib/server/blog-session'
 
 /**
@@ -65,35 +64,7 @@ function encryptPassword(password: string) {
  * 与原 Server Action 行为不同 —— 这正是我们想要的。
  */
 async function setAuthCookies(uid: string, token: string, isGuest = false) {
-  const cookieStore = await cookies()
-  const isProduction = process.env.NODE_ENV === 'production'
-  const secure = isProduction
-  const sameSite = isProduction ? 'none' as const : 'lax' as const
-
-  if (isGuest) {
-    // 游客：独立的 blog_guest_token cookie，短期有效
-    cookieStore.set('blog_guest_token', `${uid}:${token}`, {
-      httpOnly: true, secure, sameSite, path: '/', maxAge: 30 * 60,
-    })
-  } else {
-    // 注册用户：blog_tokens（uid:token 数组）+ blog_active_uid
-    const existing = cookieStore.get('blog_tokens')?.value || ''
-    const entries = existing ? existing.split(',').filter(Boolean) : []
-    const idx = entries.findIndex(e => e.startsWith(uid + ':'))
-    if (idx >= 0) {
-      entries[idx] = `${uid}:${token}`
-    } else {
-      entries.push(`${uid}:${token}`)
-    }
-    cookieStore.set('blog_tokens', entries.join(','), {
-      httpOnly: true, secure, sameSite, path: '/', maxAge: 7 * 24 * 60 * 60,
-    })
-  }
-
-  // 所有登录类型都设置当前活跃用户
-  cookieStore.set('blog_active_uid', uid, {
-    httpOnly: false, secure, sameSite, path: '/', maxAge: 365 * 24 * 60 * 60,
-  })
+  await saveCredential({ uid, token, guest: isGuest }, true)
 }
 
 // ── 主入口 ──────────────────────────────────────────
@@ -122,15 +93,15 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/auth/[actio
 async function handleGuest() {
   try {
     const resp = await Api('/api/v2' + AuthUrlMap.guest, 'POST')
-    if (resp && resp.uid && resp.token) {
-      await setAuthCookies(resp.uid, resp.token, true)
-    }
-    if (resp) delete resp.token
-    return NextResponse.json(resp ?? null)
+    // Guest endpoints wrap credentials in data; regular login does not.
+    const guest = resp?.data
+    if (!guest?.uid || !guest?.token) throw new ApiError('游客登录响应无效', 502)
+    await setAuthCookies(guest.uid, guest.token, true)
+    return NextResponse.json({ uid: guest.uid, username: guest.username || 'Guest', isGuest: true, expiresAt: guest.expiresAt })
   } catch (err) {
     return NextResponse.json(
       { message: err instanceof Error ? err.message : '游客登录失败' },
-      { status: 500 }
+      { status: err instanceof ApiError ? err.status : 502 }
     )
   }
 }
@@ -146,9 +117,9 @@ async function handleAuthWithBody(req: NextRequest, action: Auth) {
 
   // 参数校验
   try {
-    if (action === 'login') LoginSchema.parse(body)
-    else if (action === 'register') RegisterSchema.parse(body)
-    else if (action === 'code') CodeSchema.parse(body)
+    if (action === 'login') body = LoginSchema.parse(body)
+    else if (action === 'register') body = RegisterSchema.parse(body)
+    else if (action === 'code') body = CodeSchema.parse(body)
   } catch (err) {
     const message = err instanceof z.ZodError
       ? err.issues.map(i => i.message).join('; ')
@@ -166,7 +137,16 @@ async function handleAuthWithBody(req: NextRequest, action: Auth) {
   const api_url = '/api/v2' + AuthUrlMap[action]
 
   try {
-    const resp = await Api(api_url, 'POST', payload)
+    let resp
+    try {
+      resp = await Api(api_url, 'POST', payload)
+    } catch (err) {
+      // Old bcrypt accounts predate the client's SHA-256 convention. Match the
+      // original site's one-time migration only when the backend identifies it.
+      const isLegacyLogin = action === 'login' && err instanceof ApiError && err.hint === 'legacy_user_detected'
+      if (!isLegacyLogin) throw err
+      resp = await Api(api_url, 'POST', { ...(body as Record<string, unknown>), isLegacy: true })
+    }
     if (resp && (action === 'login' || action === 'register') && resp.uid && resp.token) {
       const adminUids = process.env.ADMIN_UIDS?.split(',') || []
       resp.isAdmin = adminUids.includes(resp.uid)
@@ -177,7 +157,7 @@ async function handleAuthWithBody(req: NextRequest, action: Auth) {
   } catch (err) {
     return NextResponse.json(
       { message: err instanceof Error ? err.message : '请求失败' },
-      { status: 500 }
+      { status: err instanceof ApiError ? err.status : 502 }
     )
   }
 }

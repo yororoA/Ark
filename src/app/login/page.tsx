@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { Suspense, useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useGetLocation } from '@/hooks/useGetLocation';
 import { useBrightness } from '@/context/brightness-context';
 import { useAuthStore } from '@/store/auth';
@@ -13,10 +13,14 @@ import AccountManagement from "./components/accountManagement";
 import ConnectionSequence, { type ConnectionState } from "./components/connectionSequence";
 import Sphere from "@/components/arks/sphere";
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { ConnectParams } from './types';
 
-export default function Login() {
+function Login() {
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode') === 'register' ? 'register' : 'login';
+  const returnTo = searchParams.get('returnTo');
+  const destination = returnTo?.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('\\') ? returnTo : '/home';
   const location = useGetLocation(); // 用户ip定位
   const { setDimmed } = useBrightness(); // 登录页背景图亮度
   const ensureInitialized = useAuthStore((state) => state.ensureInitialized);
@@ -42,17 +46,17 @@ export default function Login() {
   // 首次登录强制打开账号管理，连接期间让位于终端动效。
   const showAccountManagement = initialized && (details.length === 0 || isAccountManagementVisible) && !isConnecting;
 
-  const { switchUser, register, login } = useAuth();
+  const { switchUser, register, login, guestLogin } = useAuth();
   const router = useRouter();
   // 连接按钮点击事件
   const handleConnect = async (params: ConnectParams) => {
     if (connectingRef.current) return;
     connectingRef.current = true;
     const requestId = ++requestIdRef.current;
-    const uid = params.action === 'switch' ? params.uid || details[0]?.uid || '' : '';
+    let uid = params.action === 'switch' ? params.uid || details[0]?.uid || '' : '';
     const username = params.action === 'switch'
       ? details.find((detail) => detail.uid === uid)?.username || 'Guest'
-      : params.username;
+      : params.action === 'guest' ? 'Guest' : params.username;
 
     setConnection({ status: 'pending', username });
     setIsDeclarationVisible(false);
@@ -60,6 +64,7 @@ export default function Login() {
 
     try {
       if (params.action === 'switch') await switchUser(uid);
+      else if (params.action === 'guest') uid = (await guestLogin()).uid;
       else if (params.action === 'register') await register(params.username, params.password, params.email, params.code);
       else if (params.action === 'login') await login(params.username, params.password);
     } catch (err) {
@@ -74,7 +79,7 @@ export default function Login() {
 
     if (requestId === requestIdRef.current) {
       const authenticated = useAuthStore.getState().details.find(detail =>
-        params.action === 'switch' ? detail.uid === uid : detail.username === username
+        params.action === 'switch' || params.action === 'guest' ? detail.uid === uid : detail.username === username
       );
       setConnection({
         status: 'success',
@@ -86,8 +91,8 @@ export default function Login() {
 
   const handleConnected = useCallback(() => {
     setDimmed(false);
-    router.replace('/home');
-  }, [router, setDimmed]);
+    router.replace(destination);
+  }, [router, setDimmed, destination]);
 
   const handleDismissConnection = useCallback(() => {
     connectingRef.current = false;
@@ -133,7 +138,7 @@ export default function Login() {
             </div>
           </>}
         </main>
-        {showAccountManagement && <AccountManagement details={details} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
+        {showAccountManagement && <AccountManagement details={details} preferredMode={mode} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
         <footer className={styles.footer}>
           <div className={styles['footer-brands']}>
@@ -156,4 +161,8 @@ export default function Login() {
       </div>
     </>
   );
+}
+
+export default function Page() {
+  return <Suspense><Login /></Suspense>;
 }
