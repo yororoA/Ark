@@ -1,20 +1,24 @@
 @use '@/styles/variables' as *;
 
-// 一条几何规则：切角只有 $cut，方向只有右低左高的平行四边形。
-// 1px 是结构线。4px 只表示状态：青 = 指向 / 在线，黄 = 当前。
+// 层级：环境照片 → 视口纸面 → 石墨索引区 → 行与记录。
+// 线：区与区是 1px 实墨；行间是发丝；当前是 4px 黄；指向是 4px 青。
+// 切角只有 0.7em，只出现在当前行、记录框和视口右下角。
 $paper: #f3f2ee;
 $paper-dim: #dedcd5;
 $ink: #1b1d1f;
+$graphite: #141618;
 $ink-soft: rgba(27, 29, 31, 0.62);
-$ink-faint: rgba(27, 29, 31, 0.4);
+$ink-faint: rgba(27, 29, 31, 0.42);
 $hair: rgba(27, 29, 31, 0.16);
+$mist: rgba(243, 242, 238, 0.42);
+$mist-dim: rgba(243, 242, 238, 0.22);
+$line-dim: rgba(243, 242, 238, 0.14);
 $cyan: #0098c8;
 $yellow: #f0b800;
 $cut: 0.7em;
 $shear: -12deg;
 
 $ease: cubic-bezier(0.2, 0, 0, 1);
-$fast: 120ms;
 $normal: 200ms;
 
 $font-serif: var(--font-noto-serif), 'Songti SC', serif;
@@ -40,10 +44,9 @@ $font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.15em;
   min-height: calc(100svh - 1.2rem);
-  margin: 0.6rem;
-  padding: 0.85em 1.3em 1em;
+  margin: 0.55rem;
+  border: 1px solid rgba(243, 242, 238, 0.35);
   font-family: $font-sans;
   font-size: clamp(13px, 0.46rem, 18px);
   color: $ink;
@@ -60,9 +63,6 @@ $font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
 .meta {
   display: flex;
   align-items: center;
-  gap: 0;
-  margin: -0.85em -1.3em 0;
-  padding: 0 1.3em;
   border-bottom: 1px solid $ink;
   font-family: $font-mono;
   font-size: 0.78em;
@@ -76,7 +76,7 @@ $font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   display: inline-flex;
   align-items: center;
   gap: 0.45em;
-  min-height: 2.5em;
+  min-height: 2.6em;
   padding: 0 0.9em;
   border-right: 1px solid $hair;
   white-space: nowrap;
@@ -113,22 +113,22 @@ $font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   cursor: pointer;
   background: transparent;
 
-  &:last-child {
-    border-right: 0;
-    border-left: 1px solid $hair;
-  }
-}
-
-button.metaCommand {
-  margin-left: auto;
-
   &:hover {
     color: $cyan;
+  }
+
+  &:last-child {
+    border-right: 0;
   }
 
   &[aria-pressed='true'] {
     box-shadow: inset 0 -4px 0 $yellow;
   }
+}
+
+button.metaCommand {
+  margin-left: auto;
+  border-left: 1px solid $ink;
 }
 
 .dotOn,
@@ -146,33 +146,29 @@ button.metaCommand {
   border: 1px solid $ink-faint;
 }
 
-// ------------------------------------ 系统名 ------------------------------------
+// ------------------------------------ 页题 ------------------------------------
 .ident {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) auto;
-  gap: 0.35em 2em;
-  align-items: end;
-  padding-bottom: 0.9em;
-  border-bottom: 1px solid $ink;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5em;
+  padding: 1.05em 1.2em 0.95em;
+  border-bottom: 4px solid $ink;
 }
 
 .identCode,
-.log,
-.assetCode,
-.assetNote,
-.indexLatin,
-.indexPath {
+.identEn {
   margin: 0;
   font-family: $font-mono;
-  font-size: 0.78em;
-  letter-spacing: 0.04em;
+  font-size: 0.75em;
+  letter-spacing: 0.14em;
   color: $ink-soft;
 }
 
 .identName {
-  margin: 0.1em 0 0;
+  margin: 0.12em 0 0.08em;
   font-family: $font-serif;
-  font-size: 2.15em;
+  font-size: 1.85em;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -180,171 +176,285 @@ button.metaCommand {
 
 .stats {
   display: flex;
-  gap: 1.4em;
+  gap: 1.15em;
   margin: 0;
 
   div {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15em;
+    min-width: 3.2em;
   }
 
   dt {
-    font-family: $font-mono;
-    font-size: 0.72em;
+    display: flex;
+    flex-direction: column;
+    font-family: $font-sans;
+    font-size: 0.75em;
     font-weight: 400;
-    letter-spacing: 0.08em;
-    color: $ink-faint;
+    color: $ink;
+
+    span {
+      font-family: $font-mono;
+      font-size: 0.85em;
+      letter-spacing: 0.08em;
+      color: $ink-faint;
+    }
   }
 
   dd {
-    margin: 0;
+    margin: 0.12em 0 0;
     font-family: $font-num;
-    font-size: 1.55em;
+    font-size: 1.45em;
     font-weight: 700;
     line-height: 1;
   }
 }
 
-.log {
-  grid-column: 1 / -1;
+// ------------------------------------ 石墨索引区 ------------------------------------
+.bay {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  color: $paper;
+  background: $graphite;
 }
 
-// ------------------------------------ 模块表 ------------------------------------
-.index {
-  ol {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-}
-
-.indexHead,
-.indexLink {
-  display: grid;
-  grid-template-columns: 3.2em 6em 8em minmax(0, 1fr) 5em;
-  align-items: center;
-  gap: 0.8em;
-}
-
-.indexHead {
-  padding: 0 1.1em 0.45em 1.5em;
-  font-family: $font-mono;
-  font-size: 0.72em;
-  letter-spacing: 0.08em;
-  color: $ink-faint;
-}
-
-.indexLink {
-  min-height: 2.55em;
-  padding: 0.28em 1.1em 0.28em 0.7em;
-  color: inherit;
-  text-decoration: none;
-  background: transparent;
-  clip-path: polygon($cut 0, 100% 0, calc(100% - #{$cut}) 100%, 0 100%);
-  box-shadow: inset 0 -1px 0 $hair;
-  transition: transform $normal $ease, color $normal $ease;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0.35em;
-    bottom: 0.35em;
-    left: 0;
-    width: 4px;
-    background: $cyan;
-    transform: scaleY(0);
-    transform-origin: center;
-    transition: transform $normal $ease;
-  }
-
-  position: relative;
-
-  &:hover,
-  &:focus-visible {
-    transform: translateX(4px);
-
-    &::before {
-      transform: scaleY(1);
-    }
-
-    .indexNo {
-      color: #111;
-      background: $cyan;
-    }
-  }
-
-  &:focus-visible {
-    outline: 3px solid $yellow;
-    outline-offset: 2px;
-  }
-
-  &[aria-current='page'] .stateOn {
-    box-shadow: inset 0 -4px 0 $yellow;
-  }
-}
-
-.indexNo,
-.assetNo {
-  justify-self: start;
-  padding: 0.16em 0.32em 0.08em;
+.bayHead {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.7em 1.2em 0.55em;
+  border-bottom: 1px solid rgba($paper, 0.55);
   font-family: $font-num;
   font-size: 0.72em;
-  line-height: 1.1;
-  color: $paper;
-  background: $ink;
-  transform: skewX($shear);
-}
-
-.indexLabel,
-.assetName {
-  font-family: $font-serif;
-  font-weight: 700;
-  font-size: 1.2em;
-  letter-spacing: -0.02em;
-}
-
-.indexLatin {
   letter-spacing: 0.16em;
 }
 
-.stateOn,
-.stateOff {
-  justify-self: start;
-  font-family: $font-mono;
-  font-size: 0.75em;
-}
-
-.stateOff {
-  color: $ink-faint;
-}
-
-// ------------------------------------ 在册资产 ------------------------------------
-.asset {
+.bayBody {
   display: grid;
-  grid-template-columns: 3.2em minmax(0, 1fr) 7.5em;
-  gap: 0.8em;
-  align-items: center;
-  padding: 0.55em 0.4em 0.55em 0.7em;
-  clip-path: polygon($cut 0, 100% 0, calc(100% - #{$cut}) 100%, 0 100%);
-  box-shadow: inset 0 -1px 0 $ink;
+  grid-template-columns: minmax(0, 1fr) 15em;
+  gap: 1.4em;
+  align-items: start;
+  padding: 0.85em 1.2em 0.4em;
 }
 
-.assetName {
-  margin: 0.05em 0;
+.index {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.assetWell {
+.row,
+.rowCurrent {
+  a {
+    position: relative;
+    display: grid;
+    grid-template-columns: 3.4em minmax(0, 1fr) auto;
+    gap: 0.75em;
+    align-items: center;
+    min-height: 2.7em;
+    padding: 0.2em 0.8em 0.2em 0.35em;
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+.row {
+  border-bottom: 1px solid $line-dim;
+
+  a {
+    margin-left: 0.85em;
+  }
+
+  &:nth-child(even) a {
+    margin-left: 1.5em;
+  }
+}
+
+.rowCurrent a {
+  min-height: 4.4em;
+  margin-right: -0.4em;
+  padding-left: 0.7em;
+  color: $ink;
+  background: $paper;
+  clip-path: polygon($cut 0, 100% 0, 100% calc(100% - #{$cut}), calc(100% - #{$cut}) 100%, 0 100%);
+  box-shadow: inset 4px 0 0 $yellow;
+}
+
+.rowNo {
+  font-family: $font-num;
+  font-weight: 700;
+  font-size: 0.95em;
+  color: $mist;
+  transform: skewX($shear);
+}
+
+.rowCurrent .rowNo {
+  font-size: 1.7em;
+  color: $ink;
+}
+
+.rowMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35em 0.75em;
+  min-width: 0;
+}
+
+.rowLabel {
+  font-family: $font-serif;
+  font-weight: 700;
+  font-size: 1.15em;
+}
+
+.rowLatin,
+.rowPath {
+  font-family: $font-mono;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  color: $mist;
+}
+
+.rowCurrent .rowLatin,
+.rowCurrent .rowPath {
+  color: $ink-soft;
+}
+
+.rowPath {
+  flex-basis: 100%;
+  color: $mist-dim;
+}
+
+.rowState {
+  font-family: $font-mono;
+  font-size: 0.72em;
+  letter-spacing: 0.12em;
+  color: $mist;
+}
+
+.rowState[data-state='CURRENT'] {
+  color: $ink;
+  box-shadow: inset 0 -4px 0 $yellow;
+}
+
+.rowState[data-state='OFFLINE'] {
+  color: rgba(227, 59, 59, 0.85);
+}
+
+.row a:hover .rowNo,
+.row a:focus-visible .rowNo {
+  color: $cyan;
+}
+
+.row a:hover .rowPath,
+.row a:focus-visible .rowPath {
+  color: $cyan;
+}
+
+.row a:focus-visible,
+.rowCurrent a:focus-visible {
+  outline: 3px solid $yellow;
+  outline-offset: 2px;
+}
+
+// ------------------------------------ Bines 记录 ------------------------------------
+.record {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 0.45em 0.7em;
+  padding: 0.7em;
+  color: $ink;
+  background: $paper;
+  clip-path: polygon($cut 0, 100% 0, 100% 100%, 0 calc(100% - #{$cut}));
+}
+
+.recordFig {
+  grid-row: 1 / span 2;
+  margin: 0;
+  writing-mode: vertical-rl;
+  font-family: $font-num;
+  font-size: 0.72em;
+  letter-spacing: 0.18em;
+}
+
+.recordWell {
   background: #fff;
   clip-path: polygon($cut 0, 100% 0, 100% 100%, 0 100%);
 }
 
-.assetImage {
+.recordImage {
   display: block;
   width: 100%;
-  height: 4.6em;
+  height: 7.5em;
   object-fit: cover;
-  object-position: center 42%;
+  object-position: center 40%;
+}
+
+.recordCopy {
+  h2 {
+    margin: 0;
+    font-family: $font-serif;
+    font-size: 1.35em;
+    line-height: 1;
+  }
+}
+
+.recordCode,
+.recordState {
+  margin: 0;
+  font-family: $font-mono;
+  font-size: 0.7em;
+  letter-spacing: 0.08em;
+}
+
+.recordState {
+  color: $ink;
+  box-shadow: inset 0 -4px 0 $yellow;
+}
+
+// ------------------------------------ 空索引场 ------------------------------------
+.field {
+  position: relative;
+  flex: 1;
+  min-height: 9em;
+  margin: 0.8em 1.2em 0;
+  background-image:
+    linear-gradient($line-dim 1px, transparent 1px),
+    linear-gradient(90deg, $line-dim 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+
+  p {
+    position: absolute;
+    top: 50%;
+    left: 1.2em;
+    margin: 0;
+    transform: translateY(-50%);
+    font-family: $font-sans;
+    font-size: 0.85em;
+    color: $mist;
+
+    b {
+      display: block;
+      margin-bottom: 0.25em;
+      font-family: $font-num;
+      font-size: 0.8em;
+      letter-spacing: 0.14em;
+      color: $paper;
+    }
+  }
+}
+
+.fieldMark {
+  position: absolute;
+  font-family: $font-mono;
+  font-size: 0.68em;
+  letter-spacing: 0.08em;
+  color: $mist-dim;
+
+  &:nth-child(1) { top: 0.45em; left: 0.55em; }
+  &:nth-child(2) { top: 0.45em; right: 0.55em; }
+  &:nth-child(4) { right: 0.55em; bottom: 0.45em; }
 }
 
 // ------------------------------------ 月历 ------------------------------------
@@ -353,20 +463,22 @@ button.metaCommand {
   grid-template-columns: 3.4em 4.6em minmax(0, 1fr) 3.2em;
   gap: 0.8em;
   align-items: end;
-  padding-top: 0.7em;
-  border-top: 1px solid $ink;
+  margin-top: 0.8em;
+  padding: 0.65em 1.2em 0.8em;
+  border-top: 1px solid rgba($paper, 0.55);
 }
 
 .railKey {
   font-family: $font-num;
   font-weight: 700;
   letter-spacing: 0.12em;
+  color: $paper;
 }
 
 .railNow {
   font-family: $font-mono;
   font-size: 0.75em;
-  color: $ink-soft;
+  color: $mist;
 }
 
 .railTicks {
@@ -390,7 +502,7 @@ button.metaCommand {
     content: '';
     width: 1px;
     height: 7px;
-    background: $ink-faint;
+    background: $mist-dim;
   }
 
   span {
@@ -408,66 +520,46 @@ button.metaCommand {
   }
 
   span {
-    color: $ink;
+    color: $paper;
   }
 }
 
-@media (max-width: 860px) {
-  .meta {
-    flex-wrap: wrap;
-    row-gap: 0;
+@media (max-width: 900px) {
+  .ident,
+  .bayBody {
+    grid-template-columns: 1fr;
+    display: grid;
   }
 
   .ident {
-    grid-template-columns: 1fr;
+    align-items: start;
   }
 
-  .indexHead {
-    display: none;
+  .stats {
+    flex-wrap: wrap;
   }
 
-  .indexHead,
-  .indexLink {
-    grid-template-columns: 3em 4.5em minmax(0, 1fr) 4.2em;
-  }
-
-  .indexLatin {
-    display: none;
-  }
-
-  .asset {
-    grid-template-columns: 3em minmax(0, 1fr) 5.5em;
+  .record {
+    max-width: 22em;
   }
 }
 
 @media (max-width: 640px) {
-  .sheet {
-    font-size: 14px;
+  .meta {
+    flex-wrap: wrap;
   }
 
-  .indexPath,
-  .log {
+  .rowPath {
     display: none;
   }
 
-  .indexHead,
-  .indexLink {
-    grid-template-columns: 2.8em minmax(0, 1fr) 4em;
-  }
-
-  .railTicks .tick span {
-    display: none;
+  .field {
+    min-height: 7em;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .indexLink,
-  .indexLink::before {
+  .sheet {
     transition: none;
-  }
-
-  .indexLink:hover,
-  .indexLink:focus-visible {
-    transform: none;
   }
 }

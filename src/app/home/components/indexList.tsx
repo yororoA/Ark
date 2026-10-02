@@ -1,37 +1,28 @@
 import Link from 'next/link';
-import { INDEX_ENTRIES } from '../cover';
+import { INDEX_ENTRIES, STATE_LABEL } from '../cover';
 import styles from '../home.module.scss';
 
 export default function IndexList() {
   return (
-    <section className={styles.index} aria-label="模块">
-      <div className={styles.indexHead}>
-        <span>编号</span>
-        <span>模块</span>
-        <span>代码</span>
-        <span>路径</span>
-        <span>状态</span>
-      </div>
-      <ol>
-        {INDEX_ENTRIES.map((entry) => {
-          const current = entry.state === '当前';
-          return (
-            <li key={entry.no}>
-              <Link
-                className={styles.indexLink}
-                href={entry.href}
-                aria-current={current ? 'page' : undefined}
-              >
-                <span className={styles.indexNo}>{entry.no}</span>
-                <span className={styles.indexLabel}>{entry.label}</span>
-                <span className={styles.indexLatin}>{entry.latin}</span>
-                <span className={styles.indexPath}>{entry.path}</span>
-                <span className={current ? styles.stateOn : styles.stateOff}>{entry.state}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
+    <ol className={styles.index}>
+      {INDEX_ENTRIES.map((entry) => {
+        const current = entry.state === 'CURRENT';
+        return (
+          <li key={entry.no} className={current ? styles.rowCurrent : styles.row}>
+            <Link href={entry.href} aria-current={current ? 'page' : undefined}>
+              <span className={styles.rowNo}>{entry.no}</span>
+              <span className={styles.rowMain}>
+                <span className={styles.rowLabel}>{entry.label}</span>
+                <span className={styles.rowLatin}>{entry.latin}</span>
+                <span className={styles.rowPath}>{entry.path}</span>
+              </span>
+              <span className={styles.rowState} data-state={entry.state}>
+                {STATE_LABEL[entry.state]}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
