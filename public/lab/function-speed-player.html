@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>基于函数值变速的音视频播放器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        height: 100%;
+      }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 16px;
+        background: #0f172a;
+        color: #e5e7eb;
+        overflow: hidden;
+      }
+      h1 { font-size: 20px; margin-top: 0; margin-bottom: 16px; }
+      h2 { font-size: 16px; margin: 0 0 12px 0; }
+
+      .container {
+        display: flex;
+        gap: 16px;
+        max-width: 1800px;
+        margin: 0 auto;
+        align-items: flex-start;
+        height: calc(100vh - 32px);
+        overflow: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .container::-webkit-scrollbar { display: none; }
+      .left-col {
+        width: 60%;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .right-col {
+        flex: 1;
+        min-width: 300px;
+        position: sticky;
+        top: 16px;
+      }
+
+      .panel {
+        background: #020617;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.6);
+        border: 1px solid #1e293b;
+      }
+
+      .resizer {
+        width: 8px;
+        background: #1e293b;
+        border-radius: 4px;
+        cursor: col-resize;
+        align-self: stretch;
+        transition: background 0.2s, transform 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .resizer::after {
+        content: "";
+        width: 2px;
+        height: 24px;
+        background: #4b5563;
+        border-radius: 2px;
+      }
+      .resizer:hover,
+      .resizer.active {
+        background: #3b82f6;
+      }
+      .resizer:hover::after,
+      .resizer.active::after {
+        background: #fff;
+      }
+
+      @media (max-width: 1024px) {
+        .container { flex-direction: column; }
+        .left-col { width: 100% !important; }
+        .resizer { display: none; }
+        .right-col { position: static; width: 100%; }
+      }
+
+      label { display: block; margin-top: 12px; font-size: 13px; color: #9ca3af; }
+      input[type="text"], input[type="number"], select {
+        width: 100%; padding: 8px 10px; border-radius: 8px;
+        border: 1px solid #1f2937; background: #0f172a;
+        color: #e5e7eb; font-size: 13px; margin-top: 6px;
+        transition: border-color 0.2s;
+      }
+      input[type="text"]:focus, input[type="number"]:focus, select:focus {
+        outline: none; border-color: #3b82f6;
+      }
+      input[type="file"] { margin-top: 6px; }
+
+      button {
+        margin-top: 16px; margin-right: 8px; padding: 8px 16px;
+        border-radius: 999px; border: none; background: #3b82f6;
+        color: white; cursor: pointer; font-size: 13px; font-weight: 500;
+        transition: all 0.2s;
+      }
+      button.secondary { background: #4b5563; }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      button:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+      button.secondary:hover:not(:disabled) { box-shadow: 0 4px 12px rgba(75, 85, 99, 0.3); }
+
+      .row { display: flex; gap: 16px; margin-top: 8px; }
+      .row > div { flex: 1; }
+      small { font-size: 12px; color: #6b7280; display: inline-block; margin-top: 4px; line-height: 1.4; }
+
+      video { width: 100%; border-radius: 8px; background: black; display: block; }
+      .status {
+        margin-top: 16px; font-size: 13px; color: #10b981; font-weight: bold;
+        padding: 12px; background: rgba(16, 185, 129, 0.1);
+        border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);
+      }
+      canvas {
+        touch-action: none;
+        display: block;
+        width: 100%;
+        border-radius: 8px;
+        background: #0f172a;
+        border: 1px solid #1f2937;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" id="mainContainer">
+      <div class="left-col" id="leftCol">
+        <div class="panel">
+          <h1>函数变速控制台</h1>
+
+          <label style="margin-top: 0;">
+            选择音视频文件：
+            <input id="fileInput" type="file" accept="audio/*,video/*" />
+          </label>
+
+          <div class="row">
+            <div style="flex: 2;">
+              <label>函数输入方式：
+                <select id="inputModeSelect">
+                  <option value="formula">常规公式输入</option>
+                  <option value="draw">图形绘制</option>
+                  <option value="preset">预设函数</option>
+                </select>
+              </label>
+            </div>
+            <div style="flex: 1;">
+              <label>最大倍速限制：
+                <input id="maxSpeedInput" type="number" value="4" step="0.25" />
+              </label>
+            </div>
+          </div>
+
+          <div id="formulaInputSection" style="margin-top: 12px;">
+            <label>
+              自定义数学公式：
+              <input id="formulaInput" type="text" value="sin((t / d) * pi * 4) + 2" />
+              <small>支持常用数学函数如 sin, cos, pi, pow 等。变量 t 为当前时间，d 为总时长。函数值将作为播放速率。</small>
+            </label>
+          </div>
+
+          <div id="presetSection" style="display: none; margin-top: 12px;">
+            <label>选择预设函数：
+              <select id="presetSelect">
+                <option value="constant">恒定速度</option>
+                <option value="linear">线性加速</option>
+                <option value="sine">正弦波</option>
+                <option value="pulse">脉冲波</option>
+              </select>
+            </label>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <label id="sourceCanvasLabel" style="margin-top: 0; margin-bottom: 8px; color: #3b82f6; font-weight: bold;">
+              函数图像预览
+            </label>
+            <canvas id="sourceCanvas" width="800" height="300"></canvas>
+
+            <div id="drawExtraSettings" style="display: none;">
+              <div id="closedCurveSettings" style="display: none; margin-top: 12px; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <label style="margin-top: 0; color: #10b981;">已检测到闭合曲线，请选择遍历方向：</label>
+                <select id="drawDirectionSelect" style="background: #0f172a; border-color: rgba(16, 185, 129, 0.3);">
+                  <option value="cw">顺时针</option>
+                  <option value="ccw">逆时针</option>
+                </select>
+              </div>
+              <div style="margin-top: 12px;">
+                <button id="clearDrawBtn" class="secondary">清除绘制</button>
+                <button id="smoothDrawBtn" class="secondary">平滑曲线</button>
+                <small style="margin-left: 8px;">点击或拖拽绘制函数曲线。系统会自动将最小值调整为 1，最大值映射到最大倍速限制。</small>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; border-top: 1px solid #1e293b; padding-top: 16px;">
+            <button id="applyBtn">应用函数并开始播放</button>
+            <button id="stopBtn" class="secondary" disabled>停止变速控制</button>
+            <div class="status" id="statusText">请选择音视频文件并设置函数</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <label style="margin-top: 0; margin-bottom: 8px; color: #e5e7eb; font-weight: bold;">
+            播放速率时间曲线
+          </label>
+          <canvas id="previewCanvas" width="800" height="300"></canvas>
+        </div>
+      </div>
+
+      <div class="resizer" id="resizer"></div>
+
+      <div class="right-col" id="rightCol">
+        <div class="panel" style="padding: 16px;">
+          <h2 style="font-size: 16px; margin-top: 0; margin-bottom: 12px; color: #e5e7eb;">媒体播放器</h2>
+          <video id="media" controls></video>
+        </div>
+      </div>
+    </div>
+
+    <script src="./main.js"></script>
+  </body>
+</html>
+
