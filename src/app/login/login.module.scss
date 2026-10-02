@@ -1,10 +1,7 @@
+@use '@/styles/appearance-tokens' as appearance;
+
 .login-scene {
-  --paper: #f3f1ed;
-  --ink: #222321;
-  --muted: #6b6e64;
-  --line: #cecec5;
-  --accent: #bb3429;
-  --soft: #e8e6de;
+  @include appearance.surface;
   --display-latin: var(--font-gowun-batang), "Bodoni 72", Didot, serif;
   --display-cjk: var(--font-noto-serif), "Songti SC", "SimSun", serif;
   position: relative;
@@ -85,7 +82,7 @@
   overflow: hidden;
   opacity: .82;
 
-  img { object-fit: cover; object-position: center 56%; filter: grayscale(1) contrast(1.45); }
+  img { object-fit: cover; object-position: center 56%; filter: var(--ark-dark-logo-filter); }
 }
 
 .login-eyebrow {

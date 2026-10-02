@@ -1,0 +1,10 @@
+// Map the existing component vocabulary to global appearance tokens.
+@mixin surface {
+  --paper: var(--ark-paper);
+  --ink: var(--ark-ink);
+  --muted: var(--ark-muted);
+  --line: var(--ark-line);
+  --accent: var(--ark-accent);
+  --soft: var(--ark-soft);
+  color-scheme: var(--ark-color-scheme);
+}

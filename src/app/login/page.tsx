@@ -13,6 +13,7 @@ import ConnectionSequence, { type ConnectionState } from "./components/connectio
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ArchiveLogo from '@/components/brand/archive-logo';
+import ThemePicker from '@/components/appearance/theme-picker';
 import type { ConnectParams } from './types';
 
 function Login() {
@@ -121,7 +122,7 @@ function Login() {
       <div className={styles['login-scene']} inert={isConnecting || showAccountManagement || isDeclarationVisible}>
         <header className={styles['login-header']}>
           <Link href="/home" aria-label="YororoIce Ark"><ArchiveLogo priority /></Link>
-          <nav aria-label="登录页导航"><Link href="/home">浏览首页</Link><Link href="/terms">社区约定</Link></nav>
+          <nav aria-label="登录页导航"><Link href="/home">浏览首页</Link><Link href="/terms">社区约定</Link><ThemePicker /></nav>
         </header>
         <main className={styles['login-main']}>
           <section className={styles['login-copy']}>

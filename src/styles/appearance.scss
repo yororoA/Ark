@@ -1,0 +1,62 @@
+@mixin archive-night {
+  --ark-paper: #1d201e;
+  --ark-ink: #e9e6dd;
+  --ark-muted: #a7aca3;
+  --ark-line: #484d45;
+  --ark-accent: #ef7866;
+  --ark-soft: #2a2e29;
+}
+
+@mixin rain-day {
+  --ark-paper: #f3f7f4;
+  --ark-ink: #203d43;
+  --ark-muted: #536e73;
+  --ark-line: #c3d6d3;
+  --ark-accent: #236f73;
+  --ark-soft: #e3eeea;
+  --ark-rain: #78c7c3;
+  --ark-rain-deep: #469b9e;
+  --ark-rain-sheet: #fff;
+}
+
+@mixin rain-night {
+  --ark-paper: #101e27;
+  --ark-ink: #deeceb;
+  --ark-muted: #a2baba;
+  --ark-line: #344e57;
+  --ark-accent: #91ceca;
+  --ark-soft: #1b313a;
+  --ark-rain: #36676f;
+  --ark-rain-deep: #69a7aa;
+  --ark-rain-sheet: #abcac9;
+}
+
+@mixin night {
+  --ark-color-scheme: dark;
+  --ark-white-logo-filter: none;
+  --ark-dark-logo-filter: invert(1) grayscale(1);
+  @include archive-night;
+  &[data-design="rain"] { @include rain-night; }
+}
+
+:root {
+  --ark-paper: #f3f1ed;
+  --ark-ink: #222321;
+  --ark-muted: #6b6e64;
+  --ark-line: #cecec5;
+  --ark-accent: #bb3429;
+  --ark-soft: #e8e6de;
+  --ark-color-scheme: light;
+  --ark-white-logo-filter: invert(1) grayscale(1) contrast(1.4);
+  --ark-dark-logo-filter: grayscale(1) contrast(1.45);
+  color-scheme: var(--ark-color-scheme);
+  background: var(--ark-paper);
+
+  &[data-design="rain"] { @include rain-day; }
+  &[data-theme="dark"] { @include night; }
+  @media (prefers-color-scheme: dark) {
+    &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }
+  }
+}
+
+body { background: var(--ark-paper); }

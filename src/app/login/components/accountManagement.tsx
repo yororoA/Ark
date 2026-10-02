@@ -17,6 +17,7 @@ import Input from "@/components/arks/input";
 import Tabs from "@/components/arks/tabs";
 import DeleteLoginRecord from "./deleteLoginRecord";
 import type { ConnectParams } from '../types';
+import ThemePicker from '@/components/appearance/theme-picker';
 
 
 
@@ -111,6 +112,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
         <div className={cn(styles.accountManagementTitle, 'relative')}>
           {otherVisable && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
           <h1>账号管理</h1>
+          <ThemePicker />
           {details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="关闭账号管理" title="关闭账号管理" onClick={onClose}><X size={22} strokeWidth={1.3} /></button>}
         </div>
         {!otherVisable ?

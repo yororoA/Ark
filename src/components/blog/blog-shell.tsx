@@ -4,16 +4,17 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ArrowUp, ArrowUpRight, Menu, Monitor, Moon, Sun, X } from 'lucide-react'
+import { ArrowUp, ArrowUpRight, Menu, X } from 'lucide-react'
 import BlogProvider, { request, useBlog } from './blog-provider'
 import { Locale, sections } from '@/lib/blog'
 import { legacyDestination } from '@/lib/legacy-route'
 import { BlogSelect } from './controls'
 import ArchiveLogo from '@/components/brand/archive-logo'
+import ThemePicker from '@/components/appearance/theme-picker'
 import styles from './blog.module.scss'
 
 function Shell({ children }: { children: React.ReactNode }) {
-  const { t, locale, setLocale, theme, setTheme, session, refreshSession, toast, notify } = useBlog()
+  const { t, locale, setLocale, session, refreshSession, toast, notify } = useBlog()
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -34,7 +35,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     try { await request('/api/session', { method: 'DELETE' }); refreshSession() } catch (error) { notify((error as Error).message) }
   }
   return (
-    <div className={styles['blog-root']} data-theme={theme} data-blog-root>
+    <div className={styles['blog-root']} data-blog-root>
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
         <Link href="/home" className={styles['brand']} aria-label="YororoIce Ark">
@@ -49,7 +50,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             { value: 'zh', label: '简体中文' }, { value: 'en', label: 'English' },
             { value: 'ja', label: '日本語' }, { value: 'de', label: 'Deutsch' },
           ]} />
-          <button className={styles['icon-button']} title={`${t('theme')}: ${t(theme === 'dark' ? 'dark' : theme === 'light' ? 'light' : 'system')}`} aria-label={`${t('theme')}: ${t(theme === 'dark' ? 'system' : theme === 'light' ? 'dark' : 'light')}`} onClick={() => setTheme(theme === 'dark' ? 'system' : theme === 'light' ? 'dark' : 'light')}>{theme === 'dark' ? <Moon size={17} /> : theme === 'light' ? <Sun size={17} /> : <Monitor size={17} />}</button>
+          <ThemePicker locale={locale} />
           <button className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={open ? t('close') : t('menu')} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
