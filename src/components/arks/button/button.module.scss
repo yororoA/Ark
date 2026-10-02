@@ -9,6 +9,7 @@
   border: 1px solid var(--ink, #222321);
   border-radius: 0;
   box-shadow: none;
+  font-family: var(--font-noto-serif), var(--font-noto-sans), serif;
   cursor: pointer;
   transition: color .2s, background .2s, border-color .2s;
 

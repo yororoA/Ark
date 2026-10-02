@@ -9,8 +9,8 @@
   justify-content: center;
   min-height: 0;
   padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
-  background: rgb(24 27 24 / 54%);
-  backdrop-filter: blur(7px);
+  background: rgb(24 27 24 / 62%);
+  backdrop-filter: blur(10px);
 }
 
 .accountManagement,
@@ -18,7 +18,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(680px, 100%);
+  width: min(720px, 100%);
   max-height: calc(100dvh - 36px);
   min-width: 0;
   overflow: hidden;
@@ -27,7 +27,7 @@
   border: 1px solid var(--line);
   border-top: 3px solid var(--accent);
   box-shadow: 0 28px 90px #0004;
-  font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
   font-size: 14px;
 
   &::after {
@@ -43,7 +43,23 @@
   }
 }
 
-.accountManagement { min-height: min(350px, calc(100dvh - 36px)); }
+.accountManagement {
+  min-height: min(390px, calc(100dvh - 36px));
+
+  &::before {
+    content: '01';
+    position: absolute;
+    z-index: 0;
+    right: 20px;
+    top: 78px;
+    color: color-mix(in srgb, var(--accent) 6%, transparent);
+    font: 900 110px/.8 var(--font-orbitron), sans-serif;
+    letter-spacing: 0;
+    pointer-events: none;
+  }
+
+  > * { position: relative; z-index: 1; }
+}
 
 .accountManagementTitle {
   display: flex;
@@ -57,14 +73,15 @@
   h1 {
     flex: 1;
     margin: 0;
-    font: 28px/1.2 var(--font-noto-serif), "Songti SC", serif;
+    font: 400 28px/1.2 var(--font-noto-serif), "Songti SC", serif;
     font-weight: 400;
+    letter-spacing: 0;
   }
 
   h1::after {
     content: ' / ACCESS';
     color: var(--accent);
-    font: italic 14px/1 "Bodoni 72", Didot, serif;
+    font: italic 14px/1 var(--font-gowun-batang), "Bodoni 72", Didot, serif;
   }
 }
 
@@ -96,7 +113,7 @@
   flex-shrink: 0;
   padding: 15px 20px;
   border-top: 1px solid var(--line);
-  font-size: 11px;
+  font: 11px/1.4 var(--font-noto-sans), sans-serif;
 
   > a { border-bottom: 1px solid var(--line); padding-block: 7px; }
   > a:hover { color: var(--accent); border-color: var(--accent); }
@@ -113,7 +130,8 @@
   border: 1px solid var(--ink);
   border-radius: 0;
   box-shadow: none;
-  font-size: 12px;
+  font: 12px/1.4 var(--font-noto-serif), "Songti SC", serif;
+  letter-spacing: 0;
   white-space: nowrap;
   transition: color .2s, background .2s, border-color .2s;
 
@@ -141,7 +159,7 @@
   flex-direction: column;
   gap: 17px;
 
-  label { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+  label { color: var(--muted); font: 11px/1.4 var(--font-noto-sans), sans-serif; letter-spacing: 1px; }
 }
 
 .inputGroup button:not(.code-button) {
@@ -181,8 +199,8 @@
 
   &:hover, &[data-highlighted] { background: color-mix(in srgb, var(--accent) 5%, transparent); border-color: var(--accent); }
   .desc { min-width: 0; text-align: left; overflow-wrap: anywhere; }
-  .account-name { font: 18px/1.4 var(--font-noto-serif), "Songti SC", serif; }
-  .account-meta { color: var(--muted); font-size: 10px; line-height: 1.7; }
+  .account-name { font: 400 18px/1.4 var(--font-gowun-batang), var(--font-noto-serif), "Songti SC", serif; letter-spacing: 0; }
+  .account-meta { color: var(--muted); font: 10px/1.7 var(--font-noto-sans), sans-serif; }
 }
 
 .account-arrow { position: absolute; right: 12px; top: calc(50% - 12px); color: var(--accent); }
@@ -199,7 +217,7 @@
   color: var(--paper);
   background: var(--ink);
   border-left: 3px solid var(--accent);
-  font: 700 22px/1 "Bodoni 72", Didot, serif;
+  font: 700 22px/1 var(--font-gowun-batang), "Bodoni 72", Didot, serif;
 }
 
 .declaration { height: min(620px, calc(100dvh - 36px)); }

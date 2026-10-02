@@ -5,24 +5,35 @@
   --line: #cecec5;
   --accent: #bb3429;
   --soft: #e8e6de;
-  --display-font: var(--font-gowun-batang), "Bodoni 72", Didot, "Times New Roman", serif;
+  --display-latin: var(--font-gowun-batang), "Bodoni 72", Didot, serif;
+  --display-cjk: var(--font-noto-serif), "Songti SC", "SimSun", serif;
   position: relative;
   z-index: 1;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   width: 100%;
   min-height: 100vh;
   min-height: 100svh;
-  overflow: hidden;
+  overflow-x: hidden;
   color: var(--ink);
   background: var(--paper);
-  font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
 
   *, *::before, *::after { box-sizing: border-box; }
   a { color: inherit; text-decoration: none; }
   button { color: inherit; font: inherit; cursor: pointer; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   ::selection { color: var(--paper); background: var(--accent); }
+}
+
+.login-scene::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  inset: 86px 4.2% 72px;
+  border-inline: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+  pointer-events: none;
 }
 
 .login-header {
@@ -36,7 +47,7 @@
   margin-inline: 4.2%;
   border-bottom: 1px solid var(--ink);
 
-  nav { display: flex; align-items: center; gap: 30px; font-size: 11px; letter-spacing: 1px; }
+  nav { display: flex; align-items: center; gap: 30px; font: 11px/1.4 var(--font-noto-sans), sans-serif; letter-spacing: 1px; }
   nav a { padding-block: 12px; border-bottom: 1px solid transparent; transition: color .2s, border-color .2s; }
   nav a:hover { color: var(--accent); border-color: var(--accent); }
 }
@@ -44,49 +55,77 @@
 .login-main {
   position: relative;
   z-index: 2;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+  grid-template-columns: minmax(0, 1fr) minmax(370px, 420px);
   align-items: center;
-  gap: clamp(64px, 8vw, 132px);
+  gap: clamp(52px, 7vw, 112px);
   flex: 1;
-  width: min(1320px, 100%);
+  width: min(1440px, 100%);
   margin-inline: auto;
-  padding: clamp(48px, 6vh, 72px) 7% 64px;
+  padding: clamp(42px, 5.5vh, 68px) 7% 58px;
+}
+
+.login-main::before {
+  content: '01';
+  position: absolute;
+  z-index: -2;
+  right: 31%;
+  bottom: 4%;
+  color: color-mix(in srgb, var(--accent) 8%, transparent);
+  font: 900 clamp(160px, 20vw, 300px)/.75 var(--font-orbitron), sans-serif;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.login-main::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 8%;
+  bottom: 8%;
+  left: 61%;
+  width: 1px;
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  pointer-events: none;
 }
 
 .login-copy {
   position: relative;
   z-index: 2;
   align-self: center;
-  max-width: 560px;
+  max-width: 600px;
 
   h1 {
-    margin: 22px 0 24px;
-    font: 400 58px/1.05 var(--display-font);
+    margin: 24px 0 28px;
+    font: 700 68px/.98 var(--display-cjk);
+    letter-spacing: 0;
   }
 
   h1 em {
     display: inline-block;
-    margin: 8px 0 0 12%;
+    margin: 12px 0 0 14%;
     color: var(--accent);
     font-weight: 400;
+    font-style: normal;
   }
 
   > p {
-    max-width: 540px;
+    max-width: 500px;
     margin: 0;
     color: var(--muted);
-    font: 17px/1.85 var(--font-noto-serif), "Songti SC", serif;
+    font: 17px/1.9 var(--display-cjk);
+    letter-spacing: 0;
   }
 }
 
 .login-signature {
   position: relative;
-  width: 220px;
-  height: 76px;
-  margin: 0 0 16px -12px;
+  width: 230px;
+  height: 80px;
+  margin: 0 0 20px -14px;
   overflow: hidden;
-  opacity: .82;
+  opacity: .88;
 
   img { object-fit: cover; object-position: center 56%; filter: grayscale(1) contrast(1.45); }
 }
@@ -95,10 +134,33 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  font-size: 10px;
+  font: 10px/1.4 var(--font-ibm-plex), sans-serif;
   letter-spacing: 2px;
 
   &::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+}
+
+.login-portrait {
+  position: absolute;
+  z-index: -1;
+  left: 27%;
+  bottom: -6%;
+  width: min(720px, 56vw);
+  height: 96%;
+  opacity: .17;
+  pointer-events: none;
+
+  img { object-fit: contain; object-position: center bottom; filter: grayscale(.15) contrast(1.18); mix-blend-mode: multiply; }
+
+  span {
+    position: absolute;
+    right: 7%;
+    bottom: 12%;
+    color: var(--accent);
+    font: 9px/1 var(--font-ibm-plex), sans-serif;
+    letter-spacing: 2px;
+    writing-mode: vertical-rl;
+  }
 }
 
 .access-notes {
@@ -107,7 +169,7 @@
   gap: 20px;
   margin-top: 28px;
   color: var(--muted);
-  font-size: 10px;
+  font: 10px/1.4 var(--font-noto-sans), sans-serif;
   letter-spacing: 1px;
 
   span { display: inline-flex; align-items: center; gap: 8px; }
@@ -121,14 +183,15 @@
   display: flex;
   flex-direction: column;
   width: min(100%, 420px);
-  min-height: 340px;
-  padding: 26px;
+  min-height: 390px;
+  padding: 28px;
   border: 1px solid var(--line);
   border-top: 3px solid var(--accent);
-  background: var(--paper);
-  box-shadow: 0 18px 45px #1111;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  box-shadow: 0 24px 70px #1112;
+  backdrop-filter: blur(9px);
 
-  > svg { margin: 44px 0 24px; color: var(--accent); }
+  > svg { margin: 52px 0 26px; color: var(--accent); }
 
   &::after {
     content: '';
@@ -142,7 +205,19 @@
   }
 }
 
-.panel-index { color: var(--muted); font-size: 9px; letter-spacing: 2px; }
+.panel-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.panel-index { color: var(--muted); font: 9px/1.4 var(--font-noto-sans), sans-serif; letter-spacing: 2px; }
+.panel-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font: 8px/1 var(--font-orbitron), sans-serif;
+  letter-spacing: 1px;
+
+  i { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
+  &[data-ready="true"] i { background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
+}
 .active-account {
   display: flex;
   flex: 1;
@@ -150,9 +225,9 @@
   min-width: 0;
   margin-bottom: 30px;
 
-  small { color: var(--accent); font-size: 9px; letter-spacing: 2px; }
-  strong { margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 32px/1.4 var(--font-noto-serif), "Songti SC", serif; }
-  span { color: var(--muted); font-size: 11px; }
+  small { color: var(--accent); font: 9px/1.4 var(--font-noto-sans), sans-serif; letter-spacing: 2px; }
+  strong { margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 34px/1.35 var(--display-latin), var(--display-cjk); }
+  span { color: var(--muted); font: 11px/1.6 var(--font-noto-sans), sans-serif; }
 }
 
 .primary-action,
@@ -166,7 +241,8 @@
   border: 1px solid var(--ink);
   background: var(--ink);
   color: var(--paper) !important;
-  font-size: 12px;
+  font: 400 14px/1.4 var(--display-cjk);
+  letter-spacing: 0;
   transition: color .2s, background .2s, border-color .2s;
 }
 
@@ -185,29 +261,36 @@
   margin-inline: 4.2%;
   border-top: 1px solid var(--ink);
   color: var(--muted);
-  font-size: 9px;
+  font: 9px/1.4 var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
   letter-spacing: 1px;
 
-  button { border: 0; border-bottom: 1px solid var(--line); padding: 8px 0; background: none; font-size: 10px; }
+  button { border: 0; border-bottom: 1px solid var(--line); padding: 8px 0; background: none; font: 10px/1.4 var(--font-noto-sans), sans-serif; }
   button:hover { color: var(--accent); border-color: var(--accent); }
   > :last-child { justify-self: end; }
 }
 
 @media (max-width: 900px) {
   .login-main { grid-template-columns: minmax(0, 1fr) 330px; padding-inline: 6%; }
-  .login-copy h1 { font-size: 50px; }
+  .login-copy h1 { font-size: 58px; }
+  .login-portrait { left: 31%; opacity: .12; }
 }
 
 @media (max-width: 680px) {
+  .login-scene { overflow-y: auto; }
+  .login-scene::before { display: none; }
   .login-header { min-height: 74px; margin-inline: 6%; }
   .login-header nav { gap: 14px; }
   .login-header nav a:first-child { display: none; }
-  .login-main { grid-template-columns: minmax(0, 1fr); align-items: start; gap: 46px; padding: 52px 6% 60px; }
-  .login-copy h1 { margin-block: 22px; font-size: 48px; }
-  .login-signature { width: 220px; height: 76px; margin-left: -10px; }
+  .login-main { grid-template-columns: minmax(0, 1fr); align-items: start; gap: 42px; flex: none; padding: 48px 6% 56px; }
+  .login-main::before { right: -4%; bottom: 35%; font-size: 180px; }
+  .login-main::after { display: none; }
+  .login-copy h1 { margin-block: 22px; font-size: 50px; }
+  .login-signature { width: 205px; height: 70px; margin-left: -10px; }
   .login-copy h1 em { margin-left: 8%; }
   .login-copy > p { font-size: 16px; }
-  .access-panel { justify-self: stretch; min-height: 340px; width: 100%; }
+  .login-portrait { top: 70px; left: 24%; bottom: auto; width: 100vw; height: 460px; opacity: .08; }
+  .login-portrait span { display: none; }
+  .access-panel { justify-self: stretch; min-height: 360px; width: 100%; }
   .access-panel > svg { margin-top: 35px; }
   .login-footer { grid-template-columns: 1fr auto; margin-inline: 6%; padding-block: 18px; }
   .login-footer > :first-child { grid-column: 1 / -1; }

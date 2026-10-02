@@ -55,11 +55,6 @@
 }
 
 :root {
-  --font-gowun-batang: "Gowun Batang";
-  --font-ibm-plex: "IBM Plex Sans";
-  --font-noto-serif: "Noto Serif SC";
-  --font-noto-sans: "Noto Sans SC";
-  --font-orbitron: "Orbitron";
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

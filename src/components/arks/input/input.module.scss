@@ -4,6 +4,7 @@
   min-width: 0;
   gap: 9px;
   color: var(--muted, #6b6e64);
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
   font-size: 11px;
   letter-spacing: 1px;
 }
@@ -30,6 +31,7 @@
   border-radius: 0;
   box-shadow: none;
   outline: none;
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
   font-size: 16px;
   transition: border-color .2s, box-shadow .2s, background .2s;
 

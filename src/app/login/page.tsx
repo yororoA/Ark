@@ -127,8 +127,12 @@ function Login() {
             <p>使用已有账号、注册新身份，或以游客身份进入通信与留言。</p>
             <div className={styles['access-notes']}><span><ShieldCheck size={15} />安全会话</span><span><BookOpen size={15} />保留原有内容</span></div>
           </section>
+          <div className={styles['login-portrait']} aria-hidden="true">
+            <Image src="/login_light.png" alt="" fill sizes="(max-width: 680px) 100vw, 56vw" priority />
+            <span>BINES / IDENTITY ARCHIVE</span>
+          </div>
           <section className={styles['access-panel']} aria-label="当前账号">
-            <div className={styles['panel-index']}>当前身份 / 01</div>
+            <div className={styles['panel-header']}><div className={styles['panel-index']}>当前身份 / 01</div><span className={styles['panel-signal']} data-ready={initialized}><i />{initialized ? 'READY' : 'SYNC'}</span></div>
             <CircleUserRound size={30} strokeWidth={1} />
             <div className={styles['active-account']}>
               <small>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '游客' : '用户'}</small>

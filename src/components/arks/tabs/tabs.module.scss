@@ -14,12 +14,12 @@
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--line, #cecec5);
-  font-family: var(--font-ibm-plex), sans-serif;
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
   font-size: 12px;
   cursor: pointer;
   transition: color .2s, border-color .2s, background .2s;
 
-  &::before { content: counter(access-tab, decimal-leading-zero) ' / '; font-size: 9px; }
+  &::before { content: counter(access-tab, decimal-leading-zero) ' / '; font: 9px/1 var(--font-ibm-plex), sans-serif; }
   &:hover { color: var(--ink, #222321); }
   &:focus-visible { outline: 2px solid var(--accent, #bb3429); outline-offset: -2px; }
 }
