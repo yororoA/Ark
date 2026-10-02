@@ -247,10 +247,11 @@ a.metaItem:hover {
 
 .signature {
   display: block;
-  width: min(18em, 78%);
+  width: min(13em, 100%);
   height: auto;
-  margin: 0 0 0.2em auto;
+  margin: 0 0 0.15em;
   transform: rotate(-6deg);
+  transform-origin: left center;
   pointer-events: none;
 }
 
@@ -265,28 +266,24 @@ a.metaItem:hover {
   border-top: 1px solid $ink;
 }
 
-.slab {
+.slab,
+.edge {
   position: absolute;
   z-index: 0;
   top: 0.4em;
   right: -2.6em;
   bottom: -0.2em;
   left: 34%;
-  background: #141618;
   clip-path: polygon(9% 0, 100% 0, 100% 100%, 0 100%);
 }
 
-.cut {
-  position: absolute;
-  z-index: 2;
-  top: 0.4em;
-  right: -2.6em;
-  bottom: -0.2em;
-  left: 34%;
-  width: auto;
-  height: auto;
-  pointer-events: none;
-  overflow: visible;
+.slab {
+  background: #141618;
+}
+
+.edge {
+  background: $cyan;
+  transform: translateX(-5px);
 }
 
 .dock {
@@ -302,7 +299,15 @@ a.metaItem:hover {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
   gap: 1.1em;
-  align-items: start;
+  align-items: end;
+}
+
+.dockMain {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.8em;
+  min-width: 0;
 }
 
 .feature {
@@ -612,7 +617,7 @@ a.metaItem:hover {
   }
 
   .slab,
-  .cut {
+  .edge {
     right: -1.6em;
   }
 
@@ -659,7 +664,7 @@ a.metaItem:hover {
   }
 
   .slab,
-  .cut {
+  .edge {
     display: none;
   }
 
