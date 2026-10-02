@@ -51,6 +51,7 @@ $cut-md: 0.75em;
   z-index: 1;
   display: grid;
   grid-template-rows: auto auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   min-height: calc(100svh - 1.2rem);
   margin: 0.6rem;
   padding: 0.9em 2.6em 0.9em 1.6em;
@@ -247,6 +248,7 @@ a.metaItem:hover {
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.25fr) minmax(0, 0.8fr);
   gap: 2.4em;
   align-items: start;
+  align-content: start;
   padding: 1.4em 0 1.6em;
   border-top: 1px solid $ink;
 }
@@ -589,7 +591,7 @@ a.metaItem:hover {
   }
 
   .title {
-    font-size: 24vw;
+    font-size: 19vw;
   }
 
   .subline {
@@ -601,8 +603,10 @@ a.metaItem:hover {
   }
 
   .signature {
-    width: 42vw;
-    bottom: -2%;
+    position: static;
+    display: block;
+    width: 44vw;
+    margin: 0.4em 0 -0.6em auto;
   }
 
   .body {
