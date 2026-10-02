@@ -1,0 +1,55 @@
+.wordmark {
+  --wordmark-ink: var(--ink, #222321);
+  --wordmark-accent: var(--accent, #bb3429);
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  color: var(--wordmark-ink);
+}
+
+.wordmark-mark {
+  flex-shrink: 0;
+  font: italic 38px/1 "Bodoni 72", Didot, "Times New Roman", var(--font-noto-serif), serif;
+  color: var(--wordmark-accent);
+}
+
+.wordmark-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1;
+
+  strong {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+
+  small {
+    margin-top: 7px;
+    color: color-mix(in srgb, var(--wordmark-ink) 66%, transparent);
+    font-size: 7px;
+    font-weight: 400;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+}
+
+.wordmark[data-display="true"] {
+  gap: 24px;
+
+  .wordmark-mark { font-size: 92px; }
+  .wordmark-copy strong { font-size: 22px; letter-spacing: 3px; }
+  .wordmark-copy small { margin-top: 12px; font-size: 9px; letter-spacing: 3px; }
+}
+
+@media (max-width: 420px) {
+  .wordmark { gap: 10px; }
+  .wordmark-mark { font-size: 34px; }
+  .wordmark-copy strong { font-size: 10px; letter-spacing: 1.5px; }
+  .wordmark-copy small { font-size: 6px; letter-spacing: 1.4px; }
+  .wordmark[data-display="true"] .wordmark-copy { display: none; }
+  .wordmark[data-display="true"] .wordmark-mark { font-size: 62px; }
+}

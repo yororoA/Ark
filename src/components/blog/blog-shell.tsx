@@ -8,6 +8,7 @@ import BlogProvider, { request, useBlog } from './blog-provider'
 import { Locale, sections } from '@/lib/blog'
 import { legacyDestination } from '@/lib/legacy-route'
 import { BlogSelect } from './controls'
+import ArkWordmark from '@/components/brand/ark-wordmark'
 import styles from './blog.module.scss'
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -36,8 +37,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
         <Link href="/home" className={styles['brand']} aria-label="YororoIce Ark">
-          <span className={styles['brand-symbol']} aria-hidden="true">A</span>
-          <span>YOROROICE<small>PERSONAL ARCHIVE</small></span>
+          <ArkWordmark />
         </Link>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
           {sections.map(([key]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}>{t(key)}</Link>)}

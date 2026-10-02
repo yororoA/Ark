@@ -14,7 +14,9 @@ import styles from './blog.module.scss'
 export { styles }
 export function PageHeading({ title, english, number, children }: { title: TextKey; english: string; number: string; children?: React.ReactNode }) {
   const { t } = useBlog()
-  return <header className={styles['page-heading']}><div><div className={styles['eyebrow']}>YOROROICE ARCHIVE / {number}</div><h1>{t(title)}<span className={styles['english-title']}>{english}</span></h1></div>{children}</header>
+  const localizedTitle = t(title)
+  const repeatsEnglishTitle = localizedTitle.localeCompare(english, undefined, { sensitivity: 'base' }) === 0
+  return <header className={styles['page-heading']}><div><div className={styles['eyebrow']}>YOROROICE ARCHIVE / {number}</div><h1>{localizedTitle}{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1></div>{children}</header>
 }
 export function State({ loading, error, empty, retry }: { loading?: boolean; error?: Error; empty?: boolean; retry?: () => void }) {
   const { t } = useBlog()

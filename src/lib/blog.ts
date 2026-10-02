@@ -149,6 +149,20 @@ export function dateLabel(value: string, locale: Locale = 'zh') {
 }
 export function excerpt(value: string, length = 140) { return value.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/[#*_>`~[\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, length) }
 export function safeUrl(value?: string) { return value && /^(https?:\/\/|mailto:)/i.test(value) ? value : undefined }
+export function articlePreview(markdown: string) {
+  if (!markdown) return { coverUrl: undefined, coverAlt: '', content: '' }
+  const lines = markdown.trim().split(/\r?\n/)
+  const firstContentLine = lines.findIndex(line => line.trim())
+  if (firstContentLine < 0) return { coverUrl: undefined, coverAlt: '', content: markdown }
+  const match = /^!\[([^\]]*)\]\(([^)]+)\)$/.exec(lines[firstContentLine].trim())
+  const coverUrl = safeUrl(match?.[2]?.trim())
+  if (!match || !coverUrl) return { coverUrl: undefined, coverAlt: '', content: markdown }
+  return {
+    coverUrl,
+    coverAlt: match[1].trim(),
+    content: [...lines.slice(0, firstContentLine), ...lines.slice(firstContentLine + 1)].join('\n').trim(),
+  }
+}
 export function mediaFor(entry: Entry): Media[] {
   return Object.entries(entry.filenames || {}).flatMap(([name, value]) => {
     const detail = entry.filesDetail?.[name]

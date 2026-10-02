@@ -1,9 +1,10 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- Article covers are stored as arbitrary external Markdown URLs. */
 
 import Link from 'next/link'
 import { useRef } from 'react'
 import { ArrowDown, ArrowRight, ArrowUpRight, Plus } from 'lucide-react'
-import { dateLabel, Entry, Envelope, excerpt, PROFILE } from '@/lib/blog'
+import { articlePreview, dateLabel, Entry, Envelope, excerpt, PROFILE } from '@/lib/blog'
 import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
 
@@ -47,6 +48,7 @@ export default function Home() {
   const status = useBlogData<Envelope<{ online: boolean }>>('status/bines', { refreshInterval: 60000 })
   const github = useBlogData<Envelope<{ reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }>>('github/summary')
   const featured = articles.data?.data[0]
+  const featuredPreview = featured ? articlePreview(featured.content) : null
   const recent = articles.data?.data.slice(1, 4) || []
   const isOnline = status.data?.data.online
   const statusLabel = isOnline === undefined ? 'unknown' : isOnline ? 'online' : 'offline'
@@ -61,7 +63,7 @@ export default function Home() {
       art.current.style.setProperty('--art-y', `${((event.clientY - rect.top) / rect.height - .5) * 12}px`)
     }}>
       <div className={styles['hero-top']}><span>THE PERSONAL ARCHIVE OF YOROROICE</span><Plus size={13} /><span>A COLLECTION IN PROGRESS</span></div>
-      <div className={styles['hero-art']} aria-hidden="true"><div className={styles['art-plane']} ref={art}><OrbitalArtwork /><span className={styles['art-letter']}>A</span><span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span></div></div>
+      <div className={styles['hero-art']} aria-hidden="true"><div className={styles['art-plane']} ref={art}><OrbitalArtwork /><span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span></div></div>
       <div className={styles['hero-content']}>
         <div className={styles['eyebrow']}>00 / A CONTINUING STORY</div>
         <h1>Yororo<span>Ice. Ark</span></h1>
@@ -82,7 +84,7 @@ export default function Home() {
     <section id="recent" className={styles['home-section']}>
       <div className={styles['section-heading']}><div><div className={styles['eyebrow']}>01 / RECENT WRITINGS</div><h2>{t('latest')}</h2></div><Link href="/articles" className={styles['text-link']}>{t('all')}<ArrowUpRight size={18} /></Link></div>
       <State loading={articles.isLoading} error={articles.error} empty={articles.data?.data.length === 0} retry={() => articles.mutate()} />
-      {featured && <div className={styles['recent-grid']}><Link href={`/articles/${featured._id}`} prefetch={false} className={styles['featured-entry']}><div className={styles['entry-meta']}><span>{featured.category}</span><time>{dateLabel(featured.createdAt, locale)}</time><span>FEATURED / 01</span></div><h3>{featured.title}</h3><p>{excerpt(featured.content, 155)}</p><ArrowUpRight size={30} strokeWidth={1} /></Link><div className={styles['entry-list']}>{recent.map((entry, index) => <Link href={`/articles/${entry._id}`} prefetch={false} className={styles['entry-row']} key={entry._id}><span>0{index + 2}</span><div><div className={styles['entry-meta']}><time>{dateLabel(entry.createdAt, locale)}</time><span>{entry.category}</span></div><h3>{entry.title}</h3></div><ArrowUpRight size={19} strokeWidth={1} /></Link>)}</div></div>}
+      {featured && featuredPreview && <div className={styles['recent-grid']}><Link href={`/articles/${featured._id}`} prefetch={false} className={styles['featured-entry']} data-cover={!!featuredPreview.coverUrl}>{featuredPreview.coverUrl && <figure className={styles['featured-cover']}><img src={featuredPreview.coverUrl} alt={featuredPreview.coverAlt || featured.title} /><span>FEATURED / 01</span></figure>}<div className={styles['featured-body']}><div className={styles['entry-meta']}><span>{featured.category}</span><time>{dateLabel(featured.createdAt, locale)}</time>{!featuredPreview.coverUrl && <span>FEATURED / 01</span>}</div><h3>{featured.title}</h3><p>{excerpt(featuredPreview.content, 155)}</p><ArrowUpRight size={30} strokeWidth={1} /></div></Link><div className={styles['entry-list']}>{recent.map((entry, index) => <Link href={`/articles/${entry._id}`} prefetch={false} className={styles['entry-row']} key={entry._id}><span>0{index + 2}</span><div><div className={styles['entry-meta']}><time>{dateLabel(entry.createdAt, locale)}</time><span>{entry.category}</span></div><h3>{entry.title}</h3></div><ArrowUpRight size={19} strokeWidth={1} /></Link>)}</div></div>}
     </section>
     <section className={styles['manifesto']}><div><div className={styles['eyebrow']}>IN WORDS, WE REMAIN.</div><blockquote>Time mends the wounds,<br />love soothes the scars.</blockquote><a href={PROFILE.github} className={styles['text-link']} target="_blank" rel="noreferrer" style={{ marginTop: 25 }}>YOROROICE / GITHUB<ArrowUpRight size={15} /></a></div><div><div className={styles['eyebrow']}>{t('activity')}</div>{github.data ? <><div className={styles['activity']}><div><strong>{github.data.data.reposCount}</strong><small>{t('repositories')}</small></div><div><strong>{github.data.data.monthCommits}</strong><small>{t('commits')}</small></div></div><div className={styles['tags']}>{github.data.data.languages.slice(0, 4).map(language => <span key={language.name}>{language.name} · {Math.round(language.percent)}%</span>)}</div></> : <State loading={github.isLoading} error={github.error} retry={() => github.mutate()} />}</div></section>
     <section className={styles['home-section']}><div className={styles['section-heading']}><div><div className={styles['eyebrow']}>02 / FRAGMENTS OF LIFE</div><h2>{t('moments')}</h2></div><Link href="/moments" className={styles['text-link']}>{t('all')}<ArrowUpRight size={18} /></Link></div><State loading={moments.isLoading} error={moments.error} retry={() => moments.mutate()} /><div className={styles['recent-grid']}><div className={styles['entry-list']}>{moments.data?.data.slice(0, 3).map((entry, index) => <Link href={`/moments/${entry._id}`} key={entry._id} className={styles['entry-row']}><span>0{index + 1}</span><div><div className={styles['entry-meta']}>{dateLabel(entry.createdAt, locale)}</div><h3>{entry.title}</h3></div><ArrowUpRight size={18} /></Link>)}</div><div><div className={styles['eyebrow']}>{t('calendar')} / 12 WEEKS</div><div className={styles['calendar']}>{Array.from({ length: 84 }, (_, index) => { const date = new Date(calendarStart); date.setUTCDate(date.getUTCDate() + index); const day = date.toISOString().slice(0, 10); return <Link key={day} href={`/moments?date=${day}`} data-active={dates.has(day)} title={day} aria-label={`${t('date')} ${day}`} /> })}</div><p className={styles['form-note']} style={{ marginTop: 20 }}>{t('introBody')}</p><Link href="/archive" className={styles['text-link']} style={{ marginTop: 30 }}>{t('archive')}<ArrowUpRight size={16} /></Link></div></div></section>

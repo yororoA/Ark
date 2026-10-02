@@ -1,15 +1,26 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- Article covers are stored as arbitrary external Markdown URLs. */
 
 import { useState } from 'react'
 import { useSWRConfig } from 'swr'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, Download, Pencil, Plus, Search, Share2 } from 'lucide-react'
-import { dateLabel, Entry, Envelope, excerpt } from '@/lib/blog'
+import { articlePreview, dateLabel, Entry, Envelope, excerpt } from '@/lib/blog'
 import { send, useBlog, useBlogData } from './blog-provider'
 import { useAllArticles } from './content-data'
 import { DeleteButton, FilePicker, LikeButton, Markdown, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
+
+function ArticleListEntry({ entry, locale, read }: { entry: Entry; locale: Parameters<typeof dateLabel>[1]; read: string }) {
+  const preview = articlePreview(entry.content)
+  return <Link key={entry._id} href={`/articles/${entry._id}`} prefetch={false} className={styles['article-card']} data-cover={!!preview.coverUrl}>
+    <time className={styles['article-date']} dateTime={entry.createdAt}><strong>{new Date(entry.createdAt).getUTCDate().toString().padStart(2, '0')}</strong>{entry.createdAt.slice(0, 7).replace('-', ' / ')}</time>
+    {preview.coverUrl && <figure className={styles['article-cover']}><img src={preview.coverUrl} alt={preview.coverAlt || entry.title} loading="lazy" /></figure>}
+    <div className={styles['article-card-body']}><h2>{entry.title}</h2><p>{excerpt(preview.content, 190)}</p><div className={styles['entry-meta']}><span>{entry.category}</span><span>{entry.username || 'YororoIce'}</span><span>{dateLabel(entry.createdAt, locale)}</span><span>♡ {entry.likes || 0}</span></div></div>
+    <span className={styles['article-arrow']}>{read}<ArrowUpRight size={24} strokeWidth={1} /></span>
+  </Link>
+}
 
 export function ArticleList() {
   const { t, locale, session } = useBlog()
@@ -38,7 +49,7 @@ export function ArticleList() {
     <div className={styles['toolbar']}><DateField value={date} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
     <div className={styles['toolbar']}><div className={styles['filters']}><button aria-pressed={!category} onClick={() => filter('category', '')}>{t('all')}</button>{categories.data?.data.map(item => <button key={item} aria-pressed={category === item} onClick={() => filter('category', item)}>{item}</button>)}</div><form className={styles['search-field']} onSubmit={e => { e.preventDefault(); filter('keyword', query) }}><Search size={16} /><input aria-label={t('search')} placeholder={t('search')} value={query} onChange={e => setQuery(e.target.value)} /><button aria-label={t('search')} className={styles['icon-button']}><ArrowUpRight size={16} /></button></form></div>
     <State loading={isLoading} error={error} empty={data?.data.length === 0} retry={() => mutate()} />
-    <div className={styles['article-list']}>{data?.data.map(entry => <Link key={entry._id} href={`/articles/${entry._id}`} prefetch={false} className={styles['article-card']}><time className={styles['article-date']} dateTime={entry.createdAt}><strong>{new Date(entry.createdAt).getUTCDate().toString().padStart(2, '0')}</strong>{entry.createdAt.slice(0, 7).replace('-', ' / ')}</time><div><h2>{entry.title}</h2><p>{excerpt(entry.content, 190)}</p><div className={styles['entry-meta']}><span>{entry.category}</span><span>{entry.username || 'YororoIce'}</span><span>{dateLabel(entry.createdAt, locale)}</span><span>♡ {entry.likes || 0}</span></div></div><span className={styles['article-arrow']}>{t('read')}<ArrowUpRight size={24} strokeWidth={1} /></span></Link>)}</div>
+    <div className={styles['article-list']}>{data?.data.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} />)}</div>
     <Pagination page={page} pages={data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
   </div>
 }

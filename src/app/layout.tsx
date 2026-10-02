@@ -1,11 +1,9 @@
-'use client'
-
 // import { Metadata } from 'next';
 import "@/styles/globals.scss";
 import "@/app/global.css";
 import { cn } from "@/lib/utils";
-import { BrightnessProvider } from "@/context/brightness-context";
 import BgImage from "@/components/arks/bg-image";
+import RouteScrollManager from "@/components/route-scroll-manager";
 
 // ------------------------------------ 字体配置 ------------------------------------
 import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
@@ -66,11 +64,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col relative">
+        <RouteScrollManager />
         <div id="portal-root" />
-        <BrightnessProvider>
-          <BgImage />
-          {children}
-        </BrightnessProvider>
+        <BgImage />
+        {children}
       </body>
     </html>
   );
