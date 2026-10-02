@@ -126,6 +126,8 @@ const words = {
   older: ['更早的消息', 'Earlier messages', '過去のメッセージ', 'Ältere Nachrichten'],
   reconnecting: ['连接中断，正在重连', 'Reconnecting', '再接続中', 'Verbindung wird hergestellt'],
   connected: ['已连接', 'Connected', '接続済み', 'Verbunden'],
+  expandChat: ['放大聊天界面', 'Expand chat', 'チャットを拡大', 'Chat vergrößern'],
+  collapseChat: ['还原聊天界面', 'Restore chat', 'チャットを戻す', 'Chat verkleinern'],
   back: ['返回', 'Back', '戻る', 'Zurück'],
   toTop: ['回到顶部', 'Back to top', 'トップへ', 'Nach oben'],
   terms: ['社区约定', 'Community guidelines', 'コミュニティ規約', 'Community-Regeln'],

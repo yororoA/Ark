@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useSWRInfinite from 'swr/infinite'
-import { Reply, Send, X } from 'lucide-react'
+import { Maximize2, Minimize2, Reply, Send, X } from 'lucide-react'
 import { dateLabel, Envelope, excerpt, Media } from '@/lib/blog'
 import { request, send, useBlog, useBlogData } from './blog-provider'
 import { FilePicker, MediaGrid, PageHeading, RequireLogin, State, styles } from './shared'
@@ -12,7 +12,11 @@ type Conversation = { id: string; label?: string; type: 'group' | 'private' }
 type Message = { _id: string; uid: string; username: string; text: string; imgurl?: string[] | string; replyto?: string; createdAt: string }
 type ChatEvent = { chatType: 'group' | 'private'; convKey?: string; data: Message }
 
-function ConversationView({ conversation }: { conversation: Conversation }) {
+function ConversationView({ conversation, expanded, toggleExpanded }: {
+  conversation: Conversation
+  expanded: boolean
+  toggleExpanded: () => void
+}) {
   const { t, locale, session, connection } = useBlog()
   const [content, setContent] = useState('')
   const [files, setFiles] = useState<File[]>([])
@@ -89,15 +93,16 @@ function ConversationView({ conversation }: { conversation: Conversation }) {
     } catch (error) { setSubmitError((error as Error).message) } finally { setBusy(false) }
   }
   const label = conversation.id === 'group' ? t('group') : conversation.id === 'admin' ? t('admin') : conversation.label || conversation.id
+  const expandLabel = t(expanded ? 'collapseChat' : 'expandChat')
   return <section className={styles['chat-main']} aria-label={label}>
-    <div className={styles['chat-status']} title={label}><strong>{label}</strong><span aria-hidden="true">·</span><span role="status">{t(connection === 'connected' ? 'connected' : 'reconnecting')}</span></div>
+    <div className={styles['chat-status']} title={label}><strong>{label}</strong><span aria-hidden="true">·</span><span role="status">{t(connection === 'connected' ? 'connected' : 'reconnecting')}</span><button type="button" className={`${styles['icon-button']} ${styles['chat-expand']}`} aria-label={expandLabel} title={expandLabel} aria-pressed={expanded} onClick={toggleExpanded}>{expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button></div>
     <div className={styles['messages']} ref={messagesRef} role="log" aria-label={label} aria-live="polite" onScroll={() => { const el = messagesRef.current!; stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}>
       {hasMore && <div className={styles['older-messages']}><button className={styles['secondary-button']} disabled={isValidating} onClick={() => { const el = messagesRef.current!; olderPosition.current = { height: el.scrollHeight, top: el.scrollTop }; stickToBottom.current = false; void setSize(size + 1) }}>{t('older')}</button></div>}
       <State loading={isLoading} error={error} empty={!!data && !messages.length} retry={() => mutate()} />
       {messages.map(message => {
         const urls = Array.isArray(message.imgurl) ? message.imgurl : message.imgurl ? [message.imgurl] : []
         const media: Media[] = urls.filter(url => /^https?:\/\//.test(url)).map(url => ({ url, filename: url.split('/').pop() || '', mime: /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg' }))
-        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid} data-media={media.length ? 'true' : 'false'}><small title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>{message.replyto && <blockquote>{message.replyto}</blockquote>}{message.text && <p>{message.text}</p>}<MediaGrid files={media} compact onMediaLoad={keepLatestVisible} /><button className={styles['icon-button']} aria-label={`${t('reply')} ${message.username}`} onClick={() => { setReply(message); inputRef.current?.focus() }}><Reply size={14} /></button></article>
+        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid} data-media={media.length ? 'true' : 'false'}><small title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>{message.replyto && <blockquote>{message.replyto}</blockquote>}{message.text && <p>{message.text}</p>}<MediaGrid files={media} compact onMediaLoad={keepLatestVisible} /><button className={`${styles['icon-button']} ${styles['message-reply']}`} aria-label={`${t('reply')} ${message.username}`} title={t('reply')} onClick={() => { setReply(message); inputRef.current?.focus() }}><Reply size={14} /></button></article>
       })}
     </div>
     <form className={styles['chat-compose']} onSubmit={submit}>
@@ -110,7 +115,7 @@ function ConversationView({ conversation }: { conversation: Conversation }) {
   </section>
 }
 
-function ChatContent() {
+function ChatContent({ expanded, toggleExpanded }: { expanded: boolean; toggleExpanded: () => void }) {
   const { t, session } = useBlog()
   const router = useRouter()
   const params = useSearchParams()
@@ -133,10 +138,17 @@ function ChatContent() {
   return <><State loading={isLoading} error={error} retry={() => mutate()} />{data && <div className={styles['chat-layout']}><nav className={styles['conversation-list']} aria-label={t('chat')}>{data.data.map(item => {
     const label = item.id === 'group' ? t('group') : item.id === 'admin' ? t('admin') : item.label || item.id
     return <button key={item.id} title={label} aria-pressed={active === item.id} onClick={() => router.replace(`/chat?conversation=${encodeURIComponent(item.id)}`, { scroll: false })}><span>{label}</span></button>
-  })}</nav>{conversation ? <ConversationView key={`${session!.uid}:${conversation.id}`} conversation={conversation} /> : <State empty />}</div>}</>
+  })}</nav>{conversation ? <ConversationView key={`${session!.uid}:${conversation.id}`} conversation={conversation} expanded={expanded} toggleExpanded={toggleExpanded} /> : <State empty />}</div>}</>
 }
 
 export default function Chat() {
   const { session } = useBlog()
-  return <div className={`${styles['page']} ${styles['chat-page']}`}><PageHeading title="chat" english="Across the distance" number="07" /><RequireLogin guestAllowed><ChatContent key={session?.uid} /></RequireLogin></div>
+  const [expanded, setExpanded] = useState(false)
+  useEffect(() => {
+    if (!expanded) return
+    const collapse = (event: KeyboardEvent) => { if (event.key === 'Escape') setExpanded(false) }
+    window.addEventListener('keydown', collapse)
+    return () => window.removeEventListener('keydown', collapse)
+  }, [expanded])
+  return <div className={`${styles['page']} ${styles['chat-page']}`} data-expanded={expanded}><PageHeading title="chat" english="Across the distance" number="07" /><RequireLogin guestAllowed><ChatContent key={session?.uid} expanded={expanded} toggleExpanded={() => setExpanded(value => !value)} /></RequireLogin></div>
 }

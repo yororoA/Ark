@@ -53,7 +53,7 @@ export function LikeButton({ kind, id, count = 0 }: { kind: 'article' | 'moment'
   return <button className={styles['secondary-button']} disabled={busy || (!!session && !session.isGuest && !data)} onClick={toggle} aria-pressed={liked}><Heart size={15} fill={liked ? 'currentColor' : 'none'} />{t(liked ? 'liked' : 'like')} {value?.base === count ? value.likes : count}</button>
 }
 export function Modal({ title, children, close, variant = 'default', descriptionId }: {
-  title: string; children: React.ReactNode; close: () => void; variant?: 'default' | 'confirm'; descriptionId?: string
+  title: string; children: React.ReactNode; close: () => void; variant?: 'default' | 'confirm' | 'media'; descriptionId?: string
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const { t } = useBlog()
@@ -117,7 +117,7 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
     return () => window.removeEventListener('keydown', navigate)
   }, [files.length])
   const item = files[active]
-  return <Modal title={item.desc || t('preview')} close={close}><div className={styles['preview-media']} data-compact={compact}>{item.mime.startsWith('video') ? <video key={item.url} src={item.url} controls autoPlay /> : <img src={item.url} alt={item.desc || item.filename} />}</div><div className={styles['dialog-footer']}><button className={styles['secondary-button']} disabled={active === 0} onClick={() => setActive(active - 1)}>{t('previous')}</button><span>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span><button className={styles['secondary-button']} disabled={active === files.length - 1} onClick={() => setActive(active + 1)}>{t('next')}</button></div></Modal>
+  return <Modal title={item.desc || t('preview')} close={close} variant="media"><div className={styles['preview-media']} data-compact={compact}>{item.mime.startsWith('video') ? <video key={item.url} src={item.url} controls autoPlay /> : <img src={item.url} alt={item.desc || item.filename} />}</div><div className={styles['dialog-footer']}><button className={styles['secondary-button']} disabled={active === 0} onClick={() => setActive(active - 1)}>{t('previous')}</button><span>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span><button className={styles['secondary-button']} disabled={active === files.length - 1} onClick={() => setActive(active + 1)}>{t('next')}</button></div></Modal>
 }
 export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Media[]; compact?: boolean; onMediaLoad?: () => void }) {
   const [preview, setPreview] = useState<number | null>(null)
