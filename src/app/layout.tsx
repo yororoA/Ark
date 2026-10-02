@@ -7,6 +7,7 @@ import RouteScrollManager from "@/components/route-scroll-manager";
 
 // ------------------------------------ 字体配置 ------------------------------------
 import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 
 // Batang - 登录页黑条 tag
 const gowunBatang = Gowun_Batang({
@@ -68,6 +69,7 @@ export default function RootLayout({
         <div id="portal-root" />
         <BgImage />
         {children}
+        <Analytics />
       </body>
     </html>
   );
