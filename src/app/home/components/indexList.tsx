@@ -30,16 +30,13 @@ export default function IndexList({ filter }: { filter: ModuleState | null }) {
             </Link>
             {current && (
               <div className={styles.node}>
-                <span className={styles.nodeFig}>FIG.01</span>
-                <div>
-                  <p className={styles.nodeCode}>BINES-01</p>
-                  <p className={styles.nodeLine}>TYPE / MARK</p>
-                  <p className={styles.nodeLine}>ARCHIVE / PERSONAL</p>
-                  <p className={styles.nodeCursor}>在册</p>
-                </div>
-                <div className={styles.nodePreview}>
+                <span className={styles.nodeCode}>FIG.01 · BINES-01</span>
+                <span className={styles.nodeLine}>TYPE / MARK</span>
+                <span className={styles.nodeLine}>ARCHIVE / PERSONAL</span>
+                <span className={styles.nodeCursor}>在册</span>
+                <span className={styles.nodePreview}>
                   <Image src="/bines_sign.png" alt="Bines 手写标记" width={2304} height={1728} />
-                </div>
+                </span>
               </div>
             )}
           </li>
