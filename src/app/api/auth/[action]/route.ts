@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createHash } from 'crypto'
 import { z } from 'zod'
 import { Api } from '@/lib/server/api'
+import { sameOrigin, verifiedSession, saveCredential } from '@/lib/server/blog-session'
 
 /**
  * Auth Route Handler
@@ -98,6 +99,10 @@ async function setAuthCookies(uid: string, token: string, isGuest = false) {
 // ── 主入口 ──────────────────────────────────────────
 export async function POST(req: NextRequest, ctx: RouteContext<'/api/auth/[action]'>) {
   const { action } = await ctx.params
+  if (!sameOrigin(req)) return NextResponse.json({ message: '请求来源无效' }, { status: 403 })
+  if (!['switch', 'guest', 'login', 'register', 'code'].includes(action)) {
+    return NextResponse.json({ message: '接口不存在' }, { status: 404 })
+  }
 
   // ─── switch：切换当前活跃账号 ───────────────────
   if (action === 'switch') {
@@ -120,6 +125,7 @@ async function handleGuest() {
     if (resp && resp.uid && resp.token) {
       await setAuthCookies(resp.uid, resp.token, true)
     }
+    if (resp) delete resp.token
     return NextResponse.json(resp ?? null)
   } catch (err) {
     return NextResponse.json(
@@ -166,6 +172,7 @@ async function handleAuthWithBody(req: NextRequest, action: Auth) {
       resp.isAdmin = adminUids.includes(resp.uid)
       await setAuthCookies(resp.uid, resp.token, false)
     }
+    if (resp) delete resp.token
     return NextResponse.json(resp ?? null)
   } catch (err) {
     return NextResponse.json(
@@ -192,50 +199,12 @@ async function handleSwitch(req: NextRequest) {
     )
   }
   const { uid } = parsed.data
-
-  const cookieStore = await cookies()
-
-  // 1. 设置 blog_active_uid cookie
-  cookieStore.set('blog_active_uid', uid, {
-    path: '/',
-    maxAge: 31536000,
-    sameSite: 'lax',
-    httpOnly: false,
-  })
-
-  // 2. 轻量后端验证：手动构造 Cookie 头（server-to-server fetch 不带浏览器 cookie）
-  const backendUrl = process.env.BACKEND_URL
-  if (!backendUrl) {
-    return NextResponse.json(null)
-  }
-
-  const activeUid = `blog_active_uid=${uid}`
-  const tokensValue = cookieStore.get('blog_tokens')?.value || ''
-  const guestValue = cookieStore.get('blog_guest_token')?.value || ''
-  const cookieParts = [activeUid]
-  if (tokensValue) cookieParts.push(`blog_tokens=${tokensValue}`)
-  if (guestValue) cookieParts.push(`blog_guest_token=${guestValue}`)
-  const cookieHeader = cookieParts.join('; ')
-
   try {
-    const response = await fetch(`${backendUrl}/api/v2/auth/me`, {
-      headers: { Cookie: cookieHeader },
-    })
-    if (response.ok) {
-      const adminUids = (process.env.ADMIN_UIDS || '').split(',').filter(Boolean)
-      const data = await response.json()
-      if (data.valid) {
-        return NextResponse.json({
-          uid: data.uid,
-          username: data.username,
-          isGuest: data.isGuest ?? false,
-          isAdmin: adminUids.includes(data.uid),
-        })
-      }
-    }
+    const auth = await verifiedSession(uid)
+    if (!auth) return NextResponse.json({ message: '账号已过期，请重新登录' }, { status: 401 })
+    await saveCredential(auth.credential, true)
+    return NextResponse.json(auth.session)
   } catch {
-    // 网络异常 / 后端未部署新版本 → 不抛错，交给后续实际请求处理
+    return NextResponse.json({ message: '账号验证暂时不可用' }, { status: 503 })
   }
-
-  return NextResponse.json(null)
 }
