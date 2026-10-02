@@ -236,6 +236,33 @@
   &:hover { background: var(--accent); }
 }
 
+:global(html[data-design="rain"]) {
+  .dialog-overlay { background: color-mix(in srgb, var(--ark-ink) 24%, transparent); backdrop-filter: blur(12px); }
+  .accountManagement { width: min(560px, 100%); padding: 16px; border-top-width: 1px; border-radius: 20px; box-shadow: 0 28px 90px #08212626; }
+  .accountManagement::after { display: none; }
+  .accountManagementTitle { min-height: 92px; padding: 14px 12px 22px; }
+  .accountManagementTitle h1 { font-size: 30px; letter-spacing: 2px; }
+  .accountManagementTitle h1::after { display: block; content: 'YOROROICE / ARK'; font: 8px/1.6 var(--font-ibm-plex), sans-serif; letter-spacing: 2px; color: var(--muted); margin-top: 10px; }
+  .accountManagement .icon-button { border-radius: 50%; }
+  .accountManagement .form { padding: 24px 12px; gap: 24px; }
+  .account-body { padding: 24px 12px; }
+  .accountManagementFooter { padding: 18px 12px; }
+  .accountManagement .loginBtn, .accountManagementFooter > button, .code-button { border-radius: 24px; background: var(--accent); border-color: var(--accent); }
+  .accountManagement .loginBtn:hover:not(:disabled), .accountManagementFooter > button:hover:not(:disabled), .code-button:hover:not(:disabled) { background: var(--ink); border-color: var(--ink); }
+  .inputGroup { gap: 22px; }
+  .inputGroup input { border-radius: 8px; font-size: 16px; }
+  .account { border-radius: 10px; }
+  .avatar { border: 1px solid var(--line); border-radius: 50%; background: var(--soft); color: var(--accent); font-weight: 400; }
+  .accountManagementContent { border-top-width: 1px; border-radius: 12px; padding: 8px; }
+
+  @media (max-width: 600px) {
+    .accountManagement { padding: 8px; border-radius: 18px; }
+    .accountManagementTitle { min-height: 80px; padding: 12px; }
+    .accountManagementTitle h1 { font-size: 26px; }
+    .accountManagement .form { padding: 20px 12px; }
+  }
+}
+
 @media (max-width: 600px) {
   .dialog-overlay { align-items: flex-end; padding: 12px; }
   .accountManagement, .declaration { max-height: calc(100dvh - 24px); }

@@ -9,10 +9,10 @@ import { useAppearance } from './appearance-store'
 import styles from './theme-picker.module.scss'
 
 const COPY = {
-  zh: { title: '外观', design: '视觉主题', mode: '明暗模式', archive: '档案', rain: '雨声', archiveNote: '纸白 · 朱红 · 轨道', rainNote: '水青 · 细雨 · 留白', light: '浅色', dark: '深色', system: '跟随系统', close: '关闭外观设置', note: '让文字，留在喜欢的风景里。' },
-  en: { title: 'Appearance', design: 'Visual theme', mode: 'Color mode', archive: 'Archive', rain: 'Rain', archiveNote: 'Paper · Vermilion · Orbits', rainNote: 'Aqua · Rain · Stillness', light: 'Light', dark: 'Dark', system: 'System', close: 'Close appearance settings', note: 'A different atmosphere for the same stories.' },
-  ja: { title: '外観', design: 'テーマ', mode: 'カラーモード', archive: '記録', rain: '雨音', archiveNote: '紙白・朱色・軌道', rainNote: '水青・小雨・余白', light: 'ライト', dark: 'ダーク', system: 'システム', close: '外観設定を閉じる', note: '好きな景色に、言葉を残す。' },
-  de: { title: 'Darstellung', design: 'Visuelles Thema', mode: 'Farbmodus', archive: 'Archiv', rain: 'Regen', archiveNote: 'Papier · Zinnober · Orbits', rainNote: 'Aqua · Regen · Ruhe', light: 'Hell', dark: 'Dunkel', system: 'System', close: 'Darstellung schließen', note: 'Eine andere Atmosphäre für dieselben Geschichten.' },
+  zh: { title: '外观', design: '视觉主题', mode: '明暗模式', archive: '档案', rain: '雨声', archiveNote: '编号 · 索引 · 编辑排版', rainNote: '书页 · 水纹 · 留白', light: '浅色', dark: '深色', system: '跟随系统', close: '关闭外观设置', note: '让文字，留在喜欢的风景里。' },
+  en: { title: 'Appearance', design: 'Visual theme', mode: 'Color mode', archive: 'Archive', rain: 'Rain', archiveNote: 'Indexed · Editorial', rainNote: 'Pages · Ripples · Space', light: 'Light', dark: 'Dark', system: 'System', close: 'Close appearance settings', note: 'A different atmosphere for the same stories.' },
+  ja: { title: '外観', design: 'テーマ', mode: 'カラーモード', archive: '記録', rain: '雨音', archiveNote: '番号・索引・誌面', rainNote: '書頁・波紋・余白', light: 'ライト', dark: 'ダーク', system: 'システム', close: '外観設定を閉じる', note: '好きな景色に、言葉を残す。' },
+  de: { title: 'Darstellung', design: 'Visuelles Thema', mode: 'Farbmodus', archive: 'Archiv', rain: 'Regen', archiveNote: 'Index · Editorial', rainNote: 'Seiten · Wellen · Raum', light: 'Hell', dark: 'Dunkel', system: 'System', close: 'Darstellung schließen', note: 'Eine andere Atmosphäre für dieselben Geschichten.' },
 }
 const MODE_ICONS = { light: Sun, dark: Moon, system: Monitor }
 
@@ -42,8 +42,10 @@ export default function ThemePicker({ locale = 'zh' }: { locale?: Locale }) {
               {DESIGNS.map(option => <label key={option} className={styles['design-option']}>
                 <input type="radio" name={`${id}-design`} value={option} checked={design === option} onChange={() => setDesign(option)} />
                 <span className={styles['design-preview']} data-preview={option} aria-hidden="true">
-                  <span className={styles['preview-type']}>Aa<span>雨</span></span>
+                  <span className={styles['preview-caption']}>{option === 'archive' ? '01 / PERSONAL ARCHIVE' : 'A QUIET JOURNAL'}</span>
+                  <span className={styles['preview-type']}>{option === 'archive' ? 'Ark.' : '雨'}<span>{option === 'archive' ? 'INDEX / 01' : 'Rain'}</span></span>
                   <span className={styles['preview-art']}><i /><i /><i /></span>
+                  <span className={styles['preview-layout']}><i /><i /><i /></span>
                   <span className={styles['preview-line']} />
                 </span>
                 <span className={styles['option-label']}>{copy[option]}<Check size={13} aria-hidden="true" /></span>
