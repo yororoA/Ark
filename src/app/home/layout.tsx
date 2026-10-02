@@ -11,7 +11,7 @@ export default function HomeLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className='h-screen w-screen perspective-[2000px]'>
+    <div className='relative min-h-svh w-full'>
       {children}
     </div>
   );

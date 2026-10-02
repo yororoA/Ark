@@ -1,63 +1,115 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useMouse } from '@/hooks/useMouse';
+import { useBrightness } from '@/context/brightness-context';
+import { cn } from '@/lib/utils';
+import MetaLine from './components/metaLine';
+import IndexList from './components/indexList';
+import MonthRail from './components/monthRail';
+import RouteGate from './components/routeGate';
+import { EDITOR_NOTE } from './cover';
 import styles from './home.module.scss';
-import { Settings } from 'lucide-react';
-
-
 
 export default function Home() {
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const mastheadRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLElement>(null);
   const mouse = useMouse();
-  const currentRotateY = useRef(0);
-  const currentRotateX = useRef(0);
+  const { isDimmed } = useBrightness();
 
+  // 刊名和标志框按鼠标做几像素的反向位移，只给细指针、未要求减弱动效的设备
   useEffect(() => {
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!finePointer || reduced) return;
+
     let raf: number;
+    let x = 0;
+    let y = 0;
 
     const update = () => {
-      const ratioX = (mouse.current.x - window.innerWidth / 2) / (window.innerWidth / 2);
-      const targetRotateY = Math.max(-1, Math.min(1, ratioX)) * 10;
-      const targetRotateX = -(mouse.current.y / window.innerHeight) * 2;
+      const ratioX = Math.max(-1, Math.min(1, (mouse.current.x - window.innerWidth / 2) / (window.innerWidth / 2)));
+      const ratioY = Math.max(-1, Math.min(1, (mouse.current.y - window.innerHeight / 2) / (window.innerHeight / 2)));
+      x += (ratioX - x) * 0.08;
+      y += (ratioY - y) * 0.08;
 
-      // lerp 平滑插值，消除鼠标跟随的抖动感
-      currentRotateY.current += (targetRotateY - currentRotateY.current) * 0.08;
-      currentRotateX.current += (targetRotateX - currentRotateX.current) * 0.08;
-
-      wrapRef.current!.style.transform =
-        `rotateY(${currentRotateY.current}deg) rotateX(${currentRotateX.current}deg)`;
+      if (mastheadRef.current) mastheadRef.current.style.transform = `translate3d(${x * -8}px, ${y * -4}px, 0)`;
+      if (frameRef.current) frameRef.current.style.transform = `translate3d(${x * 5}px, ${y * 3}px, 0)`;
 
       raf = requestAnimationFrame(update);
     };
 
     raf = requestAnimationFrame(update);
-
-    return () => {
-      cancelAnimationFrame(raf);
-    };
-  }, []);
+    return () => cancelAnimationFrame(raf);
+  }, [mouse]);
 
   return (
     <>
-      <div className={styles.utils}>
-        <Settings className='iconBtn_noBgd size-[2rem]' />
-        <Settings className='iconBtn_noBgd size-[2rem]' />
-        <Settings className='iconBtn_noBgd size-[2rem]' />
-        <Settings className='iconBtn_noBgd size-[2rem]' />
-      </div>
+      <RouteGate code="YORORO ARK / COVER · 01" />
 
-      <div className={styles.info}>
-      </div>
+      <main className={cn(styles.sheet, isDimmed && styles.sheetDim)}>
+        <MetaLine />
 
-      <div ref={wrapRef} className={styles.wrap}>
-        <div className={styles.leftContents}>
-          <div></div>
-        </div>
+        <section className={styles.masthead}>
+          <div ref={mastheadRef} className={styles.mastheadInner}>
+            <h1 className={styles.title}>
+              YORORO
+              <span className={styles.titleCn}>冰</span>
+            </h1>
+            <div className={styles.subline}>
+              <span className={styles.spaced}>YORORO ICE · ARK</span>
+              <span className={styles.hairline} aria-hidden />
+              <span className={styles.metaDim}>个人刊物</span>
+            </div>
+          </div>
+          <Image
+            src="/logo.png"
+            alt="YororoIce 签名"
+            width={1720}
+            height={785}
+            loading="eager"
+            className={styles.signature}
+          />
+        </section>
 
-        <div className={styles.rightContents}>
-          <div></div>
-        </div>
-      </div>
+        <section className={styles.body}>
+          <article className={styles.feature}>
+            <span className={styles.kicker}>
+              <i aria-hidden />
+              {EDITOR_NOTE.kicker}
+            </span>
+            <h2 className={styles.featureTitle}>{EDITOR_NOTE.title}</h2>
+            <p className={styles.featureBody}>{EDITOR_NOTE.body}</p>
+            <Link className={styles.featureLink} href={EDITOR_NOTE.href}>
+              {EDITOR_NOTE.linkLabel}
+              <span aria-hidden>→</span>
+            </Link>
+          </article>
+
+          <IndexList />
+
+          <figure ref={frameRef} className={styles.frame}>
+            <div className={styles.frameCut}>
+              <Image
+                src="/bines_sign.png"
+                alt="Bines"
+                width={2304}
+                height={1728}
+                className={styles.frameImage}
+              />
+            </div>
+            <figcaption className={styles.frameCaption}>
+              <span className={styles.mono}>FIG. 01</span>
+              <span>Bines</span>
+            </figcaption>
+          </figure>
+        </section>
+
+        <MonthRail />
+
+        <span className={styles.spine} aria-hidden>封面 · COVER</span>
+      </main>
     </>
   );
 }

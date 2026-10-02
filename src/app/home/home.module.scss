@@ -1,85 +1,655 @@
 @use '@/styles/variables' as *;
 
-$info-size: 6.8rem;
-$init-rotate: 22.5deg;
-$left-height: $info-size*1.2;
-$right-height: $left-height*3;
-$origin-left: 10%;
+$paper: #f3f2ee;
+$paper-dim: #dedcd5;
+$ink: #1b1d1f;
+$ink-soft: rgba(27, 29, 31, 0.62);
+$ink-faint: rgba(27, 29, 31, 0.38);
+$hair: rgba(27, 29, 31, 0.18);
+$cyan: #0098c8;
+$yellow: #f0b800;
 
-.utils,
-.info {
-  position: absolute;
-  z-index: 1;
-}
+$ease: cubic-bezier(0.2, 0, 0, 1);
+$fast: 120ms;
+$normal: 200ms;
 
-.utils {
-  top: 0;
-  left: 0;
-  border: $button-border;
+$font-serif: var(--font-noto-serif), 'Songti SC', serif;
+$font-sans: var(--font-noto-sans), 'Noto Sans SC', sans-serif;
+$font-num: var(--font-orbitron), sans-serif;
+$font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, monospace;
+
+$cut-lg: 1.5em;
+$cut-md: 0.75em;
+
+// ------------------------------------ 进场 ------------------------------------
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   display: flex;
-  gap: $gap * .8;
-  padding: $gap*.7 $gap;
+  align-items: center;
+  padding-left: 8vw;
+  background: #000;
+  color: rgba(248, 248, 245, 0.68);
+  font: 13px/1 $font-mono;
+  letter-spacing: 0.18em;
+
+  span::before {
+    content: '';
+    display: inline-block;
+    width: 2.4em;
+    height: 1px;
+    margin-right: 1em;
+    vertical-align: middle;
+    background: currentColor;
+  }
 }
 
-.info {
-  height: $info-size;
-  width: $info-size;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: rgba($color: $white, $alpha: 0.5);
-}
-
-.wrap {
+// ------------------------------------ 纸面 ------------------------------------
+.sheet {
   position: relative;
-  width: 100%;
-  height: 100%;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-height: calc(100svh - 1.2rem);
+  margin: 0.6rem;
+  padding: 0.9em 2.6em 0.9em 1.6em;
+  font-family: $font-sans;
+  font-size: clamp(13px, 0.46rem, 20px);
+  color: $ink;
+  background: $paper;
+  overflow-x: clip;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$cut-lg * 2}), calc(100% - #{$cut-lg * 2}) 100%, 0 100%);
+  transition: background-color $normal $ease;
+}
+
+.sheetDim {
+  background: $paper-dim;
+}
+
+.mono {
+  font-family: $font-mono;
+  letter-spacing: 0.04em;
+}
+
+.latin {
+  font-size: 0.72em;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.metaDim {
+  color: $ink-soft;
+}
+
+// ------------------------------------ 顶栏 ------------------------------------
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 1.6em;
+  padding-bottom: 0.7em;
+  border-bottom: 1px solid $hair;
+  font-size: 0.86em;
+}
+
+.metaLeft,
+.metaRight {
+  display: flex;
+  align-items: baseline;
+  gap: 1.1em;
+  white-space: nowrap;
+}
+
+.metaRight {
+  margin-left: auto;
+}
+
+.folio {
+  font-family: $font-num;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.ruler {
+  flex: 0 1 18em;
+  height: 10px;
+  opacity: 0.55;
+  background:
+    linear-gradient(90deg, $ink 1px, transparent 1px) 0 0 / 30px 100% repeat-x,
+    linear-gradient(90deg, $ink 1px, transparent 1px) 0 100% / 6px 45% repeat-x;
+}
+
+.clock {
+  font-family: $font-num;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.metaItem:hover {
+  color: $cyan;
+}
+
+.dotOn,
+.dotOff {
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+}
+
+.dotOn {
+  background: $cyan;
+}
+
+.dotOff {
+  border: 1px solid $ink-faint;
+}
+
+.metaButton {
+  padding: 0.18em 0.7em;
+  border: 1px solid $hair;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  transition: border-color $fast $ease, color $fast $ease, background-color $fast $ease;
+
+  &:hover {
+    border-color: $ink;
+  }
+
+  &:active {
+    background: rgba(27, 29, 31, 0.06);
+  }
+
+  &[aria-pressed='true'] {
+    border-color: $yellow;
+    box-shadow: inset 0 -2px 0 $yellow;
+  }
+}
+
+// ------------------------------------ 刊名 ------------------------------------
+.masthead {
+  position: relative;
+  padding: 1.2em 0 1.4em;
+}
+
+.mastheadInner {
+  will-change: transform;
+}
+
+.title {
+  margin: 0 0 0 -0.045em;
+  font-family: $font-serif;
+  font-weight: 700;
+  font-size: clamp(5.5rem, 17vw, 15rem);
+  line-height: 0.8;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.titleCn {
+  display: inline-grid;
+  place-items: center;
+  width: 1.2em;
+  height: 1.2em;
+  margin-left: 0.5em;
+  vertical-align: top;
+  font-size: 0.13em;
+  line-height: 1;
+  letter-spacing: 0;
+  color: $paper;
+  background: $ink;
+}
+
+.subline {
+  display: flex;
+  align-items: center;
+  gap: 1.2em;
+  margin-top: 1.1em;
+  font-size: 0.95em;
+}
+
+.spaced {
+  letter-spacing: 0.62em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hairline {
+  flex: 0 1 14em;
+  height: 1px;
+  background: $ink;
+}
+
+.signature {
+  position: absolute;
+  right: 3%;
+  bottom: -4%;
+  width: clamp(9em, 24vw, 30em);
+  height: auto;
+  transform: rotate(-7deg);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+// ------------------------------------ 正文三栏 ------------------------------------
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.25fr) minmax(0, 0.8fr);
+  gap: 2.4em;
+  align-items: start;
+  padding: 1.4em 0 1.6em;
+  border-top: 1px solid $ink;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8em;
+  max-width: 24em;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 0.86em;
+  color: $ink-soft;
+
+  i {
+    width: 0.55em;
+    height: 0.55em;
+    background: $yellow;
+  }
+}
+
+.featureTitle {
+  margin: 0;
+  font-family: $font-serif;
+  font-weight: 700;
+  font-size: 1.9em;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.featureBody {
+  margin: 0;
+  line-height: 1.75;
+  color: $ink-soft;
+}
+
+.featureLink {
+  align-self: flex-start;
+  display: inline-flex;
+  gap: 0.6em;
+  margin-top: 0.4em;
+  padding-bottom: 0.15em;
+  border-bottom: 1px solid $ink;
+  color: inherit;
+  text-decoration: none;
+  transition: color $normal $ease, border-color $normal $ease;
+
+  span {
+    transition: transform $normal $ease;
+  }
+
+  &:hover {
+    color: $cyan;
+    border-color: $cyan;
+
+    span {
+      transform: translateX(4px);
+    }
+  }
+}
+
+// ------------------------------------ 目录 ------------------------------------
+.index {
+  padding-left: 2.4em;
+  border-left: 1px solid $hair;
+
+  ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    border-bottom: 1px solid $hair;
+  }
+}
+
+.indexHead {
   display: flex;
   justify-content: space-between;
-  transform-style: preserve-3d;
-  transform-origin: center top;
-  // transition: transform 0.5s ease-in-out;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid $ink;
+  font-size: 0.86em;
+  color: $ink-soft;
+}
 
-  animation-direction: alternate;
+.indexLink {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.4em auto 1fr auto;
+  align-items: baseline;
+  gap: 1em;
+  padding: 0.62em 0 0.62em 0.7em;
+  color: inherit;
+  text-decoration: none;
+  transition: transform $normal $ease, color $normal $ease;
 
-  .leftContents,
-  .rightContents {
-    backface-visibility: hidden;
-    display: flex;
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.5em;
+    bottom: 0.5em;
+    width: 4px;
+    background: $cyan;
+    transform: scaleY(0);
+    transform-origin: center top;
+    transition: transform $normal $ease;
+  }
 
-    div {
-      flex: 1;
-      background-color: rgba($color: blue, $alpha: 0.5);
+  &:hover,
+  &:focus-visible {
+    transform: translateX(4px);
+
+    &::before {
+      transform: scaleY(1);
+    }
+
+    .indexNo {
+      color: $cyan;
     }
   }
 
-  .leftContents {
-    order: 1;
-    width: $left-height*2.2;
-    height: $left-height;
-    margin-top: auto;
-    background-color: rgba($color: red, $alpha: 1);
-    transform: rotateY($init-rotate);
-    transform-origin: left center;
-    transform-origin: $origin-left center;
-    margin-bottom: $gap*4;
+  &:focus-visible {
+    outline: 3px solid $yellow;
+    outline-offset: 3px;
+  }
+}
 
-    >div {
-      margin-left: $origin-left;
-    }
+.indexNo {
+  font-family: $font-num;
+  font-size: 0.86em;
+  color: $ink-faint;
+  transition: color $normal $ease;
+}
+
+.indexLabel {
+  font-family: $font-serif;
+  font-weight: 700;
+  font-size: 1.45em;
+  letter-spacing: -0.02em;
+}
+
+.indexLatin {
+  font-size: 0.72em;
+  letter-spacing: 0.24em;
+  color: $ink-soft;
+}
+
+.indexNote {
+  font-size: 0.82em;
+  color: $ink-faint;
+}
+
+// ------------------------------------ 标志框 ------------------------------------
+.frame {
+  position: relative;
+  margin: 0;
+  padding: 0.5em;
+  will-change: transform;
+
+  // 角刻度：这一页唯一的一处
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 1.1em;
+    height: 1.1em;
+    border: 0 solid $ink;
   }
 
-  .rightContents {
-    order: 2;
-    width: 50%;
-    height: $right-height;
-    margin: auto 0;
-    background-color: rgba($color: $white, $alpha: 0.5);
-    transform: translateZ(6.6rem) rotateY(-$init-rotate);
-    transform-origin: right center;
-    transform-origin: 100%-$origin-left center;
+  &::before {
+    top: 0;
+    right: 0;
+    border-top-width: 1px;
+    border-right-width: 1px;
+  }
 
-    >div {
-      margin-right: $origin-left;
-    }
+  &::after {
+    bottom: 1.9em;
+    left: 0;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+  }
+}
+
+.frameCut {
+  padding: 1px;
+  background: $ink;
+  clip-path: polygon(#{$cut-md * 2} 0, 100% 0, 100% 100%, 0 100%, 0 #{$cut-md * 2});
+
+  > * {
+    clip-path: polygon(#{$cut-md * 2} 0, 100% 0, 100% 100%, 0 100%, 0 #{$cut-md * 2});
+  }
+}
+
+.frameImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #fff;
+}
+
+.frameCaption {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6em;
+  font-size: 0.8em;
+  color: $ink-soft;
+}
+
+// ------------------------------------ 月份刻度 ------------------------------------
+.rail {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
+  gap: 2em;
+  min-height: 2.6em;
+  padding-top: 0.8em;
+  border-top: 1px solid $hair;
+  font-size: 0.8em;
+}
+
+.railLabel {
+  color: $ink-soft;
+  white-space: nowrap;
+}
+
+.railTicks {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tick,
+.tickMajor,
+.tickToday {
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 0.3em;
+  width: 1px;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 6px;
+    background: $ink-faint;
+  }
+
+  span {
+    font-family: $font-mono;
+    font-size: 0.85em;
+    color: $ink-faint;
+  }
+}
+
+.tickMajor::before {
+  height: 10px;
+  background: $ink-soft;
+}
+
+.tickToday {
+  &::before {
+    width: 3px;
+    height: 14px;
+    background: $yellow;
+  }
+
+  span {
+    color: $ink;
+    font-weight: 700;
+  }
+}
+
+// ------------------------------------ 书脊 ------------------------------------
+.spine {
+  position: absolute;
+  top: 50%;
+  right: 0.9em;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  font-size: 0.72em;
+  letter-spacing: 0.5em;
+  color: $ink-faint;
+}
+
+// ------------------------------------ 窄屏 ------------------------------------
+@media (max-width: 960px) {
+  .sheet {
+    padding-right: 1.6em;
+  }
+
+  .body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  }
+
+  .index {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .spine {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .sheet {
+    font-size: 14px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$cut-md * 2}), calc(100% - #{$cut-md * 2}) 100%, 0 100%);
+  }
+
+  .meta {
+    flex-wrap: wrap;
+    row-gap: 0.5em;
+  }
+
+  .ruler {
+    display: none;
+  }
+
+  .metaRight {
+    margin-left: 0;
+    flex-wrap: wrap;
+    row-gap: 0.4em;
+  }
+
+  .title {
+    font-size: 24vw;
+  }
+
+  .subline {
+    flex-wrap: wrap;
+  }
+
+  .spaced {
+    letter-spacing: 0.32em;
+  }
+
+  .signature {
+    width: 42vw;
+    bottom: -2%;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+  }
+
+  .index {
+    grid-row: auto;
+  }
+
+  .indexNote {
+    display: none;
+  }
+
+  .frame {
+    max-width: 18em;
+  }
+
+  .railTicks span {
+    display: none;
+  }
+
+  .tickToday span {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indexLink,
+  .indexLink::before,
+  .featureLink span {
+    transition: none;
+  }
+
+  .indexLink:hover,
+  .indexLink:focus-visible,
+  .featureLink:hover span {
+    transform: none;
+  }
+
+  .indexLink::before {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+
+  .indexLink:hover::before,
+  .indexLink:focus-visible::before {
+    opacity: 1;
   }
 }
