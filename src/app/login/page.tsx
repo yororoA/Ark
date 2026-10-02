@@ -122,22 +122,17 @@ function Login() {
         <main className={styles['login-main']}>
           <section className={styles['login-copy']}>
             <div className={styles['login-signature']} aria-hidden="true"><Image src="/bines_sign.png" alt="" fill sizes="300px" priority /></div>
-            <div className={styles['login-eyebrow']}>PRIVATE ARCHIVE / ACCESS 09</div>
-            <h1>Return to<br /><em>the archive.</em></h1>
-            <p>登录后继续写作、记录片刻，并回到未完成的通信。</p>
-            <div className={styles['access-notes']}><span><ShieldCheck size={15} />HttpOnly session</span><span><BookOpen size={15} />Existing content</span></div>
+            <div className={styles['login-eyebrow']}>IDENTITY ACCESS / 01</div>
+            <h1>接入<br /><em>个人档案</em></h1>
+            <p>使用已有账号、注册新身份，或以游客身份进入通信与留言。</p>
+            <div className={styles['access-notes']}><span><ShieldCheck size={15} />安全会话</span><span><BookOpen size={15} />保留原有内容</span></div>
           </section>
-          <div className={styles['login-orbit']} aria-hidden="true">
-            <span /><span /><span /><i />
-            <strong>09</strong>
-            <small>MEMORY / IDENTITY / CONTINUITY</small>
-          </div>
           <section className={styles['access-panel']} aria-label="当前账号">
-            <div className={styles['panel-index']}>CURRENT IDENTITY / 01</div>
+            <div className={styles['panel-index']}>当前身份 / 01</div>
             <CircleUserRound size={30} strokeWidth={1} />
             <div className={styles['active-account']}>
-              <small>{details[0]?.isAdmin ? 'ADMINISTRATOR' : details[0]?.isGuest ? 'GUEST' : 'USER'}</small>
-              <strong title={details[0]?.username}>{details[0]?.username || 'No account'}</strong>
+              <small>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '游客' : '用户'}</small>
+              <strong title={details[0]?.username}>{details[0]?.username || '未选择账号'}</strong>
               <span>{details[0] ? '凭据将在服务端重新验证' : '选择一种方式接入个人档案'}</span>
             </div>
             {initialized && details[0] && <button className={styles['primary-action']} onClick={() => handleConnect({ action: 'switch' })}>建立连接<ArrowUpRight size={17} /></button>}
