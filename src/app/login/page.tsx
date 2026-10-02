@@ -2,7 +2,7 @@
 import { Suspense, useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowUpRight, BookOpen, CircleUserRound, ShieldCheck } from 'lucide-react'
+import { ArrowUpRight, BookOpen, CircleUserRound, ShieldCheck, UsersRound } from 'lucide-react'
 import { useGetLocation } from '@/hooks/useGetLocation';
 import { useAuthStore } from '@/store/auth';
 
@@ -150,8 +150,10 @@ function Login() {
               <div><span>ACCOUNT RECORD</span><strong>{String(details.length).padStart(2, '0')}</strong></div>
               <div><span>ACCESS LEVEL</span><strong>{activeAccount ? activeRole : '--'}</strong></div>
             </div>
-            {initialized && activeAccount && <button className={styles['primary-action']} onClick={() => handleConnect({ action: 'switch' })}>建立连接<ArrowUpRight size={17} /></button>}
-            <button className={styles['secondary-action']} onClick={() => setIsAccountManagementVisible(true)}>{details.length ? '切换或添加账号' : '登录 / 注册'}<ArrowUpRight size={15} /></button>
+            {activeAccount ? <>
+              <button className={styles['primary-action']} disabled={!initialized} onClick={() => handleConnect({ action: 'switch' })}>建立连接<ArrowUpRight size={17} /></button>
+              <button className={styles['secondary-action']} onClick={() => setIsAccountManagementVisible(true)}><UsersRound size={14} />管理账号</button>
+            </> : <button className={styles['primary-action']} onClick={() => setIsAccountManagementVisible(true)}>登录 / 注册<ArrowUpRight size={17} /></button>}
           </section>
         </main>
         {showAccountManagement && <AccountManagement details={details} preferredMode={mode} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
