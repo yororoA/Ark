@@ -102,7 +102,17 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
       {messages.map(message => {
         const urls = Array.isArray(message.imgurl) ? message.imgurl : message.imgurl ? [message.imgurl] : []
         const media: Media[] = urls.filter(url => /^https?:\/\//.test(url)).map(url => ({ url, filename: url.split('/').pop() || '', mime: /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg' }))
-        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid} data-media={media.length ? 'true' : 'false'}><small title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>{message.replyto && <blockquote>{message.replyto}</blockquote>}{message.text && <p>{message.text}</p>}<MediaGrid files={media} compact onMediaLoad={keepLatestVisible} /><button className={`${styles['icon-button']} ${styles['message-reply']}`} aria-label={`${t('reply')} ${message.username}`} title={t('reply')} onClick={() => { setReply(message); inputRef.current?.focus() }}><Reply size={14} /></button></article>
+        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid}>
+          <small className={styles['message-meta']} title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>
+          <div className={styles['message-line']}>
+            <div className={styles['message-body']}>
+              {message.replyto && <blockquote>{message.replyto}</blockquote>}
+              {message.text && <p>{message.text}</p>}
+              <MediaGrid files={media} compact onMediaLoad={keepLatestVisible} />
+            </div>
+            <button type="button" className={`${styles['icon-button']} ${styles['message-reply']}`} aria-label={`${t('reply')} ${message.username}`} title={t('reply')} onClick={() => { setReply(message); inputRef.current?.focus() }}><Reply size={14} /></button>
+          </div>
+        </article>
       })}
     </div>
     <form className={styles['chat-compose']} onSubmit={submit}>

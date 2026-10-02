@@ -2,11 +2,23 @@
 /* eslint-disable @next/next/no-img-element -- Article covers are stored as arbitrary external Markdown URLs. */
 
 import Link from 'next/link'
-import { useRef } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import { ArrowDown, ArrowRight, ArrowUpRight, Plus } from 'lucide-react'
-import { articlePreview, dateLabel, Entry, Envelope, excerpt, PROFILE } from '@/lib/blog'
+import { articlePreview, dateLabel, Entry, Envelope, excerpt, Locale, PROFILE } from '@/lib/blog'
 import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
+
+const ORBIT_SLOTS = [
+  { left: '24%', top: '29%', align: 'start' },
+  { left: '69%', top: '19%', align: 'end' },
+  { left: '83%', top: '42%', align: 'end' },
+  { left: '72%', top: '68%', align: 'end' },
+  { left: '46%', top: '78%', align: 'start' },
+  { left: '19%', top: '63%', align: 'start' },
+  { left: '40%', top: '14%', align: 'start' },
+  { left: '91%', top: '56%', align: 'end' },
+] as const
+type OrbitPositionStyle = CSSProperties & { '--orbit-left': string; '--orbit-top': string }
 
 function OrbitalArtwork() {
   return <svg className={styles['orbital-art']} viewBox="0 0 900 820" fill="none" aria-hidden="true">
@@ -40,6 +52,42 @@ function OrbitalArtwork() {
   </svg>
 }
 
+function OrbitRecords({ articles, moments, locale }: { articles: Entry[]; moments: Entry[]; locale: Locale }) {
+  const records: { entry: Entry; kind: 'article' | 'moment' }[] = []
+  const pairCount = Math.max(Math.min(articles.length, 4), Math.min(moments.length, 4))
+  for (let index = 0; index < pairCount; index += 1) {
+    if (articles[index]) records.push({ entry: articles[index], kind: 'article' })
+    if (moments[index]) records.push({ entry: moments[index], kind: 'moment' })
+  }
+  return <div className={styles['orbit-map']}>
+    <div className={styles['orbit-core']} aria-hidden="true"><span /><i>00</i></div>
+    {records.slice(0, ORBIT_SLOTS.length).map(({ entry, kind }, index) => {
+      const slot = ORBIT_SLOTS[index]
+      const preview = kind === 'article' ? articlePreview(entry.content).content : entry.content
+      const typeLabel = kind === 'article' ? 'ARTICLE' : 'MOMENT'
+      return <Link
+        key={`${kind}-${entry._id}`}
+        href={`/${kind === 'article' ? 'articles' : 'moments'}/${entry._id}`}
+        prefetch={false}
+        className={styles['orbit-node']}
+        data-align={slot.align}
+        data-kind={kind}
+        data-slot={index}
+        style={{ '--orbit-left': slot.left, '--orbit-top': slot.top } as OrbitPositionStyle}
+        aria-label={`${typeLabel}: ${entry.title}`}
+      >
+        <span className={styles['orbit-planet']} aria-hidden="true" />
+        <span className={styles['orbit-preview']}>
+          <small>{String(index + 1).padStart(2, '0')} / {typeLabel}</small>
+          <strong>{entry.title}</strong>
+          <time>{entry.category ? `${entry.category} · ` : ''}{dateLabel(entry.createdAt, locale)}</time>
+          {preview && <span>{excerpt(preview, 64)}</span>}
+        </span>
+      </Link>
+    })}
+  </div>
+}
+
 export default function Home() {
   const { t, locale } = useBlog()
   const art = useRef<HTMLDivElement>(null)
@@ -48,6 +96,8 @@ export default function Home() {
   const status = useBlogData<Envelope<{ online: boolean }>>('status/bines', { refreshInterval: 60000 })
   const github = useBlogData<Envelope<{ reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }>>('github/summary')
   const featured = articles.data?.data[0]
+  const orbitArticles = articles.data?.data || []
+  const orbitMoments = moments.data?.data || []
   const featuredPreview = featured ? articlePreview(featured.content) : null
   const recent = articles.data?.data.slice(1, 4) || []
   const isOnline = status.data?.data.online
@@ -63,7 +113,7 @@ export default function Home() {
       art.current.style.setProperty('--art-y', `${((event.clientY - rect.top) / rect.height - .5) * 12}px`)
     }}>
       <div className={styles['hero-top']}><span>THE PERSONAL ARCHIVE OF YOROROICE</span><Plus size={13} /><span>A COLLECTION IN PROGRESS</span></div>
-      <div className={styles['hero-art']}><div className={styles['art-plane']} ref={art}><OrbitalArtwork />{featured && <Link href={`/articles/${featured._id}`} prefetch={false} className={styles['track-record']}><span>01 / LATEST RECORD</span><strong>{featured.title}</strong><small>{featured.category} · {dateLabel(featured.createdAt, locale)}</small><ArrowUpRight size={17} strokeWidth={1} /></Link>}<span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span></div></div>
+      <div className={styles['hero-art']}><div className={styles['art-plane']} ref={art}><OrbitalArtwork /><OrbitRecords articles={orbitArticles} moments={orbitMoments} locale={locale} /><span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span></div></div>
       <div className={styles['hero-content']}>
         <div className={styles['eyebrow']}>00 / A CONTINUING STORY</div>
         <h1>Yororo<span>Ice. Ark</span></h1>

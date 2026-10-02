@@ -4,7 +4,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Trash2, Upload, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
@@ -107,17 +107,55 @@ export function DeleteButton({ name, onDelete, iconOnly = false }: { name: strin
 }
 export function MediaPreview({ files, index, close, compact = false }: { files: Media[]; index: number; close: () => void; compact?: boolean }) {
   const [active, setActive] = useState(index)
+  const [scale, setScale] = useState(1)
   const { t, locale } = useBlog()
+  const item = files[active]
+  const isImage = !item.mime.startsWith('video')
+  function changeMedia(offset: number) {
+    setActive(value => Math.max(0, Math.min(files.length - 1, value + offset)))
+    setScale(1)
+  }
+  function changeScale(offset: number) {
+    setScale(value => Math.max(.5, Math.min(3, Number((value + offset).toFixed(2)))))
+  }
   useEffect(() => {
     const navigate = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowLeft') setActive(value => Math.max(0, value - 1))
-      if (event.key === 'ArrowRight') setActive(value => Math.min(files.length - 1, value + 1))
+      if (event.key === 'ArrowLeft') {
+        setActive(value => Math.max(0, value - 1))
+        setScale(1)
+      }
+      if (event.key === 'ArrowRight') {
+        setActive(value => Math.min(files.length - 1, value + 1))
+        setScale(1)
+      }
+      if (!isImage) return
+      if (event.key === '-' || event.key === '_') changeScale(-.25)
+      if (event.key === '+' || event.key === '=') changeScale(.25)
+      if (event.key === '0') setScale(1)
     }
     window.addEventListener('keydown', navigate)
     return () => window.removeEventListener('keydown', navigate)
-  }, [files.length])
-  const item = files[active]
-  return <Modal title={item.desc || t('preview')} close={close} variant="media"><div className={styles['preview-media']} data-compact={compact}>{item.mime.startsWith('video') ? <video key={item.url} src={item.url} controls autoPlay /> : <img src={item.url} alt={item.desc || item.filename} />}</div><div className={styles['dialog-footer']}><button className={styles['secondary-button']} disabled={active === 0} onClick={() => setActive(active - 1)}>{t('previous')}</button><span>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span><button className={styles['secondary-button']} disabled={active === files.length - 1} onClick={() => setActive(active + 1)}>{t('next')}</button></div></Modal>
+  }, [files.length, isImage])
+  return <Modal title={item.desc || t('preview')} close={close} variant="media">
+    <div className={styles['preview-media']} data-compact={compact} data-zoomed={isImage && scale !== 1}>
+      {isImage
+        ? <div className={styles['preview-canvas']} style={{ height: `${scale * 100}%` }}><img key={item.url} src={item.url} alt={item.desc || item.filename} /></div>
+        : <video key={item.url} src={item.url} controls autoPlay />}
+    </div>
+    <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`}>
+      <div className={styles['preview-navigation']}>
+        <button type="button" className={styles['secondary-button']} disabled={active === 0} onClick={() => changeMedia(-1)}><ArrowLeft size={15} />{t('previous')}</button>
+        <button type="button" className={styles['secondary-button']} disabled={active === files.length - 1} onClick={() => changeMedia(1)}>{t('next')}<ArrowRight size={15} /></button>
+      </div>
+      <span className={styles['preview-counter']}>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span>
+      {isImage && <div className={styles['preview-zoom']} role="group" aria-label={t('preview')}>
+        <button type="button" className={styles['icon-button']} disabled={scale <= .5} onClick={() => changeScale(-.25)} aria-label={t('zoomOut')} title={t('zoomOut')}><ZoomOut size={17} /></button>
+        <output aria-live="polite">{Math.round(scale * 100)}%</output>
+        <button type="button" className={styles['icon-button']} disabled={scale === 1} onClick={() => setScale(1)} aria-label={t('resetZoom')} title={t('resetZoom')}><RotateCcw size={16} /></button>
+        <button type="button" className={styles['icon-button']} disabled={scale >= 3} onClick={() => changeScale(.25)} aria-label={t('zoomIn')} title={t('zoomIn')}><ZoomIn size={17} /></button>
+      </div>}
+    </div>
+  </Modal>
 }
 export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Media[]; compact?: boolean; onMediaLoad?: () => void }) {
   const [preview, setPreview] = useState<number | null>(null)
