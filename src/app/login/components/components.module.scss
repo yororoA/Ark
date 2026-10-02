@@ -9,8 +9,8 @@
   justify-content: center;
   min-height: 0;
   padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
-  background: rgb(24 27 24 / 62%);
-  backdrop-filter: blur(10px);
+  background: rgb(24 27 24 / 54%);
+  backdrop-filter: blur(7px);
 }
 
 .accountManagement,
@@ -18,7 +18,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(720px, 100%);
+  width: min(680px, 100%);
   max-height: calc(100dvh - 36px);
   min-width: 0;
   overflow: hidden;
@@ -44,21 +44,7 @@
 }
 
 .accountManagement {
-  min-height: min(390px, calc(100dvh - 36px));
-
-  &::before {
-    content: '01';
-    position: absolute;
-    z-index: 0;
-    right: 20px;
-    top: 78px;
-    color: color-mix(in srgb, var(--accent) 6%, transparent);
-    font: 900 110px/.8 var(--font-orbitron), sans-serif;
-    letter-spacing: 0;
-    pointer-events: none;
-  }
-
-  > * { position: relative; z-index: 1; }
+  min-height: min(350px, calc(100dvh - 36px));
 }
 
 .accountManagementTitle {

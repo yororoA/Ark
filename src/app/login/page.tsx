@@ -123,14 +123,10 @@ function Login() {
           <section className={styles['login-copy']}>
             <div className={styles['login-signature']} aria-hidden="true"><Image src="/bines_sign.png" alt="" fill sizes="300px" priority /></div>
             <div className={styles['login-eyebrow']}>IDENTITY ACCESS / 01</div>
-            <h1>接入<br /><em>个人档案</em></h1>
-            <p>使用已有账号、注册新身份，或以游客身份进入通信与留言。</p>
+            <h1>身份验证</h1>
+            <p>登录已有账号、注册新身份，或以游客身份继续访问。</p>
             <div className={styles['access-notes']}><span><ShieldCheck size={15} />安全会话</span><span><BookOpen size={15} />保留原有内容</span></div>
           </section>
-          <div className={styles['login-portrait']} aria-hidden="true">
-            <Image src="/login_light.png" alt="" fill sizes="(max-width: 680px) 100vw, 56vw" priority />
-            <span>BINES / IDENTITY ARCHIVE</span>
-          </div>
           <section className={styles['access-panel']} aria-label="当前账号">
             <div className={styles['panel-header']}><div className={styles['panel-index']}>当前身份 / 01</div><span className={styles['panel-signal']} data-ready={initialized}><i />{initialized ? 'READY' : 'SYNC'}</span></div>
             <CircleUserRound size={30} strokeWidth={1} />
