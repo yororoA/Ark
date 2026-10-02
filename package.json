@@ -6,7 +6,9 @@
     "dev": "next dev --webpack -H 0.0.0.0 -p 9999",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "verify:blog": "node scripts/verify-blog.mjs",
+    "verify:blog:preview": "node scripts/verify-blog.mjs --serve"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
