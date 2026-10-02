@@ -1007,127 +1007,6 @@
   background: #000;
 }
 
-.exit-handoff {
-  position: absolute;
-  z-index: 6;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0;
-  color: #111;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: -8%;
-    background: url('/bg.jpg') center / cover;
-    filter: grayscale(1) blur(11px) brightness(.72);
-    transform: scale(1.05);
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(90deg, transparent 0 45%, rgb(255 255 255 / 24%) 45% 45.2%, transparent 45.2%),
-      linear-gradient(0deg, transparent 0 49.8%, rgb(255 255 255 / 22%) 49.8% 50.2%, transparent 50.2%);
-    mix-blend-mode: screen;
-  }
-
-  > p {
-    position: absolute;
-    z-index: 2;
-    top: calc(50% + 82px);
-    margin: 0;
-    font-size: 10px;
-    font-weight: 700;
-  }
-}
-
-.handoff-line {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: 0;
-  width: 76%;
-  height: 2px;
-  background:
-    linear-gradient(90deg, transparent 0 14%, #e9edef 14% 39%, transparent 39% 55%, #e9edef 55% 100%);
-  box-shadow: 0 -54px 0 rgb(233 237 239 / 30%);
-}
-
-.handoff-emblem {
-  position: relative;
-  z-index: 2;
-  width: 112px;
-  aspect-ratio: 1;
-  clip-path: polygon(50% 0, 100% 91%, 0 91%);
-  background: #121414;
-  filter: drop-shadow(16px 0 0 rgb(18 20 20 / 24%));
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 10px 12px 17px;
-    clip-path: polygon(50% 0, 100% 100%, 0 100%);
-    background: #aeb2b0;
-  }
-
-  > strong {
-    position: absolute;
-    z-index: 2;
-    bottom: 12px;
-    left: 0;
-    width: 100%;
-    color: #d7dcda;
-    font-family: var(--font-noto-serif), serif;
-    font-size: 10px;
-    text-align: center;
-  }
-}
-
-.handoff-tower {
-  position: absolute;
-  z-index: 2;
-  top: 27px;
-  left: 41px;
-  width: 30px;
-  height: 47px;
-  clip-path: polygon(27% 0, 73% 0, 100% 100%, 0 100%);
-  background: #121414;
-
-  i {
-    position: absolute;
-    top: 13px;
-    width: 6px;
-    height: 8px;
-    background: #aeb2b0;
-  }
-
-  i:first-child { left: 7px; }
-  i:last-child { right: 7px; }
-}
-
-.handoff-dots {
-  position: absolute;
-  z-index: 2;
-  top: calc(50% - 56px);
-  left: calc(50% + 82px);
-  display: grid;
-  grid-template-columns: repeat(6, 3px);
-  gap: 16px;
-
-  i {
-    width: 3px;
-    height: 3px;
-    background: #f1f3f2;
-    box-shadow: 0 0 3px #fff;
-  }
-}
-
 .sequence:not([data-phase='boot']) {
   .boot-stage { visibility: hidden; }
   .terminal-stage { visibility: visible; }
@@ -1242,7 +1121,6 @@
 }
 
 .sequence[data-phase='exit'] .exit-shade { animation: darken var(--exit-duration) ease-in-out both; }
-.sequence[data-phase='exit'] .exit-handoff { animation: handoff-reveal var(--exit-duration) ease-in-out both; }
 
 @keyframes backdrop-develop {
   0% { opacity: 0; transform: scale(1.14) rotate(-3deg); }
@@ -1624,13 +1502,6 @@
   42% { opacity: .08; }
   72% { opacity: .58; }
   100% { opacity: 1; }
-}
-@keyframes handoff-reveal {
-  0%, 12% { opacity: 0; filter: blur(8px); transform: scale(1.025); }
-  34% { opacity: .72; filter: blur(2px); transform: scale(1.008); }
-  68% { opacity: 1; filter: blur(0); transform: scale(1); }
-  82% { opacity: 1; }
-  100% { opacity: .12; filter: blur(.8px); transform: scale(1); }
 }
 @keyframes spatial-blur-develop {
   0%, 26% { filter: blur(2px) brightness(1.02); }

@@ -452,11 +452,22 @@ for (const [label, viewport] of [
     }
     await timeline.advanceTo(12020);
     await phase(page, 'exit').waitFor();
-    assert.ok(
-      await page.locator('[class*="exit-handoff"]').evaluate(element => Number(getComputedStyle(element).opacity)) > .5,
-      'The exit restores the triangular handoff frame before navigation',
+    assert.equal(
+      await page.locator('[class*="exit-handoff"]').count(),
+      0,
+      'The triangular handoff is removed from the final stage',
     );
-    await shot(page, `${label}-reference-handoff`);
+    const finalNetwork = await page.locator('[class*="network-stage"]').evaluate((element) => {
+      const style = getComputedStyle(element);
+      const matrix = new DOMMatrixReadOnly(style.transform);
+      return {
+        opacity: Number(style.opacity),
+        scale: Math.hypot(matrix.a, matrix.b),
+      };
+    });
+    assert.ok(finalNetwork.opacity > .35, 'The network sphere remains visible during the final stage');
+    assert.ok(finalNetwork.scale < 1 && finalNetwork.scale > .88, 'The network sphere closes the sequence smoothly');
+    await shot(page, `${label}-reference-network-exit`);
     await timeline.advanceTo(13050);
     await page.waitForURL('**/home');
   });

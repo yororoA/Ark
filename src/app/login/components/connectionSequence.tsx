@@ -471,6 +471,7 @@ export default function ConnectionSequence({
           </div>
         )}
         <div className={styles['exit-shade']} aria-hidden="true" />
+        {/* Previous triangular handoff, retained for reference:
         <div className={styles['exit-handoff']} aria-hidden="true">
           <span className={styles['handoff-line']} />
           <div className={styles['handoff-emblem']}>
@@ -482,6 +483,7 @@ export default function ConnectionSequence({
           </span>
           <p>BINES NEURAL INTERFACE</p>
         </div>
+        */}
       </section>
     </Portal>
   );
