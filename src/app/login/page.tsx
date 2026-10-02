@@ -30,6 +30,10 @@ function Login() {
   const details = useMemo(() => [...rawDetails].sort((a, b) =>
     b.lastLoginAt?.localeCompare(a.lastLoginAt || '') || 0
   ), [rawDetails]);
+  const activeAccount = details[0];
+  const activeRole = activeAccount?.isAdmin ? 'ADMIN' : activeAccount?.isGuest ? 'GUEST' : 'USER';
+  const activeRoleLabel = activeAccount?.isAdmin ? '管理员' : activeAccount?.isGuest ? '游客' : '用户';
+  const locationLabel = location ? `${location.continentCode || '--'} / ${location.countryCode || '--'}` : '-- / --';
 
   useEffect(() => {
     ensureInitialized();
@@ -126,16 +130,27 @@ function Login() {
             <h1>身份验证</h1>
             <p>登录已有账号、注册新身份，或以游客身份继续访问。</p>
             <div className={styles['access-notes']}><span><ShieldCheck size={15} />安全会话</span><span><BookOpen size={15} />保留原有内容</span></div>
+            <dl className={styles['archive-register']}>
+              <div><dt>ARCHIVE NODE</dt><dd>YOROROICE / 01</dd></div>
+              <div><dt>SESSION</dt><dd>{initialized ? 'READY' : 'SYNC'}</dd></div>
+              <div><dt>LOCATION</dt><dd>{locationLabel}</dd></div>
+            </dl>
           </section>
           <section className={styles['access-panel']} aria-label="当前账号">
             <div className={styles['panel-header']}><div className={styles['panel-index']}>当前身份 / 01</div><span className={styles['panel-signal']} data-ready={initialized}><i />{initialized ? 'READY' : 'SYNC'}</span></div>
-            <CircleUserRound size={30} strokeWidth={1} />
-            <div className={styles['active-account']}>
-              <small>{details[0]?.isAdmin ? '管理员' : details[0]?.isGuest ? '游客' : '用户'}</small>
-              <strong title={details[0]?.username}>{details[0]?.username || '未选择账号'}</strong>
-              <span>{details[0] ? '凭据将在服务端重新验证' : '选择一种方式接入个人档案'}</span>
+            <div className={styles['account-overview']}>
+              <div className={styles['account-glyph']}><CircleUserRound size={27} strokeWidth={1} /></div>
+              <div className={styles['active-account']}>
+                <small>{activeRoleLabel}</small>
+                <strong title={activeAccount?.username}>{activeAccount?.username || '未选择账号'}</strong>
+                <span>{activeAccount ? '凭据将在服务端重新验证' : '选择一种方式接入个人档案'}</span>
+              </div>
             </div>
-            {initialized && details[0] && <button className={styles['primary-action']} onClick={() => handleConnect({ action: 'switch' })}>建立连接<ArrowUpRight size={17} /></button>}
+            <div className={styles['credential-status']}>
+              <div><span>ACCOUNT RECORD</span><strong>{String(details.length).padStart(2, '0')}</strong></div>
+              <div><span>ACCESS LEVEL</span><strong>{activeAccount ? activeRole : '--'}</strong></div>
+            </div>
+            {initialized && activeAccount && <button className={styles['primary-action']} onClick={() => handleConnect({ action: 'switch' })}>建立连接<ArrowUpRight size={17} /></button>}
             <button className={styles['secondary-action']} onClick={() => setIsAccountManagementVisible(true)}>{details.length ? '切换或添加账号' : '登录 / 注册'}<ArrowUpRight size={15} /></button>
           </section>
         </main>
@@ -144,7 +159,7 @@ function Login() {
         <footer className={styles['login-footer']}>
           <span>© 2026 YOROROICE / PERSONAL ARCHIVE</span>
           <button onClick={() => setIsDeclarationVisible(true)}>版权与设计声明</button>
-          <span>{location ? `${location.continentCode || '--'} / ${location.countryCode || '--'}` : 'LOCATION / --'}</span>
+          <span>LOCATION / {locationLabel}</span>
         </footer>
       </div>
     </>
