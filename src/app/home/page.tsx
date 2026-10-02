@@ -52,6 +52,12 @@ export default function Home() {
         <MetaLine />
 
         <section className={styles.masthead}>
+          <div className={styles.plot} aria-hidden>
+            <span>A</span>
+            <span>B</span>
+          </div>
+          <div className={styles.plate} aria-hidden />
+          <i className={styles.slash} aria-hidden />
           <div ref={mastheadRef} className={styles.mastheadInner}>
             <h1 className={styles.title}>
               YORORO

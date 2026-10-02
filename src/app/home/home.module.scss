@@ -58,14 +58,21 @@ $cut-md: 0.75em;
   font-family: $font-sans;
   font-size: clamp(13px, 0.46rem, 20px);
   color: $ink;
-  background: $paper;
+  background:
+    linear-gradient($ink, $ink) 0.55em 0.55em / 12px 1px no-repeat,
+    linear-gradient($ink, $ink) 0.55em 0.55em / 1px 12px no-repeat,
+    linear-gradient($ink, $ink) right 0.55em top 0.55em / 12px 1px no-repeat,
+    linear-gradient($ink, $ink) right 0.55em top 0.55em / 1px 12px no-repeat,
+    linear-gradient($ink, $ink) left 0.55em bottom 0.55em / 12px 1px no-repeat,
+    linear-gradient($ink, $ink) left 0.55em bottom 0.55em / 1px 12px no-repeat,
+    $paper;
   overflow-x: clip;
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - #{$cut-lg * 2}), calc(100% - #{$cut-lg * 2}) 100%, 0 100%);
   transition: background-color $normal $ease;
 }
 
 .sheetDim {
-  background: $paper-dim;
+  background-color: $paper-dim;
 }
 
 .mono {
@@ -106,9 +113,15 @@ $cut-md: 0.75em;
 }
 
 .folio {
+  display: inline-block;
+  padding: 0.12em 0.38em 0.06em;
   font-family: $font-num;
   font-weight: 700;
+  line-height: 1.2;
   letter-spacing: 0.06em;
+  color: $paper;
+  background: $ink;
+  transform: skewX(-12deg);
 }
 
 .ruler {
@@ -161,6 +174,7 @@ a.metaItem:hover {
   text-decoration: none;
   cursor: pointer;
   background: transparent;
+  clip-path: polygon(0.4em 0, 100% 0, 100% calc(100% - 0.4em), calc(100% - 0.4em) 100%, 0 100%);
   transition: border-color $fast $ease, color $fast $ease, background-color $fast $ease;
 
   &:hover {
@@ -181,6 +195,65 @@ a.metaItem:hover {
 .masthead {
   position: relative;
   padding: 1.2em 0 1.4em;
+}
+
+// 制图线：圆、十字和轴标。只铺在刊名右侧，不盖住字
+.plot {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  width: min(46%, 28em);
+  height: 100%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 42% 46%, transparent 0 34%, rgba($ink, 0.28) 34.3%, transparent 34.9%),
+    radial-gradient(circle at 42% 46%, transparent 0 7%, rgba($ink, 0.35) 7.4%, transparent 8.2%),
+    linear-gradient($ink, $ink) 42% 18% / 1px 62% no-repeat,
+    linear-gradient($ink, $ink) 18% 46% / 52% 1px no-repeat;
+
+  span {
+    position: absolute;
+    font-family: $font-num;
+    font-size: 0.72em;
+    letter-spacing: 0.08em;
+    color: $ink-faint;
+
+    &:first-child {
+      top: 8%;
+      left: 42%;
+      transform: translateX(-50%);
+    }
+
+    &:last-child {
+      top: 46%;
+      right: 6%;
+      transform: translateY(-50%);
+    }
+  }
+}
+
+.plate {
+  position: absolute;
+  z-index: 0;
+  top: 18%;
+  right: -1.4em;
+  width: min(26%, 15em);
+  height: 72%;
+  background: #17191b;
+  clip-path: polygon(16% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.slash {
+  position: absolute;
+  z-index: 2;
+  top: 12%;
+  right: min(24%, 13.6em);
+  width: 3px;
+  height: 78%;
+  background: $cyan;
+  transform: skewX(-14deg);
+  pointer-events: none;
 }
 
 .mastheadInner {
@@ -237,8 +310,8 @@ a.metaItem:hover {
   bottom: -4%;
   width: clamp(9em, 24vw, 30em);
   height: auto;
+  z-index: 2;
   transform: rotate(-7deg);
-  mix-blend-mode: multiply;
   pointer-events: none;
 }
 
@@ -254,10 +327,13 @@ a.metaItem:hover {
 }
 
 .feature {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.8em;
   max-width: 24em;
+  padding-left: 1em;
+  border-left: 4px solid $cyan;
 }
 
 .kicker {
@@ -325,8 +401,8 @@ a.metaItem:hover {
     list-style: none;
   }
 
-  li {
-    border-bottom: 1px solid $hair;
+  li + li {
+    margin-top: 0.28em;
   }
 }
 
@@ -342,37 +418,30 @@ a.metaItem:hover {
 .indexLink {
   position: relative;
   display: grid;
-  grid-template-columns: 2.4em auto 1fr auto;
-  align-items: baseline;
+  grid-template-columns: 2.6em auto 1fr auto;
+  align-items: center;
   gap: 1em;
-  padding: 0.62em 0 0.62em 0.7em;
+  padding: 0.42em 1.3em 0.42em 0.45em;
   color: inherit;
   text-decoration: none;
-  transition: transform $normal $ease, color $normal $ease;
-
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.5em;
-    bottom: 0.5em;
-    width: 4px;
-    background: $cyan;
-    transform: scaleY(0);
-    transform-origin: center top;
-    transition: transform $normal $ease;
-  }
+  background: rgba($ink, 0.045);
+  clip-path: polygon(0.7em 0, 100% 0, calc(100% - 0.7em) 100%, 0 100%);
+  transition: transform $normal $ease, color $normal $ease, background-color $normal $ease;
 
   &:hover,
   &:focus-visible {
+    color: $paper;
+    background: $ink;
     transform: translateX(4px);
 
-    &::before {
-      transform: scaleY(1);
+    .indexNo {
+      color: #111;
+      background: $cyan;
     }
 
-    .indexNo {
-      color: $cyan;
+    .indexLatin,
+    .indexNote {
+      color: rgba($paper, 0.62);
     }
   }
 
@@ -383,10 +452,15 @@ a.metaItem:hover {
 }
 
 .indexNo {
+  justify-self: start;
+  padding: 0.16em 0.34em 0.08em;
   font-family: $font-num;
-  font-size: 0.86em;
-  color: $ink-faint;
-  transition: color $normal $ease;
+  font-size: 0.78em;
+  line-height: 1;
+  color: $paper;
+  background: $ink;
+  transform: skewX(-12deg);
+  transition: color $normal $ease, background-color $normal $ease;
 }
 
 .indexLabel {
@@ -462,8 +536,12 @@ a.metaItem:hover {
   display: flex;
   justify-content: space-between;
   margin-top: 0.6em;
+  margin-left: 0.7em;
+  padding: 0.28em 0.7em;
   font-size: 0.8em;
-  color: $ink-soft;
+  color: $paper;
+  background: $ink;
+  clip-path: polygon(0.55em 0, 100% 0, 100% 100%, 0 100%);
 }
 
 // ------------------------------------ 月份刻度 ------------------------------------
@@ -602,6 +680,18 @@ a.metaItem:hover {
     letter-spacing: 0.32em;
   }
 
+  .plot,
+  .slash {
+    display: none;
+  }
+
+  .plate {
+    top: auto;
+    bottom: 2.8em;
+    width: 48%;
+    height: 3.4em;
+  }
+
   .signature {
     position: static;
     display: block;
@@ -647,13 +737,4 @@ a.metaItem:hover {
     transform: none;
   }
 
-  .indexLink::before {
-    transform: scaleY(1);
-    opacity: 0;
-  }
-
-  .indexLink:hover::before,
-  .indexLink:focus-visible::before {
-    opacity: 1;
-  }
 }
