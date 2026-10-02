@@ -17,6 +17,7 @@
   --ark-rain: #78c7c3;
   --ark-rain-deep: #469b9e;
   --ark-rain-sheet: #fff;
+  --ark-rain-panel: #fcfefd;
 }
 
 @mixin rain-night {
@@ -29,6 +30,7 @@
   --ark-rain: #36676f;
   --ark-rain-deep: #69a7aa;
   --ark-rain-sheet: #abcac9;
+  --ark-rain-panel: #152831;
 }
 
 @mixin night {

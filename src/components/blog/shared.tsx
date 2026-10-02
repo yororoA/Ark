@@ -8,26 +8,26 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Ro
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
+import RainPlanes from '@/components/appearance/rain-planes'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
 export { styles }
 export function PageHeading({ title, english, number, children }: { title: TextKey; english: string; number: string; children?: React.ReactNode }) {
-  const { t } = useBlog()
+  const { t, locale } = useBlog()
   const localizedTitle = t(title)
   const repeatsEnglishTitle = localizedTitle.localeCompare(english, undefined, { sensitivity: 'base' }) === 0
-  return <header className={styles['page-heading']}>
+  const verticalTitle = (locale === 'zh' || locale === 'ja') && localizedTitle.length <= 6
+  const isChronological = title === 'moments' || title === 'archive' || title === 'gallery'
+  const isPersonal = title === 'about' || title === 'chat'
+  const scene = isChronological ? 'calendar' : isPersonal ? 'sheets' : 'curtain'
+  return <header className={styles['page-heading']} data-vertical={verticalTitle}>
+    <RainPlanes variant={scene} />
     <span className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>
       <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span> / {number}</div>
-      <h1>{localizedTitle}{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
+      <h1><span className={styles['localized-title']}>{localizedTitle}</span>{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
     </div>
-    <svg className={styles['heading-ripple']} viewBox="0 0 160 70" fill="none" aria-hidden="true">
-      <path d="M80 0V24M80 30L83 34L80 38L77 34Z" stroke="currentColor" />
-      <ellipse cx="80" cy="48" rx="22" ry="5" stroke="currentColor" />
-      <ellipse cx="80" cy="48" rx="46" ry="11" stroke="currentColor" opacity=".6" />
-      <ellipse cx="80" cy="48" rx="74" ry="18" stroke="currentColor" opacity=".3" />
-    </svg>
     {children && <div className={styles['heading-actions']}>{children}</div>}
   </header>
 }
