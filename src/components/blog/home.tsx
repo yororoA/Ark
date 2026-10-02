@@ -63,7 +63,7 @@ export default function Home() {
       art.current.style.setProperty('--art-y', `${((event.clientY - rect.top) / rect.height - .5) * 12}px`)
     }}>
       <div className={styles['hero-top']}><span>THE PERSONAL ARCHIVE OF YOROROICE</span><Plus size={13} /><span>A COLLECTION IN PROGRESS</span></div>
-      <div className={styles['hero-art']} aria-hidden="true"><div className={styles['art-plane']} ref={art}><OrbitalArtwork /><span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span></div></div>
+      <div className={styles['hero-art']} aria-hidden="true"><div className={styles['art-plane']} ref={art}><OrbitalArtwork />{featuredPreview?.coverUrl && <figure className={styles['hero-specimen']}><img src={featuredPreview.coverUrl} alt="" /><span>ARCHIVE SPECIMEN / 01</span></figure>}<span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span></div></div>
       <div className={styles['hero-content']}>
         <div className={styles['eyebrow']}>00 / A CONTINUING STORY</div>
         <h1>Yororo<span>Ice. Ark</span></h1>

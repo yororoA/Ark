@@ -18,11 +18,15 @@ let sequence = 0
 const users = new Map()
 const calls = []
 const controls = { rotateV1: false, rotateV2: false, fail: false }
-const article = { _id: articleId, uid: 'test-admin', username: 'Tester', title: 'A small record of time', content: '# A small record\n\nWords, code, and quiet moments.\n\n- Read\n- Create\n- Remember', category: 'Development', tags: ['Ark'], createdAt: '2026-10-01T12:00:00Z', likes: 2, views: 12 }
+const article = { _id: articleId, uid: 'test-admin', username: 'Tester', title: 'A small record of time', content: `![Archive specimen](${origin}/404.jpeg)\n\n# A small record\n\nWords, code, and quiet moments.\n\n- Read\n- Create\n- Remember`, category: 'Development', tags: ['Ark'], createdAt: '2026-10-01T12:00:00Z', likes: 2, views: 12 }
 const moment = { ...article, _id: momentId, title: 'October, a beginning', comments: [commentId], published: true, filenames: {} }
 const articles = [article]
 const moments = [moment]
-const messages = [{ _id: 'first-message', uid: 'another-user', username: 'Visitor', text: 'Hello, Ark.', createdAt: '2026-10-01T12:00:00Z' }]
+const messages = [
+  { _id: 'first-message', uid: 'another-user', username: 'Visitor', text: 'Hello, Ark.', createdAt: '2026-10-01T12:00:00Z' },
+  { _id: 'image-message', uid: 'another-user', username: 'A visitor with a deliberately long display name for overflow checks', text: 'Image record', imgurl: [`${origin}/login_light.png`], createdAt: '2026-10-01T12:01:00Z' },
+  { _id: 'mixed-message', uid: 'test-admin', username: 'Tester', text: 'Text, video, and image in one message.', imgurl: ['https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', `${origin}/login_dark.png`, `${origin}/logo.png`], createdAt: '2026-10-01T12:02:00Z' },
+]
 const guestbook = []
 const comments = [{ _id: commentId, uid: 'another-user', username: 'Visitor', content: 'A quiet place to return to.', createdAt: article.createdAt }]
 const likes = new Set()
@@ -150,8 +154,12 @@ const server = createServer(async (req, res) => {
     if (path === '/api/status/bines') return ok({ online: true })
     if (path === '/api/github/summary') return ok({ reposCount: 8, monthCommits: 21, languages: [{ name: 'TypeScript', percent: 72 }] })
     if (path === '/api/guestbook') { if (req.method === 'POST') guestbook.push({ ...body, _id: `${++sequence}`, createdAt: article.createdAt }); return ok(req.method === 'POST' ? guestbook.at(-1) : guestbook) }
-    if (path === '/api/chat/conversations') return ok([{ id: 'group', type: 'group' }, { id: 'admin', type: 'private' }])
-    if (path === '/api/chat/history') return ok(url.searchParams.get('userId') === 'group' ? messages : [], { hasMore: false })
+    if (path === '/api/chat/conversations') return ok([
+      { id: 'group', type: 'group' },
+      { id: 'admin', type: 'private' },
+      { id: 'long-private-conversation-id', label: 'A very long private conversation name that must never widen the sidebar', type: 'private' },
+    ])
+    if (path === '/api/chat/history') return ok(url.searchParams.get('userId') === 'group' ? messages : [], { hasMore: url.searchParams.get('page') === '1' })
     if (path === '/api/chat/upload') return ok({ urls: Array(body.fileCount).fill(`${backend}/fixture.png`) })
     if (path === '/api/chat/send') { const message = { ...body, _id: `${++sequence}`, uid: user.uid, createdAt: new Date().toISOString() }; messages.push(message); return ok(message) }
     return json({ message: `Unimplemented fixture: ${path}` }, 404)
