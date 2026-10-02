@@ -12,28 +12,28 @@ import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } fr
 const gowunBatang = Gowun_Batang({
   weight: ['400', '700'],
   subsets: ['latin'],
-  variable: '--font-gowun-batang',
+  variable: '--font-gowun-batang-loaded',
   display: 'swap',
 });
 // ibm - 登录下方免责声明
 const ibmPlexSans = IBM_Plex_Sans({
   weight: ['400', '700'],       // 声明字重
   subsets: ['latin'],            // 声明字符子集
-  variable: '--font-ibm-plex',   // 自定义 CSS 变量名
+  variable: '--font-ibm-plex-loaded',   // 自定义 CSS 变量名
   display: 'swap',
 });
 // 宋体 - 登录按钮
 const notoSerifSC = Noto_Serif_SC({
   weight: ['400', '700'],       // 导入常规体和粗体
   subsets: ['latin'],            // 声明子集（Next.js 会自动对中文进行按需分包优化）
-  variable: '--font-noto-serif', // 定义 CSS 变量名
+  variable: '--font-noto-serif-loaded', // 定义 CSS 变量名
   display: 'swap',
 });
 // 等线 - 免责声明
 const notoSansSC = Noto_Sans_SC({
   weight: ['400', '700'],
   subsets: ['latin'],
-  variable: '--font-noto-sans',
+  variable: '--font-noto-sans-loaded',
   display: 'swap',
 })
 
@@ -41,7 +41,7 @@ const notoSansSC = Noto_Sans_SC({
 const orbitron = Orbitron({
   weight: ['400', '700', '900'],   // Orbitron 支持的字重
   subsets: ['latin'],
-  variable: '--font-orbitron',
+  variable: '--font-orbitron-loaded',
   display: 'swap',
 });
 
