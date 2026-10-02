@@ -1,5 +1,6 @@
 'use client'
 import { useNow } from '@/hooks/useNow';
+import { formatCoverDate } from '../cover';
 import styles from '../home.module.scss';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -18,7 +19,7 @@ export default function MonthRail() {
   return (
     <footer className={styles.rail} aria-label={`${year}年${month + 1}月`}>
       <span className={styles.railKey}>{MONTHS[month]}</span>
-      <span className={styles.railNow}>本日 {pad(current)}</span>
+      <span className={styles.railNow}>{formatCoverDate(today)}</span>
       <ol className={styles.railTicks}>
         {Array.from({ length: days }, (_, i) => i + 1).map((day) => (
           <li

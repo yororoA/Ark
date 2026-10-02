@@ -1,25 +1,26 @@
 'use client';
-import Image from 'next/image';
+import { useState } from 'react';
 import { useBrightness } from '@/context/brightness-context';
 import { cn } from '@/lib/utils';
 import MetaLine from './components/metaLine';
 import IndexList from './components/indexList';
 import MonthRail from './components/monthRail';
 import RouteGate from './components/routeGate';
-import { INDEX_ENTRIES, countState } from './cover';
+import { INDEX_ENTRIES, countState, GRID_X, GRID_Y, type ModuleState } from './cover';
 import styles from './home.module.scss';
 
-const summary = [
-  { key: 'MODULES', label: '模块', value: INDEX_ENTRIES.length },
-  { key: 'CURRENT', label: '当前', value: countState('CURRENT') },
-  { key: 'STANDBY', label: '待命', value: countState('STANDBY') },
-  { key: 'LOCKED', label: '锁定', value: countState('LOCKED') },
-  { key: 'ARCHIVED', label: '归档', value: countState('ARCHIVED') },
-  { key: 'OFFLINE', label: '离线', value: countState('OFFLINE') },
+const summary: { key: string; label: string; state: ModuleState | null; value: number }[] = [
+  { key: 'MODULES', label: '模块', state: null, value: INDEX_ENTRIES.length },
+  { key: 'CURRENT', label: '当前', state: 'CURRENT', value: countState('CURRENT') },
+  { key: 'STANDBY', label: '待命', state: 'STANDBY', value: countState('STANDBY') },
+  { key: 'LOCKED', label: '锁定', state: 'LOCKED', value: countState('LOCKED') },
+  { key: 'ARCHIVED', label: '归档', state: 'ARCHIVED', value: countState('ARCHIVED') },
+  { key: 'OFFLINE', label: '离线', state: 'OFFLINE', value: countState('OFFLINE') },
 ];
 
 export default function Home() {
   const { isDimmed } = useBrightness();
+  const [filter, setFilter] = useState<ModuleState | null>(null);
 
   return (
     <>
@@ -31,55 +32,57 @@ export default function Home() {
         <section className={styles.ident}>
           <div>
             <p className={styles.identCode}>SYS / ARK</p>
-            <h1 className={styles.identName}>封面索引</h1>
-            <p className={styles.identEn}>MODULE / COVER</p>
+            <p className={styles.identNo}>01</p>
+            <h1 className={styles.identName}>封面</h1>
+            <p className={styles.identEn}>COVER</p>
           </div>
-          <dl className={styles.stats}>
+          <div className={styles.stats}>
             {summary.map((item) => (
-              <div key={item.key}>
-                <dt>{item.label}<span>{item.key}</span></dt>
-                <dd>{String(item.value).padStart(2, '0')}</dd>
-              </div>
+              <button
+                key={item.key}
+                type="button"
+                className={styles.stat}
+                data-cursor={item.state === 'CURRENT'}
+                aria-pressed={item.state !== null && filter === item.state}
+                onClick={() => setFilter(item.state === null || filter === item.state ? null : item.state)}
+              >
+                <span className={styles.statLabel}>{item.label}<span>{item.key}</span></span>
+                <span className={styles.statValue}>{String(item.value).padStart(2, '0')}</span>
+              </button>
             ))}
-          </dl>
+          </div>
         </section>
 
         <section className={styles.bay}>
           <div className={styles.bayHead}>
-            <span>INDEX</span>
-            <span>01–07</span>
+            <span>ARCHIVE</span>
+            <span>{filter ? summary.find((item) => item.state === filter)?.key : '01–07'}</span>
           </div>
 
-          <div className={styles.bayBody}>
-            <IndexList />
+          <IndexList filter={filter} />
 
-            <article className={styles.record}>
-              <p className={styles.recordFig}>FIG. 01</p>
-              <div className={styles.recordWell}>
-                <Image
-                  src="/bines_sign.png"
-                  alt="Bines 手写标记"
-                  width={2304}
-                  height={1728}
-                  className={styles.recordImage}
-                />
-              </div>
-              <div className={styles.recordCopy}>
-                <p className={styles.recordCode}>ASSET / BINES-01</p>
-                <h2>Bines</h2>
-                <p className={styles.recordState}>在册</p>
-              </div>
-            </article>
-          </div>
-
-          <div className={styles.field} aria-hidden>
-            <span className={styles.fieldMark}>X 00</span>
-            <span className={styles.fieldMark}>Y 12</span>
-            <p>
-              <b>NO RECORD</b>
-              本月尚无动态或文章。刻度停在本日。
-            </p>
-            <span className={styles.fieldMark}>GRID 48</span>
+          <div className={styles.field}>
+            <div className={styles.activity}>
+              <p>ARCHIVE ACTIVITY</p>
+              <strong>NO RECORD</strong>
+              <span>本月无新增记录。黄刻度与顶栏是同一天。</span>
+            </div>
+            <div className={styles.plot} aria-label="模块坐标">
+              {INDEX_ENTRIES.map((entry) => {
+                const dim = filter !== null && entry.state !== filter;
+                return (
+                  <span
+                    key={entry.no}
+                    className={styles.dot}
+                    data-current={entry.state === 'CURRENT'}
+                    data-dim={dim}
+                    style={{ left: `${(entry.x / GRID_X) * 100}%`, top: `${(entry.y / GRID_Y) * 100}%` }}
+                  >
+                    {entry.no}
+                  </span>
+                );
+              })}
+            </div>
           </div>
 
           <MonthRail />

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAuthStore, type AuthDetail } from '@/store/auth';
 import { useNow } from '@/hooks/useNow';
 import { useBrightness } from '@/context/brightness-context';
-import { GITHUB_USER } from '../cover';
+import { formatCoverDate, GITHUB_USER } from '../cover';
 import styles from '../home.module.scss';
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -43,13 +43,13 @@ export default function MetaLine() {
     return () => controller.abort();
   }, []);
 
-  const date = now ? `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}` : '----.--.--';
+  const date = now ? formatCoverDate(now) : '----.--.--';
   const weekday = now ? WEEKDAYS[now.getDay()] : '---';
   const clock = now ? `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}` : '--:--:--';
 
   return (
     <header className={styles.meta}>
-      <span className={styles.metaKey}>ARK</span>
+      <span className={styles.metaKey}>YOROROICE</span>
       <span className={styles.metaField}>{date}</span>
       <span className={styles.metaField}>{weekday}</span>
       <span className={styles.clock}>{clock}</span>

@@ -99,7 +99,7 @@ $font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   text-decoration: none;
 
   &:hover {
-    color: $cyan;
+    box-shadow: inset 0 -1px 0 $ink;
   }
 }
 
@@ -114,7 +114,7 @@ $font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   background: transparent;
 
   &:hover {
-    color: $cyan;
+    box-shadow: inset 0 -1px 0 $ink;
   }
 
   &:last-child {
@@ -139,7 +139,7 @@ button.metaCommand {
 }
 
 .dotOn {
-  background: $cyan;
+  background: $ink;
 }
 
 .dotOff {
@@ -165,10 +165,19 @@ button.metaCommand {
   color: $ink-soft;
 }
 
+.identNo {
+  margin: 0.2em 0 0;
+  font-family: $font-num;
+  font-size: 2.4em;
+  font-weight: 700;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+}
+
 .identName {
-  margin: 0.12em 0 0.08em;
+  margin: 0.05em 0 0;
   font-family: $font-serif;
-  font-size: 1.85em;
+  font-size: 1.7em;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -176,20 +185,27 @@ button.metaCommand {
 
 .stats {
   display: flex;
-  gap: 1.15em;
+  flex-wrap: wrap;
+  gap: 0.35em 0.2em;
   margin: 0;
+}
 
-  div {
-    min-width: 3.2em;
-  }
+.stat {
+  min-width: 4.2em;
+  padding: 0.15em 0.45em 0.35em;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
 
-  dt {
+  .statLabel {
     display: flex;
     flex-direction: column;
     font-family: $font-sans;
     font-size: 0.75em;
     font-weight: 400;
-    color: $ink;
+    color: inherit;
 
     span {
       font-family: $font-mono;
@@ -199,12 +215,27 @@ button.metaCommand {
     }
   }
 
-  dd {
-    margin: 0.12em 0 0;
+  .statValue {
+    display: block;
+    margin-top: 0.12em;
     font-family: $font-num;
-    font-size: 1.45em;
+    font-size: 1.35em;
     font-weight: 700;
     line-height: 1;
+  }
+
+  &[data-cursor='true'] {
+    box-shadow: inset 0 -4px 0 $yellow;
+  }
+
+  &[aria-pressed='true'] {
+    background: $ink;
+    color: $paper;
+
+    .statLabel,
+    .statLabel span {
+      color: $mist;
+    }
   }
 }
 
@@ -228,17 +259,9 @@ button.metaCommand {
   letter-spacing: 0.16em;
 }
 
-.bayBody {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 15em;
-  gap: 1.4em;
-  align-items: start;
-  padding: 0.85em 1.2em 0.4em;
-}
-
 .index {
   margin: 0;
-  padding: 0;
+  padding: 0.7em 1.2em 0.2em;
   list-style: none;
 }
 
@@ -287,8 +310,11 @@ button.metaCommand {
   transform: skewX($shear);
 }
 
-.rowCurrent .rowNo {
-  font-size: 1.7em;
+.displayNo {
+  font-family: $font-num;
+  font-weight: 700;
+  font-size: 1.85em;
+  line-height: 0.9;
   color: $ink;
 }
 
@@ -307,15 +333,21 @@ button.metaCommand {
 }
 
 .rowLatin,
-.rowPath {
+.rowPath,
+.rowMeta {
   font-family: $font-mono;
   font-size: 0.72em;
   letter-spacing: 0.08em;
   color: $mist;
 }
 
+.rowMeta {
+  flex-basis: 100%;
+}
+
 .rowCurrent .rowLatin,
-.rowCurrent .rowPath {
+.rowCurrent .rowPath,
+.rowCurrent .rowMeta {
   color: $ink-soft;
 }
 
@@ -340,127 +372,161 @@ button.metaCommand {
   color: rgba(227, 59, 59, 0.85);
 }
 
-.row a:hover .rowNo,
-.row a:focus-visible .rowNo {
-  color: $cyan;
+.row[data-dim='true'],
+.rowCurrent[data-dim='true'] {
+  opacity: 0.28;
 }
 
-.row a:hover .rowPath,
-.row a:focus-visible .rowPath {
-  color: $cyan;
+.row[data-hit='true'] a {
+  box-shadow: inset 4px 0 0 $paper;
+}
+
+.row a:hover .rowState,
+.row a:focus-visible .rowState {
+  color: $paper;
 }
 
 .row a:focus-visible,
-.rowCurrent a:focus-visible {
+.rowCurrent a:focus-visible,
+.stat:focus-visible {
   outline: 3px solid $yellow;
   outline-offset: 2px;
 }
 
-// ------------------------------------ Bines 记录 ------------------------------------
-.record {
+.node {
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  gap: 0.45em 0.7em;
-  padding: 0.7em;
-  color: $ink;
-  background: $paper;
-  clip-path: polygon($cut 0, 100% 0, 100% 100%, 0 calc(100% - #{$cut}));
+  grid-template-columns: auto minmax(0, 1fr) 4.8em;
+  gap: 0.7em;
+  align-items: center;
+  margin: 0 0 0.45em 2.4em;
+  padding: 0.45em 0.55em 0.45em 0.7em;
+  border-left: 4px solid $yellow;
+  color: $mist;
 }
 
-.recordFig {
-  grid-row: 1 / span 2;
-  margin: 0;
-  writing-mode: vertical-rl;
-  font-family: $font-num;
-  font-size: 0.72em;
-  letter-spacing: 0.18em;
-}
-
-.recordWell {
-  background: #fff;
-  clip-path: polygon($cut 0, 100% 0, 100% 100%, 0 100%);
-}
-
-.recordImage {
-  display: block;
-  width: 100%;
-  height: 7.5em;
-  object-fit: cover;
-  object-position: center 40%;
-}
-
-.recordCopy {
-  h2 {
-    margin: 0;
-    font-family: $font-serif;
-    font-size: 1.35em;
-    line-height: 1;
-  }
-}
-
-.recordCode,
-.recordState {
+.nodeFig,
+.nodeCode,
+.nodeLine,
+.nodeCursor {
   margin: 0;
   font-family: $font-mono;
   font-size: 0.7em;
   letter-spacing: 0.08em;
 }
 
-.recordState {
-  color: $ink;
+.nodeFig {
+  writing-mode: vertical-rl;
+  font-family: $font-num;
+  letter-spacing: 0.16em;
+  color: $paper;
+}
+
+.nodeCode {
+  color: $paper;
+}
+
+.nodeCursor {
+  display: inline-block;
+  margin-top: 0.25em;
+  color: $paper;
   box-shadow: inset 0 -4px 0 $yellow;
 }
 
-// ------------------------------------ 空索引场 ------------------------------------
-.field {
-  position: relative;
-  flex: 1;
-  min-height: 9em;
-  margin: 0.8em 1.2em 0;
-  background-image:
-    linear-gradient($line-dim 1px, transparent 1px),
-    linear-gradient(90deg, $line-dim 1px, transparent 1px);
-  background-size: 48px 48px;
-  background-position: -1px -1px;
+.nodePreview {
+  background: #fff;
+  clip-path: polygon($cut 0, 100% 0, 100% 100%, 0 100%);
 
-  p {
-    position: absolute;
-    top: 50%;
-    left: 1.2em;
-    margin: 0;
-    transform: translateY(-50%);
-    font-family: $font-sans;
-    font-size: 0.85em;
-    color: $mist;
-
-    b {
-      display: block;
-      margin-bottom: 0.25em;
-      font-family: $font-num;
-      font-size: 0.8em;
-      letter-spacing: 0.14em;
-      color: $paper;
-    }
+  img {
+    display: block;
+    width: 100%;
+    height: 3.2em;
+    object-fit: cover;
+    object-position: center 40%;
   }
 }
 
-.fieldMark {
-  position: absolute;
-  font-family: $font-mono;
-  font-size: 0.68em;
-  letter-spacing: 0.08em;
-  color: $mist-dim;
+.field {
+  display: grid;
+  grid-template-columns: 16em minmax(0, 1fr);
+  gap: 1em;
+  flex: 1;
+  min-height: 11em;
+  margin: 0.6em 1.2em 0;
+}
 
-  &:nth-child(1) { top: 0.45em; left: 0.55em; }
-  &:nth-child(2) { top: 0.45em; right: 0.55em; }
-  &:nth-child(4) { right: 0.55em; bottom: 0.45em; }
+.activity {
+  align-self: end;
+  padding-bottom: 0.4em;
+  border-top: 1px solid rgba($paper, 0.55);
+
+  p,
+  span {
+    margin: 0.35em 0 0;
+    font-family: $font-mono;
+    font-size: 0.72em;
+    letter-spacing: 0.06em;
+    color: $mist;
+  }
+
+  p {
+    letter-spacing: 0.14em;
+    color: $mist-dim;
+  }
+
+  strong {
+    display: block;
+    margin-top: 0.35em;
+    font-family: $font-num;
+    font-size: 1.05em;
+    letter-spacing: 0.12em;
+  }
+}
+
+.plot {
+  position: relative;
+  min-height: 10em;
+  background-image:
+    linear-gradient($line-dim 1px, transparent 1px),
+    linear-gradient(90deg, $line-dim 1px, transparent 1px);
+  background-size: calc(100% / 12) calc(100% / 6);
+}
+
+.dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: $font-num;
+  font-size: 0.62em;
+  letter-spacing: 0.04em;
+  color: $mist;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 7px;
+    height: 7px;
+    margin: 0 auto 0.15em;
+    background: $paper;
+  }
+
+  &[data-current='true'] {
+    color: $yellow;
+
+    &::before {
+      width: 11px;
+      height: 11px;
+      background: $yellow;
+    }
+  }
+
+  &[data-dim='true'] {
+    opacity: 0.2;
+  }
 }
 
 // ------------------------------------ 月历 ------------------------------------
 .rail {
   display: grid;
-  grid-template-columns: 3.4em 4.6em minmax(0, 1fr) 3.2em;
+  grid-template-columns: 3.4em auto minmax(0, 1fr) 3.2em;
   gap: 0.8em;
   align-items: end;
   margin-top: 0.8em;
@@ -525,22 +591,13 @@ button.metaCommand {
 }
 
 @media (max-width: 900px) {
-  .ident,
-  .bayBody {
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-
   .ident {
+    display: grid;
     align-items: start;
   }
 
-  .stats {
-    flex-wrap: wrap;
-  }
-
-  .record {
-    max-width: 22em;
+  .field {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -553,8 +610,8 @@ button.metaCommand {
     display: none;
   }
 
-  .field {
-    min-height: 7em;
+  .plot {
+    min-height: 8em;
   }
 }
 
