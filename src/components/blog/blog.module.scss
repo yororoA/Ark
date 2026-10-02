@@ -478,6 +478,54 @@
 @media (max-width: 360px) {
   .about-intro h2 { font-size: 60px; }
 }
+
+// Archive composition remains intact above. Rain has its own atmosphere and
+// hierarchy; the document's data attribute selects it before hydration.
+:global(html[data-design="rain"]) {
+  .site-header, .site-footer { border-color: var(--line); }
+  .desktop-nav a::after { height: 1px; }
+  .hero { min-height: min(780px, calc(100svh - 86px)); }
+  .hero-content { width: 58%; padding-top: 95px; }
+  .hero-content h1 {
+    font-size: clamp(104px, 11vw, 176px); letter-spacing: -.035em; margin-bottom: 46px;
+    span { font-size: .43em; letter-spacing: .04em; font-style: normal; margin: 22px 0 0 19%; }
+  }
+  .hero-content h2 { font-size: clamp(21px, 1.8vw, 28px); letter-spacing: 3px; }
+  .hero-art { width: 62%; right: -3%; top: 4%; height: 94%; }
+  .orbital-art, .orbit-map, .art-label { display: none; }
+  .art-plane { transition-timing-function: ease-in-out; }
+  .hero-actions .primary-button { background: var(--accent); border-color: var(--accent); &:hover { background: var(--ink); border-color: var(--ink); } }
+  .manifesto { background: var(--soft); color: var(--ink); border-block: 1px solid var(--line); }
+  .manifesto blockquote { font-style: normal; font-size: clamp(30px, 3.5vw, 52px); line-height: 1.45; }
+  .page-heading, .featured-entry, .entry-list, .moment-card, .link-card { border-color: var(--line); }
+  .page-heading h1 { letter-spacing: .06em; }
+  .section-heading h2 { letter-spacing: .12em; }
+  .field input::placeholder, .field textarea::placeholder { opacity: 1; }
+
+  @media (max-width: 1150px) {
+    .hero-content { padding-top: 95px; }
+    .hero-content h2 { max-width: 370px; }
+  }
+  @media (max-width: 820px) {
+    .hero { min-height: 740px; }
+    .hero-content { width: 70%; padding-top: 100px; }
+    .hero-content h1 { font-size: 108px; }
+    .hero-art { width: 73%; right: -17%; height: 88%; top: 6%; }
+  }
+  @media (max-width: 540px) {
+    .hero { min-height: 0; }
+    .hero-top > span:last-child { display: none; }
+    .hero-content { width: 100%; padding: 64px 0 315px; }
+    .hero-content h1 { font-size: clamp(80px, 24vw, 118px); letter-spacing: -.04em; margin-bottom: 32px; }
+    .hero-content h1 span { font-size: .44em; margin-top: 16px; margin-left: 22%; letter-spacing: .035em; }
+    .hero-content h2 { max-width: 100%; font-size: 21px; letter-spacing: 1px; }
+    .hero-content p { max-width: 100%; }
+    .hero-actions { margin-top: 23px; gap: 20px; }
+    .hero-art { top: auto; bottom: 65px; right: -4%; width: 106%; height: 325px; }
+    .hero-bottom { padding-top: 12px; }
+    .manifesto blockquote { font-size: 34px; }
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   :global(html):has(.blog-root) { scroll-behavior: auto; }
   .blog-root *, .blog-root *::before, .blog-root *::after { animation: none !important; transition: none !important; }

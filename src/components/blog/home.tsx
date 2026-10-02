@@ -7,6 +7,7 @@ import { ArrowDown, ArrowRight, ArrowUpRight, Plus } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt, Locale, PROFILE } from '@/lib/blog'
 import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
+import RainArtwork from './rain-artwork'
 
 const ORBIT_SLOTS = [
   { track: 'outer', start: '8%', duration: '72s', delay: '-5.76s' },
@@ -119,9 +120,12 @@ export default function Home() {
       const rect = event.currentTarget.getBoundingClientRect()
       art.current.style.setProperty('--art-x', `${((event.clientX - rect.left) / rect.width - .5) * 18}px`)
       art.current.style.setProperty('--art-y', `${((event.clientY - rect.top) / rect.height - .5) * 12}px`)
+    }} onPointerLeave={() => {
+      art.current?.style.setProperty('--art-x', '0px')
+      art.current?.style.setProperty('--art-y', '0px')
     }}>
       <div className={styles['hero-top']}><span>THE PERSONAL ARCHIVE OF YOROROICE</span><Plus size={13} /><span>A COLLECTION IN PROGRESS</span></div>
-      <div className={styles['hero-art']}><div className={styles['art-plane']} ref={art}><OrbitalArtwork /><OrbitRecords articles={orbitArticles} moments={orbitMoments} locale={locale} /><span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span></div></div>
+      <div className={styles['hero-art']}><div className={styles['art-plane']} ref={art}><OrbitalArtwork /><OrbitRecords articles={orbitArticles} moments={orbitMoments} locale={locale} /><span className={styles['art-label']}>MEMORIES / THOUGHTS / CREATIONS</span><RainArtwork locale={locale} /></div></div>
       <div className={styles['hero-content']}>
         <div className={styles['eyebrow']}>00 / A CONTINUING STORY</div>
         <h1>Yororo<span>Ice. Ark</span></h1>
