@@ -118,7 +118,7 @@ test('fast authentication still plays the full sequence and ignores duplicate cl
   assert.ok(Date.now() - startedAt >= 12200, 'A fast response does not skip the reference timeline');
   assert.equal(requests.length, 1);
   assert.deepEqual(requests[0], { action: 'switch', body: { uid: account.uid } });
-  assert.equal(await page.getByRole('img', { name: 'bg', exact: true }).evaluate((image) => image.classList.contains('brightness-60')), false);
+  assert.equal(await page.getByRole('img', { name: 'bg', exact: true }).count(), 0);
 });
 
 test('slow authentication waits on mobile instead of inventing success', async (t) => {
@@ -249,7 +249,7 @@ test('landscape terminal remains readable and a late response cannot navigate an
   await page.waitForTimeout(1500);
   assert.equal(new URL(page.url()).pathname, '/');
   assert.equal(await page.getByRole('dialog').count(), 0);
-  assert.equal(await page.getByRole('img', { name: 'bg', exact: true }).evaluate((image) => image.classList.contains('brightness-60')), false);
+  assert.equal(await page.getByRole('img', { name: 'bg', exact: true }).count(), 0);
 });
 
 async function networkPixels(buffer) {

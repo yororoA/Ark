@@ -1,14 +1,13 @@
 'use client'
 
 import Image from "next/image"
-import { useBrightness } from "@/context/brightness-context"
 import { usePathname } from "next/navigation"
 
 export default function BgImage() {
-  const { isDimmed } = useBrightness()
   const pathname = usePathname()
-  // 博客使用自己的纸色背景，保留登录页现有图像与过渡。
-  if (!pathname.startsWith('/login') && !pathname.startsWith('/test')) return null
+  // The current blog and login flows own their backgrounds. The previous
+  // photographic login backdrop remains available in commit 26f4085.
+  if (!pathname.startsWith('/test')) return null
 
   return (
     <Image
@@ -16,7 +15,7 @@ export default function BgImage() {
       alt="bg"
       fill={true}
       loading="eager"
-      className={`absolute top-0 left-0 w-full h-full object-cover ${isDimmed ? 'brightness-60' : 'brightness-100'}`}
+      className="absolute top-0 left-0 w-full h-full object-cover"
     />
   )
 }

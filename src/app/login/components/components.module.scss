@@ -1,40 +1,71 @@
-@use '@/styles/variables' as *;
-
 .dialog-overlay {
+  --paper: #f3f1ed;
+  --ink: #222321;
+  --muted: #6b6e64;
+  --line: #cecec5;
+  --accent: #bb3429;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
   min-height: 0;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  background: rgb(24 27 24 / 54%);
+  backdrop-filter: blur(7px);
 }
 
 .accountManagement,
 .declaration {
+  position: relative;
   display: flex;
   flex-direction: column;
-  width: min(620px, 100%);
-  max-height: calc(100dvh - 32px);
+  width: min(680px, 100%);
+  max-height: calc(100dvh - 36px);
   min-width: 0;
   overflow: hidden;
-  color: $white;
-  background: #2a2a2af5;
-  border: 1px solid #858585;
-  box-shadow: 0 8px 30px #0005;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 28px 90px #0004;
+  font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
   font-size: 14px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 8px;
+    height: 8px;
+    border-right: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    pointer-events: none;
+  }
 }
 
-.accountManagement { min-height: min(320px, calc(100dvh - 32px)); }
+.accountManagement { min-height: min(350px, calc(100dvh - 36px)); }
 
 .accountManagementTitle {
   display: flex;
   align-items: center;
   flex-shrink: 0;
   gap: 12px;
-  min-height: 60px;
-  padding: 12px 18px;
-  border-bottom: 1px solid #555;
+  min-height: 68px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
 
-  h1 { flex: 1; font-size: 20px; font-weight: 400; margin: 0; }
+  h1 {
+    flex: 1;
+    margin: 0;
+    font: 28px/1.2 var(--font-noto-serif), "Songti SC", serif;
+    font-weight: 400;
+  }
+
+  h1::after {
+    content: ' / ACCESS';
+    color: var(--accent);
+    font: italic 14px/1 "Bodoni 72", Didot, serif;
+  }
 }
 
 .icon-button {
@@ -42,64 +73,96 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   padding: 0;
-  color: inherit;
-  background: #ffffff08;
-  border: 1px solid #777;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
   cursor: pointer;
-  &:hover { background: #ffffff20; }
-  &:focus-visible { outline: 2px solid #ddd; outline-offset: 2px; }
+  transition: color .2s, border-color .2s, background .2s;
+
+  &:hover { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 4%, transparent); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 }
 
-.account-body { flex: 1; padding: 20px 16px; min-height: 100px; }
-.empty-accounts { display: block; padding: 32px 12px; text-align: center; color: #bbb; }
+.account-body { flex: 1; padding: 24px 20px; min-height: 110px; }
+.empty-accounts { display: block; padding: 40px 12px; text-align: center; color: var(--muted); }
 
 .accountManagementFooter {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  padding: 14px 16px;
-  border-top: 1px solid #555;
+  padding: 15px 20px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+
+  > a { border-bottom: 1px solid var(--line); padding-block: 7px; }
+  > a:hover { color: var(--accent); border-color: var(--accent); }
 }
 
-.accountManagement .loginBtn {
-  flex: 1;
+.accountManagement .loginBtn,
+.accountManagementFooter > button,
+.code-button {
   min-width: 0;
-  min-height: 44px;
-  padding: 8px 14px;
-  font-size: 14px;
+  min-height: 46px;
+  padding: 10px 16px;
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 12px;
   white-space: nowrap;
+  transition: color .2s, background .2s, border-color .2s;
+
+  &:hover:not(:disabled) { color: var(--paper); background: var(--accent); border-color: var(--accent); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 }
+
+.accountManagement .loginBtn { flex: 1; }
+.accountManagementFooter > button { margin-left: auto; }
 
 .accountManagement .form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 18px;
+  gap: 20px;
   min-height: 0;
+  padding: 22px 20px;
   overflow-y: auto;
   overscroll-behavior: contain;
+
+  > p { margin: 0; color: var(--accent); font-size: 12px; }
 }
 
 .inputGroup {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 17px;
 
-  button { min-height: 40px; padding: 8px 10px; font-size: 12px; white-space: nowrap; }
+  label { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
 }
 
+.inputGroup button:not(.code-button) {
+  color: var(--muted);
+  &:hover { color: var(--accent); }
+}
+
+.code-button { flex: none !important; min-height: 42px !important; padding-inline: 12px !important; }
+
 .accountManagementContent {
-  z-index: 9999;
+  z-index: 100;
   width: var(--radix-dropdown-menu-trigger-width);
   min-width: 0;
-  max-height: min(320px, var(--radix-dropdown-menu-content-available-height));
-  padding: 0;
+  max-height: min(330px, var(--radix-dropdown-menu-content-available-height));
+  padding: 6px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--accent);
   border-radius: 0;
-  background: #292929;
+  background: var(--paper);
+  box-shadow: 0 16px 40px #0003;
 }
 
 .account {
@@ -110,22 +173,22 @@
   gap: 4px 12px;
   min-width: 0;
   padding: 14px 44px 14px 14px;
-  border: 1px solid #777;
+  border: 1px solid var(--line);
   border-radius: 0;
-  background: #3f3f3f66;
+  background: transparent;
+  color: var(--ink);
   cursor: pointer;
-  color: $white;
 
-  &:hover { background: #ffffff20; }
+  &:hover, &[data-highlighted] { background: color-mix(in srgb, var(--accent) 5%, transparent); border-color: var(--accent); }
   .desc { min-width: 0; text-align: left; overflow-wrap: anywhere; }
-  .account-name { font-size: 16px; font-weight: 500; }
-  .account-meta { color: #b5b5b5; font-size: 11px; line-height: 1.7; }
+  .account-name { font: 18px/1.4 var(--font-noto-serif), "Songti SC", serif; }
+  .account-meta { color: var(--muted); font-size: 10px; line-height: 1.7; }
 }
 
-.account-arrow { position: absolute; right: 12px; top: calc(50% - 12px); }
-.delete-button { position: absolute; right: 6px; top: calc(50% - 18px); }
-.delete-button:hover { color: #ff9292; }
-.recent-label { display: inline-block; font-size: 10px; color: #b6cfbd; margin-left: 8px; }
+.account-arrow { position: absolute; right: 12px; top: calc(50% - 12px); color: var(--accent); }
+.delete-button { position: absolute; right: 6px; top: calc(50% - 20px); }
+.delete-button:hover { color: var(--accent); }
+.recent-label { display: inline-block; margin-left: 8px; color: var(--accent); font-size: 9px; }
 
 .avatar {
   display: grid;
@@ -133,48 +196,53 @@
   align-self: center;
   width: 44px;
   height: 44px;
-  background: #555;
-  border: 1px solid #888;
-  border-radius: 50%;
-  font-size: 23px;
-  font-family: var(--font-gowun-batang), serif;
-  font-weight: 700;
+  color: var(--paper);
+  background: var(--ink);
+  border-left: 3px solid var(--accent);
+  font: 700 22px/1 "Bodoni 72", Didot, serif;
 }
 
-.declaration { height: min(560px, calc(100dvh - 32px)); }
+.declaration { height: min(620px, calc(100dvh - 36px)); }
 .declarationContentWrapper {
   flex: 1;
   min-height: 0;
-  padding: 24px;
+  padding: 30px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  line-height: 1.8;
-  h1 { font-size: 20px; text-align: center; margin-bottom: 18px; }
-  pre { font-family: inherit; white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 20px; }
+  color: var(--ink);
+  line-height: 1.9;
+
+  h1 { margin: 0 0 24px; font: 32px/1.3 var(--font-noto-serif), "Songti SC", serif; }
+  pre { margin: 0 0 24px; font-family: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
 }
+
 .declarationBtn {
   width: 100%;
   flex-shrink: 0;
-  min-height: 48px;
+  min-height: 52px;
   padding: 12px;
-  color: $white;
-  background: #3f3f3f;
+  color: var(--paper);
+  background: var(--ink);
   border: 0;
-  border-top: 1px solid #777;
-  font-size: 15px;
+  border-top: 2px solid var(--accent);
+  font-size: 13px;
   cursor: pointer;
-  &:hover { background: #505050; }
+
+  &:hover { background: var(--accent); }
 }
 
 @media (max-width: 600px) {
-  .accountManagementTitle { padding: 10px 14px; }
-  .accountManagementTitle h1 { font-size: 18px; }
-  .accountManagement .form { padding: 14px; }
-  .accountManagementFooter { padding: 12px; gap: 8px; }
-  .accountManagement .loginBtn { padding-inline: 10px; font-size: 13px; }
+  .dialog-overlay { align-items: flex-end; padding: 12px; }
+  .accountManagement, .declaration { max-height: calc(100dvh - 24px); }
+  .accountManagementTitle { padding: 11px 14px; }
+  .accountManagementTitle h1 { font-size: 24px; }
+  .accountManagement .form { padding: 16px 14px; }
+  .accountManagementFooter { flex-wrap: wrap; padding: 12px 14px; gap: 8px; }
+  .accountManagementFooter > button { flex-basis: 100%; margin-left: 0; }
+  .accountManagement .loginBtn { padding-inline: 10px; }
   .account-body { padding: 16px 12px; }
-  .account { grid-template-columns: 36px minmax(0, 1fr); padding-left: 10px; gap: 4px 8px; }
-  .avatar { width: 36px; height: 36px; font-size: 20px; }
-  .account .account-name { font-size: 14px; }
-  .declarationContentWrapper { padding: 18px; font-size: 13px; }
+  .account { grid-template-columns: 38px minmax(0, 1fr); padding-left: 10px; gap: 4px 8px; }
+  .avatar { width: 38px; height: 38px; font-size: 19px; }
+  .account .account-name { font-size: 16px; }
+  .declarationContentWrapper { padding: 20px; font-size: 13px; }
 }

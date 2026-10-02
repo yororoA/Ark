@@ -174,7 +174,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
             </div>
             <div className={cn(styles.accountManagementFooter)}>
               {details.length > 0 && <Button size="small" onClick={() => { onClose(); onConnect({ action: 'switch', uid: selectedDetail?.uid }) }} className={cn(styles.loginBtn, 'mr-auto')}>登录</Button>}
-              <Button size="small" className={cn(styles.loginBtn, 'opacity-50 ml-auto')} onClick={() => setOtherVisable(true)}>其他账号登录</Button>
+              <Button size="small" className={styles.loginBtn} onClick={() => setOtherVisable(true)}>其他账号登录</Button>
             </div>
           </>
           :
@@ -195,7 +195,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                   <>
                     <Input label="邮箱" id="email" required placeholder="请输入邮箱" ref={emailRef} />
                     <Input label="验证码" id="code" required placeholder="请输入验证码" ref={codeRef}>
-                      <Button size="small" disabled={formBusy} onClick={() => run(handleSendCode)}>{codeSent ? '重新发送' : '获取验证码'}</Button>
+                      <Button className={styles['code-button']} size="small" disabled={formBusy} onClick={() => run(handleSendCode)}>{codeSent ? '重新发送' : '获取验证码'}</Button>
                     </Input>
                   </>
                 )}
