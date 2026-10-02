@@ -9,6 +9,7 @@
  * 联合类型让每个 action 的参数集合在类型层面就明确，杜绝错位。
  */
 export type ConnectParams =
+  | { action: 'guest' }
   | { action: 'switch'; uid?: string }
   | { action: 'login'; username: string; password: string }
   | { action: 'register'; username: string; password: string; email: string; code: string };

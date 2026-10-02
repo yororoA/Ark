@@ -1,81 +1,63 @@
-@use '@/styles/variables' as *;
-
-$placeholder-color: color-mix(in srgb, $white 40%, $black);
-$transition: all 0.15s ease-in-out;
-
 .inputContainer {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  gap: $gap * .25;
-  font-size: 13px;
+  gap: 9px;
+  color: var(--muted, #6b6e64);
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
 
-  .inputWrapper {
-    display: flex;
-    align-items: center;
-    gap: $gap * .5;
-    position: relative;
-    min-width: 0;
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
 
-    .input {
-      -webkit-text-stroke: 0;
-      background-color: $default-bgc;
-      border: $button-border;
-      border-color: color-mix(in srgb, $gray 70%, $white);
-      border-width: 1.5px;
-      box-shadow: $black 0.1rem 0.2rem 0.5rem;
-      color: $white;
-      font-size: 16px;
-      padding: 8px;
-      min-width: 0;
-      width: 100%;
-      min-height: 40px;
-      outline: none;
-      transition: $transition;
-      flex: 1;
+.input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 13px 14px;
+  appearance: none;
+  color: var(--ink, #222321);
+  background: color-mix(in srgb, var(--line, #cecec5) 18%, transparent);
+  border: 1px solid transparent;
+  border-bottom-color: var(--line, #cecec5);
+  border-radius: 0;
+  box-shadow: none;
+  outline: none;
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
+  font-size: 16px;
+  transition: border-color .2s, box-shadow .2s, background .2s;
 
-      &.inputEncrypt {
-        padding-right: 1.2rem;
-      }
+  &::placeholder { color: var(--muted, #6b6e64); }
+  &:hover { border-bottom-color: var(--ink, #222321); }
+  &:focus { border-bottom-color: var(--accent, #bb3429); box-shadow: 0 1px var(--accent, #bb3429); background: var(--paper, #f3f1ed); }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+}
 
-      &::placeholder {
-        color: $placeholder-color;
-        font-family: inherit;
-      }
+.inputEncrypt { padding-right: 48px; }
 
-      &:hover {
-        background-color: color-mix(in srgb, $white 3%, $default-bgc);
-      }
+.toggleBtn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--muted, #6b6e64);
+  background: transparent;
+  border: 0;
+  transform: translateY(-50%);
+  cursor: pointer;
 
-      &:focus {
-        background-color: color-mix(in srgb, $white 5%, $default-bgc);
-        border-color: $active-color;
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-    }
-
-    .toggleBtn {
-      position: absolute;
-      right: 0.4rem;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: none;
-      border: none;
-      color: $placeholder-color;
-      cursor: pointer;
-      padding: 0;
-      line-height: 0;
-
-      &:hover {
-        color: $white;
-      }
-    }
-  }
+  &:hover { color: var(--accent, #bb3429); }
+  &:focus-visible { outline: 2px solid var(--accent, #bb3429); outline-offset: 1px; }
 }

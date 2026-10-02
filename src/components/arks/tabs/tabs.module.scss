@@ -1,34 +1,31 @@
-@use '@/styles/variables' as *;
-
-$transition: all 0.15s ease-in-out;
-$placeholder-color: color-mix(in srgb, $white 40%, $black);
-
 .tabs {
   display: grid;
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
+  counter-reset: access-tab;
+}
 
-  .tab {
-    -webkit-text-stroke: 0;
-    background-color: $default-bgc;
-    border: none;
-    border-bottom: 1.8px solid color-mix(in srgb, $white 30%, $black);
-    color: $placeholder-color;
-    cursor: pointer;
-    font-family: var(--font-orbitron);
-    font-size: 0.6rem;
-    padding: $gap * 0.6;
-    transition: $transition;
+.tab {
+  counter-increment: access-tab;
+  position: relative;
+  min-height: 48px;
+  padding: 12px 16px;
+  color: var(--muted, #6b6e64);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line, #cecec5);
+  font-family: var(--font-noto-sans), var(--font-ibm-plex), sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
 
-    &:hover {
-      color: rgba($color: $white, $alpha: 0.5);
-      background-color: color-mix(in srgb, $white 1%, $default-bgc);
-    }
+  &::before { content: counter(access-tab, decimal-leading-zero) ' / '; font: 9px/1 var(--font-ibm-plex), sans-serif; }
+  &:hover { color: var(--ink, #222321); }
+  &:focus-visible { outline: 2px solid var(--accent, #bb3429); outline-offset: -2px; }
+}
 
-    &.active {
-      color: $white;
-      border-bottom-color: $active-color;
-      background-color: color-mix(in srgb, $white 3%, $default-bgc);
-    }
-  }
+.active {
+  color: var(--accent, #bb3429);
+  border-bottom: 2px solid var(--accent, #bb3429);
+  background: color-mix(in srgb, var(--accent, #bb3429) 4%, transparent);
 }

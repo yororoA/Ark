@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import BlogShell from '@/components/blog/blog-shell';
 
 export const metadata: Metadata = {
   title: "首页 - YororoIce Ark",
@@ -11,8 +12,8 @@ export default function HomeLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className='h-screen w-screen perspective-[2000px]'>
+    <BlogShell>
       {children}
-    </div>
+    </BlogShell>
   );
 }

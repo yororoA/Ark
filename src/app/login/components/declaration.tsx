@@ -33,10 +33,6 @@ export default function Declaration(props: { onClose: () => void }) {
             + '5、若涉及资源版权方认为本网站存在侵权，可通过联系邮箱 "moranluo@163.com" 告知，本站将第一时间删除相关内容。'}
           </pre>
           <pre>{'【使用资源】\n'
-            + '[1] mefu. 宇泽玲纱[插画]. pixiv, 作品ID: 134552521.\n'
-            + '[2] 绘之音. 404页面背景[插画]. bilibili.\n'
-            + '    ① https://gf.bilibili.com/item/detail/1106286118?noTitleBar=1&from=mall-up_itemDetail&msource=comments_4637682&track_id=__BGMT__\n'
-            + '    ② https://www.bilibili.com/video/BV1Cn4y1o7r6/?spm_id_from=333.1387.list.card_archive.click&vd_source=1e099b31d05e4344ac2cbf94a5077b23\n'
           }
           </pre>
           <pre>{'【设计参考】\n'

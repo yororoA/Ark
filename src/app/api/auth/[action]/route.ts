@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { createHash } from 'crypto'
 import { z } from 'zod'
-import { Api } from '@/lib/server/api'
+import { Api, ApiError } from '@/lib/server/api'
+import { sameOrigin, verifiedSession, saveCredential } from '@/lib/server/blog-session'
 
 /**
  * Auth Route Handler
@@ -64,40 +64,16 @@ function encryptPassword(password: string) {
  * 与原 Server Action 行为不同 —— 这正是我们想要的。
  */
 async function setAuthCookies(uid: string, token: string, isGuest = false) {
-  const cookieStore = await cookies()
-  const isProduction = process.env.NODE_ENV === 'production'
-  const secure = isProduction
-  const sameSite = isProduction ? 'none' as const : 'lax' as const
-
-  if (isGuest) {
-    // 游客：独立的 blog_guest_token cookie，短期有效
-    cookieStore.set('blog_guest_token', `${uid}:${token}`, {
-      httpOnly: true, secure, sameSite, path: '/', maxAge: 30 * 60,
-    })
-  } else {
-    // 注册用户：blog_tokens（uid:token 数组）+ blog_active_uid
-    const existing = cookieStore.get('blog_tokens')?.value || ''
-    const entries = existing ? existing.split(',').filter(Boolean) : []
-    const idx = entries.findIndex(e => e.startsWith(uid + ':'))
-    if (idx >= 0) {
-      entries[idx] = `${uid}:${token}`
-    } else {
-      entries.push(`${uid}:${token}`)
-    }
-    cookieStore.set('blog_tokens', entries.join(','), {
-      httpOnly: true, secure, sameSite, path: '/', maxAge: 7 * 24 * 60 * 60,
-    })
-  }
-
-  // 所有登录类型都设置当前活跃用户
-  cookieStore.set('blog_active_uid', uid, {
-    httpOnly: false, secure, sameSite, path: '/', maxAge: 365 * 24 * 60 * 60,
-  })
+  await saveCredential({ uid, token, guest: isGuest }, true)
 }
 
 // ── 主入口 ──────────────────────────────────────────
 export async function POST(req: NextRequest, ctx: RouteContext<'/api/auth/[action]'>) {
   const { action } = await ctx.params
+  if (!sameOrigin(req)) return NextResponse.json({ message: '请求来源无效' }, { status: 403 })
+  if (!['switch', 'guest', 'login', 'register', 'code'].includes(action)) {
+    return NextResponse.json({ message: '接口不存在' }, { status: 404 })
+  }
 
   // ─── switch：切换当前活跃账号 ───────────────────
   if (action === 'switch') {
@@ -117,14 +93,15 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/auth/[actio
 async function handleGuest() {
   try {
     const resp = await Api('/api/v2' + AuthUrlMap.guest, 'POST')
-    if (resp && resp.uid && resp.token) {
-      await setAuthCookies(resp.uid, resp.token, true)
-    }
-    return NextResponse.json(resp ?? null)
+    // Guest endpoints wrap credentials in data; regular login does not.
+    const guest = resp?.data
+    if (!guest?.uid || !guest?.token) throw new ApiError('游客登录响应无效', 502)
+    await setAuthCookies(guest.uid, guest.token, true)
+    return NextResponse.json({ uid: guest.uid, username: guest.username || 'Guest', isGuest: true, expiresAt: guest.expiresAt })
   } catch (err) {
     return NextResponse.json(
       { message: err instanceof Error ? err.message : '游客登录失败' },
-      { status: 500 }
+      { status: err instanceof ApiError ? err.status : 502 }
     )
   }
 }
@@ -140,9 +117,9 @@ async function handleAuthWithBody(req: NextRequest, action: Auth) {
 
   // 参数校验
   try {
-    if (action === 'login') LoginSchema.parse(body)
-    else if (action === 'register') RegisterSchema.parse(body)
-    else if (action === 'code') CodeSchema.parse(body)
+    if (action === 'login') body = LoginSchema.parse(body)
+    else if (action === 'register') body = RegisterSchema.parse(body)
+    else if (action === 'code') body = CodeSchema.parse(body)
   } catch (err) {
     const message = err instanceof z.ZodError
       ? err.issues.map(i => i.message).join('; ')
@@ -160,17 +137,27 @@ async function handleAuthWithBody(req: NextRequest, action: Auth) {
   const api_url = '/api/v2' + AuthUrlMap[action]
 
   try {
-    const resp = await Api(api_url, 'POST', payload)
+    let resp
+    try {
+      resp = await Api(api_url, 'POST', payload)
+    } catch (err) {
+      // Old bcrypt accounts predate the client's SHA-256 convention. Match the
+      // original site's one-time migration only when the backend identifies it.
+      const isLegacyLogin = action === 'login' && err instanceof ApiError && err.hint === 'legacy_user_detected'
+      if (!isLegacyLogin) throw err
+      resp = await Api(api_url, 'POST', { ...(body as Record<string, unknown>), isLegacy: true })
+    }
     if (resp && (action === 'login' || action === 'register') && resp.uid && resp.token) {
       const adminUids = process.env.ADMIN_UIDS?.split(',') || []
       resp.isAdmin = adminUids.includes(resp.uid)
       await setAuthCookies(resp.uid, resp.token, false)
     }
+    if (resp) delete resp.token
     return NextResponse.json(resp ?? null)
   } catch (err) {
     return NextResponse.json(
       { message: err instanceof Error ? err.message : '请求失败' },
-      { status: 500 }
+      { status: err instanceof ApiError ? err.status : 502 }
     )
   }
 }
@@ -192,50 +179,12 @@ async function handleSwitch(req: NextRequest) {
     )
   }
   const { uid } = parsed.data
-
-  const cookieStore = await cookies()
-
-  // 1. 设置 blog_active_uid cookie
-  cookieStore.set('blog_active_uid', uid, {
-    path: '/',
-    maxAge: 31536000,
-    sameSite: 'lax',
-    httpOnly: false,
-  })
-
-  // 2. 轻量后端验证：手动构造 Cookie 头（server-to-server fetch 不带浏览器 cookie）
-  const backendUrl = process.env.BACKEND_URL
-  if (!backendUrl) {
-    return NextResponse.json(null)
-  }
-
-  const activeUid = `blog_active_uid=${uid}`
-  const tokensValue = cookieStore.get('blog_tokens')?.value || ''
-  const guestValue = cookieStore.get('blog_guest_token')?.value || ''
-  const cookieParts = [activeUid]
-  if (tokensValue) cookieParts.push(`blog_tokens=${tokensValue}`)
-  if (guestValue) cookieParts.push(`blog_guest_token=${guestValue}`)
-  const cookieHeader = cookieParts.join('; ')
-
   try {
-    const response = await fetch(`${backendUrl}/api/v2/auth/me`, {
-      headers: { Cookie: cookieHeader },
-    })
-    if (response.ok) {
-      const adminUids = (process.env.ADMIN_UIDS || '').split(',').filter(Boolean)
-      const data = await response.json()
-      if (data.valid) {
-        return NextResponse.json({
-          uid: data.uid,
-          username: data.username,
-          isGuest: data.isGuest ?? false,
-          isAdmin: adminUids.includes(data.uid),
-        })
-      }
-    }
+    const auth = await verifiedSession(uid)
+    if (!auth) return NextResponse.json({ message: '账号已过期，请重新登录' }, { status: 401 })
+    await saveCredential(auth.credential, true)
+    return NextResponse.json(auth.session)
   } catch {
-    // 网络异常 / 后端未部署新版本 → 不抛错，交给后续实际请求处理
+    return NextResponse.json({ message: '账号验证暂时不可用' }, { status: 503 })
   }
-
-  return NextResponse.json(null)
 }

@@ -1,0 +1,46 @@
+.archive-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  color: var(--ink, #222321);
+}
+
+.logo-image {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: 112px;
+  height: 51px;
+
+  img { object-fit: contain; }
+}
+
+.logo-light { filter: grayscale(1) contrast(1.5) brightness(.55); }
+.logo-dark { display: none; }
+
+.logo-caption {
+  max-width: 72px;
+  font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
+  font-size: 7px;
+  line-height: 1.7;
+  letter-spacing: 1.4px;
+}
+
+:global([data-theme="dark"]) {
+  .logo-light { display: none; }
+  .logo-dark { display: block; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :global([data-theme="system"]) {
+    .logo-light { display: none; }
+    .logo-dark { display: block; }
+  }
+}
+
+@media (max-width: 420px) {
+  .archive-logo { gap: 7px; }
+  .logo-image { width: 92px; height: 42px; }
+  .logo-caption { max-width: 56px; font-size: 6px; letter-spacing: 1px; }
+}

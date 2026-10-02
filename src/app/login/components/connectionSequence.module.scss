@@ -1,7 +1,7 @@
 .sequence {
-  --signal: #eff34c;
-  --ink: #080909;
-  --paper: #dfe5ea;
+  --signal: #c43b30;
+  --ink: #222321;
+  --paper: #f3f1ed;
   --sequence-scale: 1;
   position: fixed;
   inset: 0;
@@ -9,8 +9,8 @@
   isolation: isolate;
   outline: none;
   color: var(--ink);
-  background: #080909;
-  font-family: Arial, var(--font-ibm-plex), sans-serif;
+  background: #1d201e;
+  font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
   font-size: 14px;
   line-height: 1.25;
   letter-spacing: 0;
@@ -31,14 +31,17 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  color: #fff;
+  color: var(--paper);
 }
 
 .boot-backdrop {
   position: absolute;
   inset: -8%;
-  background: url('/bg.jpg') center / cover;
-  filter: blur(12px) brightness(.4) saturate(.5);
+  background:
+    linear-gradient(112deg, transparent 49.8%, #c43b3028 50%, transparent 50.2%),
+    linear-gradient(90deg, transparent 49.9%, #f3f1ed12 50%, transparent 50.1%),
+    #1d201e;
+  filter: none;
   animation: backdrop-develop var(--boot-duration) linear both;
 }
 
@@ -256,9 +259,9 @@
 
 .frame-haze {
   border-width: 5px;
-  border-color: #eff34c52;
+  border-color: #c43b3052;
   filter: blur(12px);
-  box-shadow: 0 0 28px #eff34c4a;
+  box-shadow: 0 0 28px #c43b304a;
   animation-name: frame-haze;
 }
 
@@ -448,7 +451,7 @@
   place-items: center;
   overflow: hidden auto;
   visibility: hidden;
-  background: linear-gradient(#c1d1de, var(--paper) 42%, #dfe4ea 62%, #bfd4e3);
+  background: var(--paper);
 }
 
 .terminal-motion {
@@ -851,8 +854,8 @@
   overflow: hidden;
   visibility: hidden;
   opacity: 0;
-  color: #e5e6d8;
-  background: #282a2c;
+  color: var(--paper);
+  background: #1d201e;
   transform-origin: center;
   will-change: transform, opacity;
 
@@ -864,8 +867,8 @@
     pointer-events: none;
     opacity: 0;
     background:
-      linear-gradient(124deg, transparent 42%, #eff34ca8 47%, transparent 52%),
-      linear-gradient(54deg, transparent 43%, #b43a3675 48%, transparent 53%);
+      linear-gradient(124deg, transparent 42%, #c43b30a8 47%, transparent 52%),
+      linear-gradient(54deg, transparent 43%, #f3f1ed42 48%, transparent 53%);
     mix-blend-mode: screen;
   }
 
@@ -955,9 +958,9 @@
     position: relative;
     width: var(--network-progress);
     height: 100%;
-    color: #ece873;
-    background: #ece873;
-    box-shadow: 0 0 5px #ece87344;
+    color: var(--signal);
+    background: var(--signal);
+    box-shadow: 0 0 5px #c43b3044;
     transition: width 100ms ease-in-out;
   }
 

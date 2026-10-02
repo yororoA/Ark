@@ -1,32 +1,35 @@
-@use '@/styles/variables' as *;
-
-$hover-bgc: color-mix(in srgb, $white 3%, $default-bgc);
-// $transition: all 0.15s ease-in-out;
-
 .button {
-  -webkit-text-stroke: 0;
-  background-color: $default-bgc;
-  border: $button-border;
-  box-shadow: $black 0.1rem 0.2rem 0.5rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  color: var(--paper, #f3f1ed);
+  background: var(--ink, #222321);
+  border: 1px solid var(--ink, #222321);
+  border-radius: 0;
+  box-shadow: none;
+  font-family: var(--font-noto-serif), var(--font-noto-sans), serif;
   cursor: pointer;
-  // transition: $transition;
+  transition: color .2s, background .2s, border-color .2s;
 
-  &:hover {
-    background-color: $hover-bgc;
+  &::after {
+    content: '';
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    width: 4px;
+    height: 4px;
+    border-right: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    opacity: .6;
   }
 
-  &:active {
-    background-color: $active-bgc;
-    color: $active-color;
-  }
-
-  &.small {
-    font-size: 0.5rem;
-    padding: 0.3rem 1.5rem;
-  }
-
-  &.large {
-    font-size: 0.75rem;
-    padding: 0.6rem 2.1rem;
-  }
+  &:hover:not(:disabled) { background: var(--accent, #bb3429); border-color: var(--accent, #bb3429); }
+  &:active:not(:disabled) { color: var(--paper, #f3f1ed); }
+  &:focus-visible { outline: 2px solid var(--accent, #bb3429); outline-offset: 3px; }
+  &:disabled { cursor: not-allowed; opacity: .45; }
 }
+
+.small { padding: 10px 18px; font-size: 12px; }
+.large { min-height: 50px; padding: 12px 24px; font-size: 14px; }
