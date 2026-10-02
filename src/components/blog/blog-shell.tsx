@@ -42,7 +42,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <ArchiveLogo priority />
         </Link>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
-          {sections.map(([key]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}>{t(key)}</Link>)}
+          {sections.map(([key, number]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span className={styles['nav-index']} aria-hidden="true">{number}</span>{t(key)}</Link>)}
         </nav>
         <div className={styles['header-tools']}>
           <Link className={styles['chat-link']} href="/chat">{t('chat')}<ArrowUpRight size={14} /></Link>

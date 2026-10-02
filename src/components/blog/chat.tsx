@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useSWRInfinite from 'swr/infinite'
-import { Maximize2, Minimize2, Reply, Send, X } from 'lucide-react'
+import { Maximize2, MessageCircle, Minimize2, Reply, Send, UsersRound, X } from 'lucide-react'
 import { dateLabel, Envelope, excerpt, Media } from '@/lib/blog'
 import { request, send, useBlog, useBlogData } from './blog-provider'
 import { FilePicker, MediaGrid, PageHeading, RequireLogin, State, styles } from './shared'
@@ -147,7 +147,10 @@ function ChatContent({ expanded, toggleExpanded }: { expanded: boolean; toggleEx
   }, [mutate])
   return <><State loading={isLoading} error={error} retry={() => mutate()} />{data && <div className={styles['chat-layout']}><nav className={styles['conversation-list']} aria-label={t('chat')}>{data.data.map(item => {
     const label = item.id === 'group' ? t('group') : item.id === 'admin' ? t('admin') : item.label || item.id
-    return <button key={item.id} title={label} aria-pressed={active === item.id} onClick={() => router.replace(`/chat?conversation=${encodeURIComponent(item.id)}`, { scroll: false })}><span>{label}</span></button>
+    return <button key={item.id} title={label} aria-pressed={active === item.id} onClick={() => router.replace(`/chat?conversation=${encodeURIComponent(item.id)}`, { scroll: false })}>
+      <span className={styles['conversation-symbol']} aria-hidden="true">{item.type === 'group' ? <UsersRound size={17} strokeWidth={1.3} /> : <MessageCircle size={17} strokeWidth={1.3} />}</span>
+      <span>{label}</span>
+    </button>
   })}</nav>{conversation ? <ConversationView key={`${session!.uid}:${conversation.id}`} conversation={conversation} expanded={expanded} toggleExpanded={toggleExpanded} /> : <State empty />}</div>}</>
 }
 
