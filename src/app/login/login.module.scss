@@ -312,51 +312,56 @@
 
 :global(html[data-design="rain"]) {
   .login-header, .login-footer { border-color: var(--line); margin-inline: 6%; }
-  .login-main { max-width: 1200px; gap: 80px; padding-block: 72px; }
-  .login-copy { text-align: center; }
+  .login-main { max-width: 1280px; gap: 72px; padding: 72px 5%; margin-block: 32px; border: 1px solid var(--line); background: var(--soft); }
+  .login-copy { padding: 30px 26px 30px 70px; border: 1px solid var(--line); background: var(--ark-rain-panel); text-align: left; }
+  .login-copy::before { content: ''; position: absolute; inset: 0 auto 0 38px; width: 1px; background: var(--line); }
   .login-signature { display: none; }
   .login-rain {
-    position: relative; display: block; width: 200px; height: 150px; margin: 0 auto 32px; color: var(--accent);
-    span { position: absolute; inset: 40px 0 auto; font: 28px/1.5 var(--display-cjk); letter-spacing: .25em; padding-left: .25em; }
-    svg { width: 100%; height: 100%; }
-    ellipse { transform-origin: 100px 121px; animation: login-ripple 7s ease-in-out infinite alternate; }
+    position: relative; display: flex; align-items: end; gap: 30px; margin: 0 0 34px; color: var(--ink);
+    span { writing-mode: vertical-rl; font: 64px/1.2 var(--display-cjk); letter-spacing: .12em; }
+    small { padding: 7px 12px; margin-bottom: 10px; color: var(--paper); background: var(--ink); font: 8px/1.6 var(--font-ibm-plex), sans-serif; letter-spacing: 1px; }
   }
-  .login-eyebrow { justify-content: center; color: var(--muted); font-size: 9px; }
+  .login-eyebrow { padding-block: 9px; border-block: 1px solid var(--line); color: var(--muted); font-size: 8px; letter-spacing: 1.5px; }
   .login-eyebrow::before { display: none; }
-  .login-copy h1 { font-size: 44px; letter-spacing: .12em; margin-block: 24px; }
-  .login-copy > p { font-size: 15px; line-height: 2; margin-inline: auto; }
-  .access-notes { justify-content: center; margin-top: 24px; }
-  .archive-register { margin-top: 36px; text-align: left; }
+  .login-copy h1 { font-size: 38px; letter-spacing: .08em; margin-block: 22px; }
+  .login-copy > p { font-size: 14px; line-height: 2; }
+  .access-notes { margin-top: 24px; gap: 14px; }
+  .archive-register { margin-top: 30px; }
   .archive-register dd { font-family: var(--font-ibm-plex), sans-serif; }
-  .access-panel { padding: 36px; border-top-width: 1px; border-radius: 120px 120px 12px 12px / 44px 44px 12px 12px; box-shadow: 0 20px 60px #102d300a; }
-  .access-panel::after { width: 32px; height: 5px; border: 1px solid var(--line); border-radius: 50%; bottom: 14px; right: calc(50% - 16px); }
-  .panel-header { margin-top: 16px; }
-  .account-glyph { border-radius: 50%; width: 54px; height: 54px; background: none; }
+  .access-panel { padding: 30px; border: 1px solid var(--line); border-radius: 0; background: var(--ark-rain-panel); box-shadow: 12px 12px 0 var(--ark-rain); }
+  .access-panel::before { content: ''; position: absolute; inset: 10px; border: 1px solid var(--line); pointer-events: none; }
+  .access-panel::after { width: 14px; height: 18px; border: 0; background: var(--ark-rain-deep); box-shadow: 7px 5px 0 var(--ark-rain); bottom: -9px; right: 24px; }
+  .panel-header { padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .account-glyph { border-radius: 0; background: var(--soft); box-shadow: 4px 4px 0 var(--ark-rain); }
   .active-account strong { font-size: 26px; }
   .credential-status div { padding-block: 18px; }
   .credential-status strong { font-family: var(--font-ibm-plex), sans-serif; }
-  .primary-action { border-radius: 30px; padding-inline: 22px; background: var(--accent); border-color: var(--accent); }
+  .primary-action { border-radius: 0; padding-inline: 22px; background: var(--accent); border-color: var(--accent); }
   .primary-action:hover { background: var(--ink); border-color: var(--ink); }
-  .secondary-action { align-self: center; margin-top: 20px; }
+  .secondary-action { margin-top: 20px; }
 
   @media (max-width: 900px) {
-    .login-main { gap: 44px; }
+    .login-main { gap: 32px; }
+    .login-copy { padding-left: 40px; padding-right: 20px; }
+    .login-copy::before { left: 20px; }
     .access-panel { padding: 28px; }
-    .login-copy h1 { font-size: 38px; }
+    .login-copy h1 { font-size: 32px; }
+    .login-rain { gap: 18px; }
+    .login-rain span { font-size: 52px; }
+    .login-rain small { padding: 6px 8px; }
   }
   @media (max-width: 680px) {
-    .login-main { padding-block: 40px; gap: 36px; }
-    .login-rain { width: 160px; height: 120px; margin-bottom: 22px; }
-    .login-rain span { top: 30px; font-size: 24px; }
-    .login-copy h1 { font-size: 36px; }
+    .login-main { width: 88%; margin-block: 24px; padding: 24px 16px 32px; gap: 28px; }
+    .login-copy { padding: 20px 16px 20px 32px; }
+    .login-copy::before { left: 13px; }
+    .login-rain { margin-bottom: 22px; gap: 20px; }
+    .login-rain span { font-size: 46px; }
+    .login-copy h1 { font-size: 30px; }
     .archive-register { display: none; }
-    .access-panel { max-width: 440px; justify-self: center; }
+    .access-panel { max-width: 440px; justify-self: center; padding: 24px; box-shadow: 6px 6px 0 var(--ark-rain); }
   }
 }
 
-@keyframes login-ripple { from { opacity: .4; transform: scaleX(.9); } to { opacity: .9; transform: scaleX(1); } }
-
 @media (prefers-reduced-motion: reduce) {
   .login-copy, .access-panel { animation: none; }
-  .login-rain ellipse { animation: none !important; }
 }

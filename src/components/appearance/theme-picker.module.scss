@@ -71,10 +71,10 @@
   i:nth-child(3) { inset: 0 38px; }
 }
 .design-preview[data-preview="rain"] .preview-art {
-  top: 19px; right: 7px; width: 66px; height: 100px;
-  i { inset: 0 3px; border: 0; border-top: 1px solid #469b9e; border-radius: 50% 50% 0 0 / 26px 26px 0 0; background: repeating-linear-gradient(90deg, transparent 0 2px, #eef5f280 2px 3px), linear-gradient(currentColor, transparent); transform: none; }
-  i:nth-child(2) { inset: 24px -22px 0 47px; opacity: .65; }
-  i:nth-child(3) { inset: -10px 47px 30px -13px; opacity: .5; }
+  top: 15px; right: 7px; width: 66px; height: 95px;
+  i { inset: 0; border: 0; border-radius: 0; background: repeating-linear-gradient(90deg, currentColor 0 10px, #fff 10px 16px); transform: skewY(-8deg); }
+  i:nth-child(2) { inset: 38px 4px 15px 25px; border: 1px solid #469b9e; background: #eef5f2; transform: rotate(-10deg); }
+  i:nth-child(3) { inset: 27px 26px 41px 11px; background: #469b9e; transform: rotate(-10deg); }
 }
 .preview-line { position: absolute; inset: auto 10px 7px; height: 1px; background: currentColor; opacity: .5; }
 .preview-caption { position: absolute; inset: 10px 10px auto; padding-bottom: 6px; border-bottom: 1px solid currentColor; color: #536e73; font-size: 5px; letter-spacing: .8px; }
@@ -85,13 +85,12 @@
   i:nth-child(3) { width: 72%; }
 }
 .design-preview[data-preview="rain"] {
-  .preview-caption { text-align: center; border: 0; }
-  .preview-type { top: 37px; left: 40%; font: 32px/1 var(--font-noto-serif), serif; letter-spacing: 0; color: #203d43; }
-  .preview-type span { margin: 8px 0 0; text-align: center; font: 11px/1 var(--font-gowun-batang), serif; }
-  .preview-art { opacity: .55; }
-  .preview-layout { inset-inline: 27px; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .preview-layout i { width: 100%; height: 13px; border-top: 1px solid #469b9e; background: #78c7c3; }
-  .preview-layout i:nth-child(2) { margin-top: 5px; }
+  .preview-caption { text-align: left; border: 0; z-index: 2; }
+  .preview-type { top: 30px; left: 17px; padding: 3px; background: #fff; writing-mode: vertical-rl; font: 27px/1 var(--font-noto-serif), serif; letter-spacing: 2px; color: #203d43; }
+  .preview-type span { position: absolute; top: 59px; left: 23px; margin: 0; padding: 3px 6px; writing-mode: horizontal-tb; background: #203d43; color: #fff; font: 8px/1 var(--font-gowun-batang), serif; }
+  .preview-layout { inset-inline: 12px; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .preview-layout i { width: 100%; height: 15px; border: 1px solid #469b9e; background: #fff; }
+  .preview-layout i:nth-child(2) { margin-top: 4px; }
   .preview-layout i:nth-child(3) { display: none; }
 }
 .option-label { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font: 16px/1.4 var(--font-noto-serif), serif; svg { visibility: hidden; } }
@@ -107,14 +106,14 @@
 }
 .panel-note { margin: 0; padding-top: 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
 :global(html[data-design="rain"]) {
-  .theme-trigger, .close-button { border-radius: 50%; }
+  .theme-trigger, .close-button { border-radius: 0; }
   .theme-trigger { border-color: var(--ark-line); color: var(--ark-accent); }
-  .theme-panel { border-top-width: 1px; border-radius: 16px; padding: 24px; }
-  .panel-heading { margin-bottom: 26px; }
-  .design-preview { border-radius: 8px; }
-  .mode-option > span { border-radius: 22px; }
-  .mode-option input:checked + span { color: var(--accent); background: var(--soft); border-color: var(--accent); }
-  .panel-note { text-align: center; font-family: var(--font-noto-serif), serif; line-height: 1.8; }
+  .theme-panel { border: 1px solid var(--line); border-radius: 0; padding: 22px; background: var(--ark-rain-panel); box-shadow: 7px 7px 0 var(--soft); }
+  .panel-heading { margin-bottom: 22px; padding-left: 12px; border-left: 4px solid var(--ark-rain); }
+  .design-preview { border-radius: 0; }
+  .mode-option > span { border-radius: 0; }
+  .mode-option input:checked + span { color: var(--paper); background: var(--ink); border-color: var(--ink); box-shadow: 2px 2px 0 var(--ark-rain); }
+  .panel-note { font-family: var(--font-noto-serif), serif; line-height: 1.8; }
 }
 @media (max-width: 540px) { .theme-trigger { width: 44px; height: 44px; } }
 @media (prefers-reduced-motion: reduce) {
