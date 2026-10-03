@@ -45,6 +45,9 @@ export default function ConnectionNetwork({ onReady }: ConnectionNetworkProps) {
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
+    const sequenceStyle = getComputedStyle(canvas);
+    const themeColor = (property: string, fallback: string) =>
+      sequenceStyle.getPropertyValue(property).trim() || fallback;
     const scene = new Scene();
     const camera = new PerspectiveCamera(38, 1, 0.1, 30);
     camera.position.z = 6;
@@ -52,8 +55,17 @@ export default function ConnectionNetwork({ onReady }: ConnectionNetworkProps) {
     const wireframe = new WireframeGeometry(geometry);
     const primaryGeometry = new LineSegmentsGeometry();
     primaryGeometry.setPositions(new Float32Array(wireframe.getAttribute('position').array));
-    const primaryMaterial = new LineMaterial({ color: 0xe8e76a, linewidth: 1.3, transparent: true, opacity: 0.82 });
-    const secondaryMaterial = new LineBasicMaterial({ color: 0xd6d18a, transparent: true, opacity: 0.28 });
+    const primaryMaterial = new LineMaterial({
+      color: themeColor('--network-primary', '#e8e76a'),
+      linewidth: 1.3,
+      transparent: true,
+      opacity: 0.82,
+    });
+    const secondaryMaterial = new LineBasicMaterial({
+      color: themeColor('--network-secondary', '#d6d18a'),
+      transparent: true,
+      opacity: 0.28,
+    });
     const group = new Group();
     const outer = new LineSegments2(primaryGeometry, primaryMaterial);
     const inner = new LineSegments(wireframe, secondaryMaterial);
@@ -71,7 +83,12 @@ export default function ConnectionNetwork({ onReady }: ConnectionNetworkProps) {
       [...unique.values()].flat(),
       3,
     ));
-    const pointMaterial = new PointsMaterial({ color: 0xfffba1, size: 0.035, transparent: true, opacity: 0.9 });
+    const pointMaterial = new PointsMaterial({
+      color: themeColor('--network-point', '#fffba1'),
+      size: 0.035,
+      transparent: true,
+      opacity: 0.9,
+    });
     outer.add(new Points(pointGeometry, pointMaterial));
     scene.add(group);
 

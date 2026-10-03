@@ -1,7 +1,11 @@
 .sequence {
-  --signal: #c43b30;
-  --ink: #222321;
-  --paper: #f3f1ed;
+  --signal: var(--ark-sequence-signal, #c43b30);
+  --ink: var(--ark-sequence-ink, #222321);
+  --paper: var(--ark-sequence-paper, #f3f1ed);
+  --sequence-background: var(--ark-sequence-background, #1d201e);
+  --network-primary: var(--ark-sequence-network-primary, #e8e76a);
+  --network-secondary: var(--ark-sequence-network-secondary, #d6d18a);
+  --network-point: var(--ark-sequence-network-point, #fffba1);
   --sequence-scale: 1;
   position: fixed;
   inset: 0;
@@ -9,7 +13,7 @@
   isolation: isolate;
   outline: none;
   color: var(--ink);
-  background: #1d201e;
+  background: var(--sequence-background);
   font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
   font-size: 14px;
   line-height: 1.25;
@@ -38,9 +42,9 @@
   position: absolute;
   inset: -8%;
   background:
-    linear-gradient(112deg, transparent 49.8%, #c43b3028 50%, transparent 50.2%),
-    linear-gradient(90deg, transparent 49.9%, #f3f1ed12 50%, transparent 50.1%),
-    #1d201e;
+    linear-gradient(112deg, transparent 49.8%, color-mix(in srgb, var(--signal) 16%, transparent) 50%, transparent 50.2%),
+    linear-gradient(90deg, transparent 49.9%, color-mix(in srgb, var(--paper) 7%, transparent) 50%, transparent 50.1%),
+    var(--sequence-background);
   filter: none;
   animation: backdrop-develop var(--boot-duration) linear both;
 }
@@ -259,9 +263,9 @@
 
 .frame-haze {
   border-width: 5px;
-  border-color: #c43b3052;
+  border-color: color-mix(in srgb, var(--signal) 32%, transparent);
   filter: blur(12px);
-  box-shadow: 0 0 28px #c43b304a;
+  box-shadow: 0 0 28px color-mix(in srgb, var(--signal) 29%, transparent);
   animation-name: frame-haze;
 }
 
@@ -855,7 +859,7 @@
   visibility: hidden;
   opacity: 0;
   color: var(--paper);
-  background: #1d201e;
+  background: var(--sequence-background);
   transform-origin: center;
   will-change: transform, opacity;
 
@@ -867,8 +871,8 @@
     pointer-events: none;
     opacity: 0;
     background:
-      linear-gradient(124deg, transparent 42%, #c43b30a8 47%, transparent 52%),
-      linear-gradient(54deg, transparent 43%, #f3f1ed42 48%, transparent 53%);
+      linear-gradient(124deg, transparent 42%, color-mix(in srgb, var(--signal) 66%, transparent) 47%, transparent 52%),
+      linear-gradient(54deg, transparent 43%, color-mix(in srgb, var(--paper) 26%, transparent) 48%, transparent 53%);
     mix-blend-mode: screen;
   }
 
@@ -960,7 +964,7 @@
     height: 100%;
     color: var(--signal);
     background: var(--signal);
-    box-shadow: 0 0 5px #c43b3044;
+    box-shadow: 0 0 5px color-mix(in srgb, var(--signal) 27%, transparent);
     transition: width 100ms ease-in-out;
   }
 

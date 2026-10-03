@@ -532,7 +532,8 @@
     .manifesto blockquote { font-size: 34px; }
   }
 }
-// The shared composition above is retained; each theme adds its own layout.
+// Keep this include at the stylesheet root: its global html selectors must
+// remain ancestors of the locally scoped blog classes.
 @include theme-ui.personalities;
 
 @media (prefers-reduced-motion: reduce) {
