@@ -5,6 +5,11 @@
   :global(html[data-design="rain"]) {
     .archive-only { display: none; }
     .rain-only { display: inline; }
+    .blog-root {
+      --rain-frame-inset-block: 39px;
+      --rain-frame-inset-inline: 3.5vw;
+      --rain-header-height: 86px;
+    }
     .blog-root::before {
       content: '';
       position: fixed;
@@ -20,9 +25,10 @@
     .blog-root::after {
       content: '';
       position: fixed;
-      z-index: 2;
-      inset: 39px 3.5vw;
+      z-index: 4;
+      inset: var(--rain-frame-inset-block) var(--rain-frame-inset-inline);
       border: 1px solid color-mix(in srgb, var(--ark-rain-deep) 32%, transparent);
+      box-shadow: 0 0 0 100vmax var(--paper);
       pointer-events: none;
     }
     .site-header, .main-content, .site-footer { position: relative; z-index: 3; }
@@ -163,6 +169,10 @@
     .comment { border-left: 1px solid var(--ark-rain-deep); padding: 18px; margin-top: 18px; background: var(--ark-rain-panel); }
 
     .chat-page { max-width: 1520px; padding-top: 20px; padding-bottom: 20px; }
+    .chat-page[data-expanded="false"] {
+      height: calc(100vh - var(--rain-header-height) - var(--rain-frame-inset-block));
+      height: calc(100svh - var(--rain-header-height) - var(--rain-frame-inset-block));
+    }
     .chat-page .page-heading { min-height: 100px; padding: 12px 24px; margin-bottom: 18px; align-items: center; }
     .chat-page .heading-index { display: none; }
     .chat-page .heading-title { gap: 10px; }
@@ -185,11 +195,12 @@
     .chat-compose textarea { min-height: 58px; border: 1px solid var(--line); border-left-color: var(--ark-rain-deep); padding: 8px 12px; }
     .chat-compose .field { gap: 5px; }
     .chat-compose .primary-button { min-height: 44px; padding: 10px 18px; gap: 10px; box-shadow: none; }
-    .chat-page[data-expanded="true"] { padding: 0; }
+    .chat-page[data-expanded="true"] { width: auto; max-width: none; padding: 0; }
+    .blog-root:has(.chat-page[data-expanded="true"])::after { display: none; }
     .dialog { border-top-width: 1px; border-radius: 0; background: var(--ark-rain-panel); }
     .dialog-header { border-block: 1px solid var(--line); padding: 12px 0; }
     .dialog-header h2 { border-left: 4px solid var(--ark-rain); padding-left: 16px; }
-    .site-footer { padding-top: 36px; border-color: var(--line); background: var(--paper); }
+    .site-footer { margin-bottom: var(--rain-frame-inset-block); padding-top: 36px; border-color: var(--line); background: var(--paper); }
     .site-footer > .icon-button { border: 1px solid var(--line); }
     .mobile-nav { padding-inline: 6%; border-radius: 0; border-color: var(--line); background: var(--ark-rain-panel); }
     .mobile-nav a { padding-inline: 12px; border-left: 1px solid var(--line); }
@@ -222,8 +233,14 @@
       .chat-layout { grid-template-columns: 164px minmax(0, 1fr); }
       .conversation-list button { gap: 8px; padding-inline: 8px; }
     }
+    @media (max-width: 820px) {
+      .blog-root { --rain-header-height: 75px; }
+    }
     @media (max-width: 540px) {
-      .blog-root::after { inset: 10px; }
+      .blog-root {
+        --rain-frame-inset-block: 10px;
+        --rain-frame-inset-inline: 10px;
+      }
       .page { padding-top: 22px; }
       .page-heading { min-height: 236px; padding: 18px 16px 18px 62px; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
       .heading-index { width: 36px; padding-top: 20px; font-size: 9px; }

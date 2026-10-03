@@ -51,6 +51,9 @@
   grid-template-columns: minmax(280px, 1.35fr) minmax(140px, .62fr) minmax(170px, .72fr) 44px;
   column-gap: clamp(30px, 4vw, 72px); row-gap: 28px; align-items: start;
 }
+.blog-root:has(.not-found-page) { display: flex; flex-direction: column; }
+.blog-root:has(.not-found-page) .main-content { display: flex; flex: 1; min-height: 0; }
+.blog-root:has(.not-found-page) .site-footer { margin-top: 0; }
 .footer-signatures {
   display: flex; align-items: center; justify-content: space-between; align-self: stretch; gap: 14px;
   width: min(100%, 360px); min-height: 92px; overflow: hidden;
@@ -209,6 +212,11 @@
   > span { display: flex; align-items: baseline; gap: 13px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; strong { font: 36px/1 var(--serif); color: var(--ink); } i { color: var(--accent); font-style: normal; } }
 }
 .state-box { padding: 50px 10px; color: var(--muted); text-align: center; font-size: 14px; display: grid; justify-items: center; gap: 20px; }
+.not-found-page {
+  display: grid; grid-template-rows: auto minmax(0, 1fr); flex: 1; width: 100%;
+  padding-bottom: clamp(24px, 4vh, 48px);
+}
+.not-found-page .state-box { align-content: center; padding-block: clamp(24px, 5vh, 50px); }
 .loading-line { height: 1px; width: 70px; background: var(--line); overflow: hidden; &::after { content: ''; display: block; height: 100%; width: 50%; background: var(--accent); animation: loading 1s ease-in-out infinite alternate; } }
 .reader { max-width: 830px; margin: 0 auto; }
 .reader-header { padding: 40px 0; border-bottom: 1px solid var(--line); h1 { font: 400 clamp(32px, 4vw, 54px)/1.4 var(--song); letter-spacing: -.5px; margin: 20px 0; overflow-wrap: anywhere; } }
@@ -472,6 +480,12 @@
   .home-section { margin: 50px 6% 0; }.section-heading { margin-bottom: 25px; }.section-heading h2 { font-size: 28px; }.recent-grid { grid-template-columns: 1fr; gap: 10px; }.featured-entry { min-height: auto; }.featured-entry h3 { font-size: 29px; }.entry-row { padding: 20px 0; gap: 15px; }.entry-row h3 { font-size: 20px; }
   .manifesto { margin-top: 50px; padding: 45px 6%; grid-template-columns: 1fr; gap: 40px; }.manifesto blockquote { font-size: 40px; }.activity { gap: 50px; }
   .site-footer { width: auto; margin: 60px 6% 0; gap: 35px; padding-top: 30px; }.site-footer > .icon-button { align-self: end; justify-self: end; }.footer-signatures { grid-column: 1 / -1; width: 100%; }
+  .blog-root:has(.not-found-page) .not-found-page { padding-bottom: 16px; }
+  .blog-root:has(.not-found-page) .not-found-page .page-heading { margin-bottom: 16px; }
+  .blog-root:has(.not-found-page) .not-found-page .state-box { gap: 14px; margin-block: 8px; padding-block: 18px; }
+  .blog-root:has(.not-found-page) .site-footer { row-gap: 24px; }
+  .blog-root:has(.not-found-page) .site-footer > .icon-button { grid-column: 2; grid-row: 2; align-self: start; }
+  .blog-root:has(.not-found-page) .account-links { grid-column: 2; grid-row: 2; padding-right: 48px; }
   .page { padding-top: 35px; }.page-heading { padding-bottom: 30px; gap: 22px; }.page-heading h1 { font-size: 48px; }.page-heading .english-title { font-size: 30px; }.article-card { grid-template-columns: 45px 1fr; gap: 15px; padding: 25px 0; }.article-date { font-size: 9px; }.article-date strong { font-size: 34px; }.article-card h2 { font-size: 24px; }.article-card p { font-size: 12px; }.entry-meta { gap: 10px; font-size: 9px; }
   .article-card[data-cover="true"] { grid-template-columns: 45px minmax(0, 1fr); }.article-card[data-cover="true"] .article-cover, .article-card[data-cover="true"] .article-card-body { grid-column: 2; }.article-card[data-cover="true"] .article-date { grid-row: 1 / span 2; }
   .toolbar { gap: 18px; }.search-field { width: 100%; }.search-field input { width: 100%; }.moments-grid { grid-template-columns: 1fr; gap: 20px; }.gallery-grid { column-gap: 14px; }.gallery-grid figcaption { font-size: 9px; }.gallery-grid figcaption time { display: none; }.reader-header { padding-top: 28px; }.reader-header h1 { font-size: 32px; }.markdown { font-size: 15px; }.form-row { grid-template-columns: 1fr; }.dialog { padding: 20px; }.reader-actions { gap: 10px; }
