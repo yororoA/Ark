@@ -1,7 +1,7 @@
 export const RAIN_TIMING = {
   // Observed beats, measured from the first white umbrella at ~63.567s.
   // Geometry is evaluated continuously; these are not source-frame indices.
-  lift: 1700,
+  lift: 1667,
   flash: 1800,
   chamber: 1833,
   paper: 3033,

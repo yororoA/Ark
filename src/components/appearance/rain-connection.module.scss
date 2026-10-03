@@ -13,6 +13,8 @@
 
 .sequence {
   --stage-opacity: 1;
+  --scene-blur: 0px;
+  --foreground-blur: 0px;
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -37,12 +39,19 @@
   &[data-phase="revealing"] .caption { visibility: hidden; }
   &[data-renderer="canvas"] .static-paper { display: none; }
   &[data-renderer="canvas"] .canvas { visibility: visible; }
+  &[data-reveal-started="true"] .stage-backdrop { visibility: hidden; }
 }
 
 .stage {
   position: absolute;
   inset: 0;
   opacity: var(--stage-opacity);
+}
+
+.stage-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--ark-paper);
 }
 
 .static-paper {
@@ -65,7 +74,10 @@
   width: 100%;
   height: 100%;
   visibility: hidden;
+  filter: blur(var(--scene-blur));
 }
+
+.foreground { filter: blur(var(--foreground-blur)); }
 
 // Announce connection state without laying UI text over the composition.
 .caption {

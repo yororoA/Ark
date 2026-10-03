@@ -1,4 +1,5 @@
 import { RAIN_TIMING, lerp, progress, smooth } from './rain-connection-timeline'
+import { UMBRELLA_CROWN_HEIGHT, UMBRELLA_SIDE_POINTS, UMBRELLA_TOP_POINTS } from './rain-umbrella-geometry'
 
 export interface RainPalette {
   paper: string
@@ -6,6 +7,7 @@ export interface RainPalette {
   rain: string
   deep: string
   line: string
+  pencil: string
   font: string
 }
 
@@ -21,60 +23,57 @@ const seed = (index: number) => {
 function canopy(ctx: Context, radius: number, color: string, seam: string) {
   ctx.fillStyle = color
   ctx.beginPath()
-  for (let rib = 0; rib < 8; rib++) {
-    const angle = rib * TAU / 8 - Math.PI / 8
-    const next = angle + TAU / 8
-    const middle = angle + TAU / 16
-    const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius
-    if (rib === 0) ctx.moveTo(x, y)
-    else ctx.lineTo(x, y)
-    ctx.quadraticCurveTo(
-      Math.cos(middle) * radius * .89, Math.sin(middle) * radius * .89,
-      Math.cos(next) * radius, Math.sin(next) * radius,
-    )
-  }
+  UMBRELLA_TOP_POINTS.forEach(([x, y], index) => {
+    if (index === 0) ctx.moveTo(x * radius, y * radius)
+    else ctx.lineTo(x * radius, y * radius)
+  })
   ctx.closePath()
   ctx.fill()
   ctx.save()
-  ctx.globalAlpha *= .2
+  ctx.globalAlpha *= .54
   ctx.strokeStyle = seam
   ctx.lineWidth = .65
   ctx.beginPath()
-  for (let rib = 0; rib < 8; rib++) {
-    const angle = rib * TAU / 8 - Math.PI / 8
+  for (const [x, y] of UMBRELLA_TOP_POINTS) {
     ctx.moveTo(0, 0)
-    ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius)
+    ctx.lineTo(x * radius, y * radius)
   }
   ctx.stroke()
   ctx.restore()
 }
 
-function invertedUmbrella(ctx: Context, x: number, y: number, radius: number, palette: RainPalette, tilt = 0) {
-  ctx.save()
-  ctx.translate(x, y)
-  ctx.rotate(tilt)
+function umbrellaShaft(ctx: Context, radius: number, palette: RainPalette, length = 1) {
   ctx.strokeStyle = palette.deep
   ctx.lineWidth = Math.max(1, radius * .014)
   ctx.beginPath()
-  ctx.moveTo(0, radius * .28)
-  ctx.lineTo(0, -radius * .85)
-  ctx.bezierCurveTo(0, -radius * 1.14, radius * .2, -radius * 1.14, radius * .18, -radius * .88)
+  ctx.moveTo(0, 0)
+  const top = -radius * .85 * length
+  const hook = length > 1 ? .45 : 1
+  ctx.lineTo(0, top)
+  ctx.bezierCurveTo(0, top - radius * .29 * hook, radius * .2 * hook, top - radius * .29 * hook, radius * .18 * hook, top - radius * .03 * hook)
   ctx.stroke()
+}
+
+function invertedUmbrella(ctx: Context, x: number, y: number, radius: number, palette: RainPalette, tilt = 0, shaft = true) {
+  ctx.save()
+  ctx.translate(x, y)
+  ctx.rotate(tilt)
+  if (shaft) umbrellaShaft(ctx, radius, palette)
   ctx.fillStyle = palette.deep
   ctx.beginPath()
-  ctx.moveTo(-radius, 0)
-  ctx.bezierCurveTo(-radius * .61, radius * .57, radius * .61, radius * .57, radius, 0)
-  ctx.quadraticCurveTo(0, radius * .04, -radius, 0)
+  UMBRELLA_SIDE_POINTS.forEach(([px, py], index) => {
+    if (index === 0) ctx.moveTo(px * radius, -py * radius)
+    else ctx.lineTo(px * radius, -py * radius)
+  })
+  ctx.closePath()
   ctx.fill()
-  ctx.strokeStyle = palette.rain
-  ctx.globalAlpha *= .42
-  ctx.lineWidth = .7
-  for (let rib = -2; rib <= 2; rib++) {
-    ctx.beginPath()
-    ctx.moveTo(radius * rib / 3, radius * .01)
-    ctx.quadraticCurveTo(radius * rib / 5, radius * .28, 0, radius * .43)
-    ctx.stroke()
-  }
+  ctx.strokeStyle = palette.deep
+  ctx.lineWidth = Math.max(1.3, radius * .023)
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(0, radius * UMBRELLA_CROWN_HEIGHT)
+  ctx.lineTo(0, radius * (UMBRELLA_CROWN_HEIGHT + .09))
+  ctx.stroke()
   ctx.restore()
 }
 
@@ -117,7 +116,7 @@ function umbrellaField(ctx: Context, width: number, height: number, time: number
       ctx.save()
       ctx.translate(x, y)
       ctx.rotate(-.07 + seed(id) * .11)
-      canopy(ctx, radius, palette.rain, palette.deep)
+      canopy(ctx, radius, palette.rain, palette.sheet)
       if (flash > 0) {
         ctx.globalAlpha = flash
         canopy(ctx, radius, palette.sheet, palette.paper)
@@ -125,36 +124,57 @@ function umbrellaField(ctx: Context, width: number, height: number, time: number
       ctx.restore()
     }
   }
-  const rise = progress(time, RAIN_TIMING.lift, RAIN_TIMING.flash)
-  if (rise > 0) {
-    ctx.globalAlpha = smooth(rise)
-    invertedUmbrella(ctx, width * .5, lerp(height * 1.15, height * .87, rise), Math.min(width * .26, height * .34), palette)
-    ctx.globalAlpha = 1
-  }
 }
 
-function paperSquare(ctx: Context, x: number, y: number, size: number, rotation: number, pitch: number, color: string, edge: string) {
+function paperSquare(ctx: Context, x: number, y: number, size: number, rotation: number, pitch: number, color: string, edge: string, id: number) {
   ctx.save()
   ctx.translate(x, y)
   ctx.rotate(rotation)
   const half = size / 2
   const foreshorten = Math.cos(pitch)
   const depth = Math.sin(pitch) * .18
-  ctx.beginPath()
+  const corners: [number, number][] = []
   for (let corner = 0; corner < 4; corner++) {
     const u = corner === 0 || corner === 3 ? -1 : 1
     const v = corner < 2 ? -1 : 1
     const perspective = 1 / (1 + v * depth)
     const px = u * half * perspective
     const py = v * half * foreshorten * perspective
-    if (corner === 0) ctx.moveTo(px, py)
-    else ctx.lineTo(px, py)
+    corners.push([px, py])
   }
+  ctx.beginPath()
+  corners.forEach(([px, py], index) => {
+    if (index === 0) ctx.moveTo(px, py)
+    else ctx.lineTo(px, py)
+  })
   ctx.closePath()
   ctx.fillStyle = color
   ctx.fill()
-  ctx.lineWidth = .65
+  // A stable, slightly uneven pencil edge. Its grain travels with the paper,
+  // rather than being regenerated each frame and flickering like noise.
+  ctx.lineWidth = .6 + seed(id + 31) * .35
   ctx.strokeStyle = edge
+  ctx.globalAlpha *= .68
+  ctx.beginPath()
+  corners.forEach(([ax, ay], side) => {
+    const [bx, by] = corners[(side + 1) % 4]
+    const length = Math.hypot(bx - ax, by - ay)
+    const nx = -(by - ay) / length, ny = (bx - ax) / length
+    ctx.moveTo(ax, ay)
+    for (let step = 1; step <= 8; step++) {
+      const fraction = step / 8
+      const roughness = (seed(id * 47 + side * 11 + step) - .5)
+        * Math.min(1.3, .45 + size * .012) * Math.sin(fraction * Math.PI)
+      ctx.lineTo(lerp(ax, bx, fraction) + nx * roughness, lerp(ay, by, fraction) + ny * roughness)
+    }
+  })
+  ctx.stroke()
+  ctx.globalAlpha *= .25
+  ctx.lineWidth = .45
+  const [ax, ay] = corners[id % 4], [bx, by] = corners[(id + 1) % 4]
+  ctx.beginPath()
+  ctx.moveTo(ax + .6, ay + .5)
+  ctx.lineTo(bx + .35, by + .6)
   ctx.stroke()
   ctx.restore()
 }
@@ -195,12 +215,17 @@ function waterStrokes(ctx: Context, width: number, height: number, seconds: numb
 function paperChamber(ctx: Context, width: number, height: number, time: number, palette: RainPalette) {
   const seconds = (time - RAIN_TIMING.chamber) / 1000
   const unit = Math.min(width, height)
-  waterStrokes(ctx, width, height, seconds, palette)
   const rim = Math.max(12, unit * .056)
   ctx.strokeStyle = palette.line
   ctx.lineWidth = .7
   ctx.strokeRect(rim, rim, width - rim * 2, height - rim * 2)
 
+  const cover = progress(time, RAIN_TIMING.paper, RAIN_TIMING.covered)
+  // The far composition sinks as one plane. Its small displacement contrasts
+  // with the foreground sheet crossing more than a viewport in the same beat.
+  ctx.save()
+  ctx.translate(0, height * .09 * cover * cover)
+  waterStrokes(ctx, width, height, seconds, palette)
   ctx.fillStyle = palette.deep
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -211,22 +236,26 @@ function paperChamber(ctx: Context, width: number, height: number, time: number,
   for (let index = 0; index < cloudCount; index++) {
     const x = width * seed(index + 520) + Math.sin(seconds * .6 + index) * unit * .008
     const y = height * (-.015 + seed(index + 610) * .18)
-    const size = unit * (.03 + seed(index + 740) * .086)
+    const size = unit * (.04 + seed(index + 740) * .115)
     paperSquare(ctx, x, y, size, seed(index + 820) * 1.4 - .7 + seconds * .018,
-      Math.sin(index + seconds * .3) * .45, index % 4 ? palette.sheet : palette.rain, palette.line)
+      Math.sin(index + seconds * .3) * .45, index % 4 ? palette.sheet : palette.rain, palette.pencil, index + 520)
   }
 
   const landing = height * .64
-  const funnelCount = width < 500 ? 36 : 64
+  const funnelCount = width < 500 ? 36 : 58
   for (let index = 0; index < funnelCount; index++) {
     const fall = (seed(index + 910) + seconds * (.12 + seed(index + 930) * .06)) % 1
     const spread = .22 + .78 * Math.pow(1 - fall, 1.65)
     const x = width * .5 + (seed(index + 980) - .5) * width * .66 * spread
       + Math.sin(index * 1.4 + seconds * .8) * unit * .012
     const y = lerp(height * .12, landing, fall)
-    const size = unit * (.014 + seed(index + 1030) * .067) * lerp(1, .65, fall)
+    const variation = seed(index + 1030)
+    const scale = index % 5 === 0 ? .095 + variation * .07
+      : index % 5 === 1 ? .009 + variation * .015
+      : .032 + variation * .043
+    const size = unit * scale * lerp(1, .82, fall)
     paperSquare(ctx, x, y, size, index * 2.4 + seconds * (seed(index + 1160) - .5),
-      Math.sin(index + seconds) * .85, index % 6 ? palette.sheet : palette.rain, palette.line)
+      Math.sin(index + seconds) * .65, index % 6 ? palette.sheet : palette.rain, palette.pencil, index + 910)
   }
 
   const radius = Math.min(width * .16, height * .165)
@@ -242,6 +271,7 @@ function paperChamber(ctx: Context, width: number, height: number, time: number,
     ctx.fill()
   }
   ctx.globalAlpha = 1
+  ctx.restore()
 }
 
 function curtain(ctx: Context, width: number, height: number, cover: number, reveal: number, palette: RainPalette) {
@@ -273,6 +303,7 @@ function curtain(ctx: Context, width: number, height: number, cover: number, rev
 
 export function drawRainConnection(
   ctx: Context,
+  foreground: Context,
   width: number,
   height: number,
   time: number,
@@ -280,6 +311,10 @@ export function drawRainConnection(
   palette: RainPalette,
 ) {
   ctx.clearRect(0, 0, width, height)
+  foreground.clearRect(0, 0, width, height)
+  const unit = Math.min(width, height)
+  const cover = progress(time, RAIN_TIMING.paper, RAIN_TIMING.covered)
+  const rise = progress(time, RAIN_TIMING.lift, RAIN_TIMING.flash)
   const dropping = reveal > 0
   if (!dropping) {
     ctx.fillStyle = palette.paper
@@ -293,6 +328,23 @@ export function drawRainConnection(
       ctx.translate(rim, rim)
       umbrellaField(ctx, width - rim * 2, height - rim * 2, time, palette)
       ctx.restore()
+      if (rise > 0) {
+        const radius = Math.min(width * .36, (height - rim * 2) * .45)
+        const ascent = 1 - Math.pow(1 - rise, 3)
+        const y = lerp(height * 1.1, rim + (height - rim * 2) * .75, ascent)
+        const opacity = smooth(Math.min(1, rise * 2.5))
+        // Keep the shaft in the middle distance; the out-of-focus canopy
+        // rises in the foreground on a separate compositor layer.
+        ctx.save()
+        ctx.globalAlpha = opacity * .8
+        ctx.translate(width * .5, y)
+        umbrellaShaft(ctx, radius, palette, 1.65)
+        ctx.restore()
+        foreground.save()
+        foreground.globalAlpha = opacity
+        invertedUmbrella(foreground, width * .5, y, radius, palette, 0, false)
+        foreground.restore()
+      }
     }
     else if (time >= RAIN_TIMING.chamber) paperChamber(ctx, width, height, time, palette)
     else {
@@ -301,6 +353,11 @@ export function drawRainConnection(
     }
   }
   if (time >= RAIN_TIMING.paper || dropping) {
-    curtain(ctx, width, height, progress(time, RAIN_TIMING.paper, RAIN_TIMING.covered), reveal, palette)
+    curtain(foreground, width, height, cover, reveal, palette)
+  }
+  const enteringUmbrella = time < RAIN_TIMING.flash && rise > 0
+  return {
+    sceneBlur: enteringUmbrella ? unit * .001 : unit * .0045 * cover * cover,
+    foregroundBlur: enteringUmbrella ? unit * .025 : unit * (.002 + .006 * cover * cover),
   }
 }

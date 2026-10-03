@@ -5,6 +5,7 @@ import Portal from '@/components/Portal'
 import { drawRainConnection, type RainPalette } from './rain-connection-drawing'
 import { RAIN_TIMING, smooth } from './rain-connection-timeline'
 import type { RainConnection } from './rain-connection-store'
+import { UMBRELLA_SIDE_PATH } from './rain-umbrella-geometry'
 import styles from './rain-connection.module.scss'
 
 interface Props extends RainConnection {
@@ -18,6 +19,7 @@ export default function RainConnectionSequence(props: Props) {
   const { status, error, destination, pageReady, navigationSlow, onDismiss } = props
   const sectionRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const foregroundRef = useRef<HTMLCanvasElement>(null)
   const latest = useRef(props)
   const skip = useRef(false)
   const [phase, setPhase] = useState('umbrellas')
@@ -27,15 +29,17 @@ export default function RainConnectionSequence(props: Props) {
   useEffect(() => {
     const section = sectionRef.current
     const canvas = canvasRef.current
-    if (!section || !canvas) return
+    const foreground = foregroundRef.current
+    if (!section || !canvas || !foreground) return
     const previousFocus = document.activeElement
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     section.focus({ preventScroll: true })
     // The falling sheet must expose real DOM through transparent canvas pixels.
     const context = canvas.getContext('2d')
+    const foregroundContext = foreground.getContext('2d')
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
-    let simplified = reducedMotion.matches || !context
+    let simplified = reducedMotion.matches || !context || !foregroundContext
     let disposed = false
     let animationFrame = 0
     let previousTime = 0
@@ -45,6 +49,7 @@ export default function RainConnectionSequence(props: Props) {
     let announcedPhase = 'umbrellas'
     let width = 0
     let height = 0
+    let revealProgress = 0
     const rootStyle = getComputedStyle(document.documentElement)
     const token = (name: string, fallback: string) => rootStyle.getPropertyValue(name).trim() || fallback
     const palette: RainPalette = {
@@ -53,16 +58,26 @@ export default function RainConnectionSequence(props: Props) {
       rain: token('--ark-rain', '#7bd3e2'),
       deep: token('--ark-rain-deep', '#5fa4bd'),
       line: token('--ark-line', '#a4bfc5'),
+      pencil: token('--ark-muted', '#536e73'),
       font: `${token('--font-noto-serif-loaded', '"Noto Serif SC"')}, serif`,
     }
 
+    const paint = () => {
+      if (!context || !foregroundContext || simplified || skip.current) return
+      const focus = drawRainConnection(context, foregroundContext, width, height, elapsed, revealProgress, palette)
+      section.style.setProperty('--scene-blur', `${focus.sceneBlur.toFixed(2)}px`)
+      section.style.setProperty('--foreground-blur', `${focus.foregroundBlur.toFixed(2)}px`)
+    }
     const resize = () => {
       const ratio = Math.min(devicePixelRatio || 1, 1.5)
       width = section.clientWidth
       height = section.clientHeight
-      canvas.width = Math.round(width * ratio)
-      canvas.height = Math.round(height * ratio)
+      canvas.width = foreground.width = Math.round(width * ratio)
+      canvas.height = foreground.height = Math.round(height * ratio)
       context?.setTransform(ratio, 0, 0, ratio, 0, 0)
+      foregroundContext?.setTransform(ratio, 0, 0, ratio, 0, 0)
+      // Resizing clears canvas pixels. Repaint before the same frame is shown.
+      paint()
     }
     const observer = new ResizeObserver(resize)
     observer.observe(section)
@@ -79,6 +94,7 @@ export default function RainConnectionSequence(props: Props) {
     const contextLost = () => { simplified = true }
     reducedMotion.addEventListener('change', motionChanged)
     canvas.addEventListener('contextlost', contextLost)
+    foreground.addEventListener('contextlost', contextLost)
 
     const render = (now: number) => {
       if (disposed) return
@@ -101,6 +117,7 @@ export default function RainConnectionSequence(props: Props) {
       if (exitTime >= 0 && !failed) exitTime += delta
       const exitDuration = quick ? RAIN_TIMING.quickReveal : RAIN_TIMING.reveal
       const reveal = exitTime < 0 ? 0 : Math.min(1, exitTime / exitDuration)
+      revealProgress = reveal
 
       if (failed) announce('error')
       else if (exitTime >= 0) announce('revealing')
@@ -110,8 +127,9 @@ export default function RainConnectionSequence(props: Props) {
       else if (elapsed >= RAIN_TIMING.flash) announce('flash')
       else announce('umbrellas')
 
-      if (context && !quick) drawRainConnection(context, width, height, elapsed, reveal, palette)
+      paint()
       section.dataset.renderer = quick ? 'static' : 'canvas'
+      section.dataset.revealStarted = reveal > 0 ? 'true' : 'false'
       // A short fade is reserved for reduced motion, skip and Canvas fallback.
       // Normal playback remains fully opaque and reveals by moving the paper.
       section.style.setProperty('--stage-opacity', `${quick ? 1 - smooth(reveal) : 1}`)
@@ -131,6 +149,7 @@ export default function RainConnectionSequence(props: Props) {
       observer.disconnect()
       reducedMotion.removeEventListener('change', motionChanged)
       canvas.removeEventListener('contextlost', contextLost)
+      foreground.removeEventListener('contextlost', contextLost)
       document.body.style.overflow = previousOverflow
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true })
     }
@@ -162,13 +181,15 @@ export default function RainConnectionSequence(props: Props) {
       role="dialog" aria-modal="true" aria-label="雨声 · 接入" aria-busy={status === 'pending'}
       tabIndex={-1} onKeyDown={onKeyDown}>
       <div className={styles.stage} aria-hidden="true">
+        <div className={styles['stage-backdrop']} />
         <div className={styles['static-paper']}>
           <svg viewBox="0 0 220 150">
-            <path d="M31 92H189C181 116 151 130 110 130S39 116 31 92Z" />
+            <path d={UMBRELLA_SIDE_PATH} transform="translate(110 92) scale(79 -79)" />
             <path className={styles['umbrella-handle']} d="M110 92V50c0-12 15-15 20-5 3 7-2 13-8 13" />
           </svg>
         </div>
-        <canvas ref={canvasRef} className={styles.canvas} />
+        <canvas ref={canvasRef} className={styles.canvas} data-layer="scene" />
+        <canvas ref={foregroundRef} className={`${styles.canvas} ${styles.foreground}`} data-layer="foreground" />
       </div>
       <div className={styles.caption} role="status">
         {failed ? '这场雨，稍作停留。' : status === 'pending' ? '正在确认身份…' : pageReady ? '连接已建立。' : '正在打开页面…'}
