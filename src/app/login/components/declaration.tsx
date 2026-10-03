@@ -38,6 +38,7 @@ export default function Declaration(props: { onClose: () => void }) {
           <pre>{'【设计参考】\n'
             + '1、【鹰角网络】-《明日方舟》\n'
             + '2、2086丷《有空再做了【明日方舟】》(https://www.bilibili.com/video/BV1Qj411x745/)\n'
+            + '3、明石缪《他人事の音がする / 声不关己》翻唱视频（影片：kkmfd；插画：ミツ蜂）(https://www.bilibili.com/video/BV1qtMc6HEis/)。本站“雨声”主题仅参考其构图、色彩、排版与动效规律，未使用视频画面、插画或音频素材。\n'
           }
           </pre>
         </div>

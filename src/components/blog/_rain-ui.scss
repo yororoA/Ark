@@ -26,7 +26,7 @@
       pointer-events: none;
     }
     .site-header, .main-content, .site-footer { position: relative; z-index: 3; }
-    .site-header { padding-inline: 5%; background: var(--ark-rain-panel); }
+    .site-header { position: sticky; z-index: 40; padding-inline: 5%; background: var(--ark-rain-panel); }
     .desktop-nav { gap: 0; }
     .desktop-nav a { position: relative; padding: 0 clamp(10px, 1.25vw, 20px); border-inline-start: 1px solid var(--line); font-family: var(--song); font-size: 13px; letter-spacing: 1px; }
     .desktop-nav a:last-child { border-inline-end: 1px solid var(--line); }
@@ -189,7 +189,7 @@
     .dialog { border-top-width: 1px; border-radius: 0; background: var(--ark-rain-panel); }
     .dialog-header { border-block: 1px solid var(--line); padding: 12px 0; }
     .dialog-header h2 { border-left: 4px solid var(--ark-rain); padding-left: 16px; }
-    .site-footer { margin-inline: 5%; padding-top: 36px; border-color: var(--line); }
+    .site-footer { padding-top: 36px; border-color: var(--line); background: var(--paper); }
     .site-footer > .icon-button { border: 1px solid var(--line); }
     .mobile-nav { padding-inline: 6%; border-radius: 0; border-color: var(--line); background: var(--ark-rain-panel); }
     .mobile-nav a { padding-inline: 12px; border-left: 1px solid var(--line); }
