@@ -15,13 +15,37 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ArchiveLogo from '@/components/brand/archive-logo';
 import ThemePicker from '@/components/appearance/theme-picker';
 import RainPlanes from '@/components/appearance/rain-planes';
+import { useAppearance } from '@/components/appearance/appearance-store';
+import { useRainConnection } from '@/components/appearance/rain-connection-store';
+import type { Design } from '@/lib/appearance';
 import type { ConnectParams } from './types';
+
+function loginDestination(returnTo: string | null) {
+  if (!returnTo?.startsWith('/') || returnTo.startsWith('//') || returnTo.includes('\\')) return '/home';
+  try {
+    const url = new URL(returnTo, 'https://ark.local');
+    const path = decodeURIComponent(url.pathname).replace(/\/+$/, '');
+    // Do not uncover another copy of the login page after successful access.
+    if (url.origin !== 'https://ark.local' || !path || path === '/login') return '/home';
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return '/home';
+  }
+}
 
 function Login() {
   const searchParams = useSearchParams();
   const mode = searchParams.get('mode') === 'register' ? 'register' : 'login';
   const returnTo = searchParams.get('returnTo');
-  const destination = returnTo?.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('\\') ? returnTo : '/home';
+  const destination = loginDestination(returnTo);
+  const { design } = useAppearance();
+  useEffect(() => {
+    if (design !== 'rain') return;
+    void import('@/components/appearance/rain-connection-sequence').catch(() => {});
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      void import('@/components/appearance/rain-umbrella-scene').catch(() => {});
+    }
+  }, [design]);
   const location = useGetLocation(); // 用户ip定位
   const ensureInitialized = useAuthStore((state) => state.ensureInitialized);
   const initialized = useAuthStore((state) => state.initialized);
@@ -44,10 +68,11 @@ function Login() {
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
   const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
   const [connection, setConnection] = useState<ConnectionState | null>(null);
+  const [connectionDesign, setConnectionDesign] = useState<Design>('archive');
   const connectingRef = useRef(false);
   const requestIdRef = useRef(0);
   const isConnecting = connection !== null;
-  // 首次登录强制打开账号管理，连接期间让位于终端动效。
+  // 首次登录强制打开账号管理，连接期间让位于所选主题的动效。
   const showAccountManagement = initialized && (details.length === 0 || isAccountManagementVisible) && !isConnecting;
 
   const { switchUser, register, login, guestLogin } = useAuth();
@@ -62,8 +87,17 @@ function Login() {
       ? details.find((detail) => detail.uid === uid)?.username || 'Guest'
       : params.action === 'guest' ? 'Guest' : params.username;
 
-    setConnection({ status: 'pending', username });
+    const initial: ConnectionState = { status: 'pending', username };
+    setConnectionDesign(design);
+    setConnection(initial);
     setIsDeclarationVisible(false);
+    const rainId = design === 'rain'
+      ? useRainConnection.getState().begin({ ...initial, destination, onDismiss: handleDismissConnection })
+      : null;
+    const updateConnection = (state: ConnectionState) => {
+      setConnection(state);
+      if (rainId !== null) useRainConnection.getState().update(rainId, state);
+    };
 
     try {
       if (params.action === 'switch') await switchUser(uid);
@@ -72,7 +106,7 @@ function Login() {
       else if (params.action === 'login') await login(params.username, params.password);
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
-      setConnection({
+      updateConnection({
         status: 'error',
         username,
         error: err instanceof Error ? err.message : '连接失败，请稍后重试',
@@ -84,7 +118,7 @@ function Login() {
       const authenticated = useAuthStore.getState().details.find(detail =>
         params.action === 'switch' || params.action === 'guest' ? detail.uid === uid : detail.username === username
       );
-      setConnection({
+      updateConnection({
         status: 'success',
         username: authenticated?.username || username,
         role: authenticated?.isAdmin ? 'ADMINISTRATOR' : authenticated?.isGuest ? 'GUEST' : 'USER',
@@ -97,6 +131,7 @@ function Login() {
   }, [router, destination]);
 
   const handleDismissConnection = useCallback(() => {
+    requestIdRef.current += 1;
     connectingRef.current = false;
     setConnection(null);
     setIsAccountManagementVisible(true);
@@ -111,7 +146,7 @@ function Login() {
 
   return (
     <>
-      {connection && (
+      {connection && connectionDesign === 'archive' && (
         <ConnectionSequence
           {...connection}
           location={location ? `${location.continentCode}/${location.countryCode}` : '-- / --'}
