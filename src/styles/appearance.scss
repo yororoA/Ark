@@ -1,0 +1,87 @@
+@mixin archive-night {
+  --ark-paper: #1d201e;
+  --ark-ink: #e9e6dd;
+  --ark-muted: #a7aca3;
+  --ark-line: #484d45;
+  --ark-accent: #ef7866;
+  --ark-soft: #2a2e29;
+}
+
+@mixin rain-day {
+  --ark-paper: #eceeee;
+  --ark-ink: #20363d;
+  --ark-muted: #536e73;
+  --ark-line: #bfd2d6;
+  --ark-accent: #2d7186;
+  --ark-soft: #dce8e9;
+  --ark-rain: #7bd3e2;
+  --ark-rain-deep: #5fa4bd;
+  --ark-rain-sheet: #f7f9f9;
+  --ark-rain-panel: #f4f7f6;
+  --ark-rain-shadow: #91a9b0;
+  --ark-sequence-background: #102127;
+  --ark-sequence-ink: #142d35;
+  --ark-sequence-paper: #edf4f4;
+  --ark-sequence-signal: #7bd3e2;
+  --ark-sequence-network-primary: #b7eef3;
+  --ark-sequence-network-secondary: #79b5c2;
+  --ark-sequence-network-point: #e3fbfc;
+}
+
+@mixin rain-night {
+  --ark-paper: #0c1116;
+  --ark-ink: #edf2f2;
+  --ark-muted: #a7b9bc;
+  --ark-line: #40525a;
+  --ark-accent: #9bd1e0;
+  --ark-soft: #1c2a31;
+  --ark-rain: #456f7c;
+  --ark-rain-deep: #89c3d4;
+  --ark-rain-sheet: #dfe9eb;
+  --ark-rain-panel: #141c22;
+  --ark-rain-shadow: #050709;
+  --ark-sequence-background: #080d12;
+  --ark-sequence-ink: #13272e;
+  --ark-sequence-paper: #edf2f2;
+  --ark-sequence-signal: #89c3d4;
+  --ark-sequence-network-primary: #bdebf2;
+  --ark-sequence-network-secondary: #648f9a;
+  --ark-sequence-network-point: #e7fbfc;
+}
+
+@mixin night {
+  --ark-color-scheme: dark;
+  --ark-white-logo-filter: none;
+  --ark-dark-logo-filter: invert(1) grayscale(1);
+  @include archive-night;
+  &[data-design="rain"] { @include rain-night; }
+}
+
+:root {
+  --ark-paper: #f3f1ed;
+  --ark-ink: #222321;
+  --ark-muted: #6b6e64;
+  --ark-line: #cecec5;
+  --ark-accent: #bb3429;
+  --ark-soft: #e8e6de;
+  --ark-color-scheme: light;
+  --ark-white-logo-filter: invert(1) grayscale(1) contrast(1.4);
+  --ark-dark-logo-filter: grayscale(1) contrast(1.45);
+  --ark-sequence-background: #1d201e;
+  --ark-sequence-ink: #222321;
+  --ark-sequence-paper: #f3f1ed;
+  --ark-sequence-signal: #c43b30;
+  --ark-sequence-network-primary: #e8e76a;
+  --ark-sequence-network-secondary: #d6d18a;
+  --ark-sequence-network-point: #fffba1;
+  color-scheme: var(--ark-color-scheme);
+  background: var(--ark-paper);
+
+  &[data-design="rain"] { @include rain-day; }
+  &[data-theme="dark"] { @include night; }
+  @media (prefers-color-scheme: dark) {
+    &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }
+  }
+}
+
+body { background: var(--ark-paper); }

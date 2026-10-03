@@ -44,3 +44,7 @@
   .logo-image { width: 92px; height: 42px; }
   .logo-caption { max-width: 56px; font-size: 6px; letter-spacing: 1px; }
 }
+
+@media (max-width: 360px) {
+  .logo-caption { display: none; }
+}

@@ -1,9 +1,12 @@
 // import { Metadata } from 'next';
 import "@/styles/globals.scss";
 import "@/app/global.css";
+import "@/styles/appearance.scss";
 import { cn } from "@/lib/utils";
 import BgImage from "@/components/arks/bg-image";
 import RouteScrollManager from "@/components/route-scroll-manager";
+import { AppearanceObserver } from "@/components/appearance/appearance-store";
+import { APPEARANCE_BOOTSTRAP } from "@/lib/appearance";
 
 // ------------------------------------ 字体配置 ------------------------------------
 import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
@@ -61,10 +64,16 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
+      data-design="archive"
+      data-theme="system"
       className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable, "font-sans")}
       suppressHydrationWarning
     >
+      <head>
+        <script id="ark-appearance" dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOTSTRAP }} />
+      </head>
       <body className="min-h-screen flex flex-col relative">
+        <AppearanceObserver />
         <RouteScrollManager />
         <div id="portal-root" />
         <BgImage />

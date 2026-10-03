@@ -13,6 +13,8 @@ import ConnectionSequence, { type ConnectionState } from "./components/connectio
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ArchiveLogo from '@/components/brand/archive-logo';
+import ThemePicker from '@/components/appearance/theme-picker';
+import RainPlanes from '@/components/appearance/rain-planes';
 import type { ConnectParams } from './types';
 
 function Login() {
@@ -121,11 +123,15 @@ function Login() {
       <div className={styles['login-scene']} inert={isConnecting || showAccountManagement || isDeclarationVisible}>
         <header className={styles['login-header']}>
           <Link href="/home" aria-label="YororoIce Ark"><ArchiveLogo priority /></Link>
-          <nav aria-label="登录页导航"><Link href="/home">浏览首页</Link><Link href="/terms">社区约定</Link></nav>
+          <nav aria-label="登录页导航"><Link href="/home">浏览首页</Link><Link href="/terms">社区约定</Link><ThemePicker /></nav>
         </header>
         <main className={styles['login-main']}>
+          <RainPlanes variant="identity" />
           <section className={styles['login-copy']}>
             <div className={styles['login-signature']} aria-hidden="true"><Image src="/bines_sign.png" alt="" fill sizes="300px" priority /></div>
+            <div className={styles['login-rain']} aria-hidden="true">
+              <span>雨声</span><small>YOROROICE / ARK</small>
+            </div>
             <div className={styles['login-eyebrow']}>IDENTITY ACCESS / 01</div>
             <h1>身份验证</h1>
             <p>登录已有账号、注册新身份，或以游客身份继续访问。</p>

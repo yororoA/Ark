@@ -20,7 +20,6 @@ export function useBlogData<T>(path: string | null, options?: { refreshInterval?
 }
 type BlogContextValue = {
   locale: Locale; setLocale: (value: Locale) => void; t: (key: TextKey) => string
-  theme: string; setTheme: (value: string) => void
   session: Session | null; sessionLoading: boolean; refreshSession: () => void
   connection: string; notify: (message: string) => void; toast: string
 }
@@ -49,7 +48,6 @@ export function useBlog() {
 
 function Preferences({ children }: { children: React.ReactNode }) {
   const locale = useSyncExternalStore(subscribePreferences, readLocale, () => 'zh' as Locale)
-  const theme = useSyncExternalStore(subscribePreferences, () => preference('ark.theme', 'system'), () => 'system')
   const [toast, setToast] = useState('')
   const [connection, setConnection] = useState('idle')
   const { mutate } = useSWRConfig()
@@ -89,7 +87,6 @@ function Preferences({ children }: { children: React.ReactNode }) {
   return (
     <BlogContext.Provider value={{
       locale, setLocale(value) { savePreference('ark.locale', value) }, t: key => translate(locale, key),
-      theme, setTheme(value) { savePreference('ark.theme', value) },
       session, sessionLoading: isLoading, refreshSession: () => { void refreshSession() }, connection, notify, toast,
     }}>
       {children}

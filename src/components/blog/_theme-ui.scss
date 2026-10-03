@@ -1,0 +1,79 @@
+@use './rain-ui';
+
+// The first rain iteration remains in 3d601fb; the second pass is isolated in
+// rain-ui so theme rules have one owner, without remounting shared content.
+@mixin personalities {
+  .rain-only { display: none; }
+  .nav-index { color: var(--muted); font-size: 8px; letter-spacing: 1px; }
+  .desktop-nav {
+    gap: clamp(16px, 2vw, 30px);
+    a { display: flex; flex-direction: column; justify-content: center; gap: 4px; height: 100%; transition: color .25s ease-in-out; }
+    a::after { bottom: 0; }
+    a[aria-current] .nav-index { color: var(--accent); }
+  }
+  .page-heading { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 32px; }
+  .heading-index { align-self: end; color: var(--accent); font: 400 clamp(80px, 8.8vw, 126px)/.9 var(--serif); letter-spacing: -.08em; padding-right: 12px; }
+  .heading-title { min-width: 0; }
+  .heading-title h1 { overflow-wrap: anywhere; }
+  .heading-actions { min-width: 0; }
+  .conversation-list button { display: flex; align-items: center; gap: 12px; min-height: 54px; }
+  .conversation-list .conversation-symbol { display: grid; place-items: center; flex: none; width: 28px; height: 28px; }
+  .chat-page .page-heading { grid-template-columns: minmax(0, 1fr) auto; }
+  .chat-page .heading-index { display: none; }
+  .chat-page .heading-title h1 { line-height: 1.2; }
+
+  :global(html[data-design="archive"]) {
+    .site-header { border-bottom-width: 2px; }
+    .header-tools { padding-left: 22px; border-left: 1px solid var(--line); }
+    .article-card { position: relative; transition: background .3s ease-in-out; }
+    .article-card::before { content: ''; position: absolute; inset: 35px auto 35px -18px; width: 2px; background: var(--accent); transform: scaleY(0); transform-origin: top; transition: transform .35s ease-in-out; }
+    .article-card:hover::before, .article-card:focus-visible::before { transform: scaleY(1); }
+    .article-date strong { letter-spacing: -.06em; }
+    .article-arrow svg { transition: transform .3s ease-in-out; }
+    .article-card:hover .article-arrow svg { transform: translate(3px, -3px); }
+    .article-card .entry-meta > span:first-child { color: var(--accent); border-block: 1px solid var(--line); padding-block: 3px; }
+    .moments-grid { counter-reset: fragment; }
+    .moment-card { position: relative; counter-increment: fragment; border-top-width: 2px; }
+    .moment-card::after { content: counter(fragment, decimal-leading-zero); position: absolute; top: 17px; right: 0; color: var(--accent); font: italic 26px/1 var(--serif); }
+    .moment-card > .entry-meta { padding-right: 48px; }
+    .reader-header { position: relative; border-bottom-color: var(--ink); }
+    .reader-header::after { content: ''; position: absolute; bottom: -3px; left: 0; width: 48px; height: 5px; background: var(--accent); }
+    .reader-header h1 { font-size: clamp(34px, 4.3vw, 60px); }
+    .reader-header .entry-meta { padding-left: 14px; border-left: 2px solid var(--accent); }
+    .chat-layout { border-top: 2px solid var(--ink); }
+    .conversation-list { padding: 0; background: color-mix(in srgb, var(--soft) 45%, var(--paper)); }
+    .conversation-list button { position: relative; padding: 18px; border-bottom: 1px solid var(--line); }
+    .conversation-list button[aria-pressed="true"]::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--accent); }
+    .chat-status { letter-spacing: .8px; }
+    .message-body p { border-left: 2px solid var(--line); }
+    .message[data-own="true"] .message-body p { border: 1px solid var(--line); border-right: 2px solid var(--accent); }
+    .chat-compose textarea { background: color-mix(in srgb, var(--soft) 28%, var(--paper)); }
+  }
+  @media (max-width: 1150px) {
+    .desktop-nav { gap: 15px; }
+    .page-heading { gap: 24px; }
+  }
+  @media (max-width: 820px) {
+    .page-heading { grid-template-columns: auto minmax(0, 1fr); }
+    .heading-actions { grid-column: 2; }
+    .heading-index { font-size: 82px; align-self: center; }
+    :global(html[data-design="archive"]) .header-tools { padding-left: 0; border: 0; }
+  }
+  @media (max-width: 540px) {
+    .page-heading { gap: 16px; }
+    .heading-index { font-size: 56px; padding-right: 0; }
+    .heading-title .eyebrow { font-size: 8px; gap: 7px; letter-spacing: 1px; }
+    .heading-title .eyebrow::before { width: 12px; }
+    .heading-title h1 { margin-top: 12px; font-size: 42px; letter-spacing: -1px; }
+    .page-heading .english-title { font-size: 25px; }
+    .heading-actions { grid-column: 1 / -1; }
+    .conversation-list .conversation-symbol { width: 22px; height: 22px; }
+    :global(html[data-design="archive"]) {
+      .article-card::before { left: -10px; top: 24px; bottom: 24px; }
+      .conversation-list { gap: 0; }
+      .conversation-list button { min-height: 50px; padding: 10px 12px; }
+      .reader-header h1 { font-size: 32px; }
+    }
+  }
+  @include rain-ui.personality;
+}
