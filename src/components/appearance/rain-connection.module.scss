@@ -9,14 +9,10 @@
   color: var(--ark-ink);
   background: var(--ark-paper);
   font: 15px var(--font-noto-serif-loaded), serif;
-  letter-spacing: .2em;
 }
 
 .sequence {
-  --umbrella-cloth: #7bd3e2;
-  --umbrella-rib: #d8e9eb;
-  --scene-opacity: 1;
-  --veil-opacity: 1;
+  --stage-opacity: 1;
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -29,7 +25,6 @@
     color: inherit;
     font: inherit;
     font-size: 12px;
-    letter-spacing: .12em;
     cursor: pointer;
     background: var(--ark-paper);
     border: 1px solid var(--ark-line);
@@ -39,19 +34,29 @@
     &:hover { background: var(--ark-rain-panel, var(--ark-paper)); }
     &:focus-visible { outline: 2px solid var(--ark-accent); outline-offset: 4px; }
   }
-
-  &[data-fallback="true"] .canvas { visibility: hidden; }
-  &[data-phase="closing"] {
-    .signature, .caption, .scene-lines { visibility: hidden; }
-  }
-  &[data-phase="error"] .canvas { opacity: .32; }
+  &[data-phase="revealing"] .caption { visibility: hidden; }
+  &[data-renderer="canvas"] .static-paper { display: none; }
+  &[data-renderer="canvas"] .canvas { visibility: visible; }
 }
 
-.veil {
+.stage {
   position: absolute;
   inset: 0;
+  opacity: var(--stage-opacity);
+}
+
+.static-paper {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
   background: var(--ark-paper);
-  opacity: var(--veil-opacity);
+  svg { width: 200px; fill: var(--ark-rain-deep); }
+  .umbrella-handle {
+    fill: none;
+    stroke: var(--ark-rain-deep);
+    stroke-width: 2;
+  }
 }
 
 .canvas {
@@ -59,54 +64,23 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: var(--scene-opacity);
+  visibility: hidden;
 }
 
-.scene-lines {
-  position: absolute;
-  inset: 39px 3.5vw;
-  border: 1px solid var(--ark-line);
-  opacity: var(--veil-opacity);
-  overflow: hidden;
-  i {
-    position: absolute;
-    width: 86vmin;
-    height: 86vmin;
-    border: 1px solid var(--ark-line);
-    border-radius: 50%;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    &:nth-child(2) { width: 94vmin; height: 94vmin; border-style: dashed; opacity: .6; }
-    &:nth-child(3) { width: 96vmin; height: 96vmin; opacity: .35; }
-  }
-}
-
-.signature {
-  position: absolute;
-  top: 65px;
-  left: calc(3.5vw + 24px);
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  opacity: var(--scene-opacity);
-  span { writing-mode: vertical-rl; font-size: 28px; letter-spacing: .22em; }
-  small { writing-mode: vertical-rl; font: 8px var(--font-ibm-plex-loaded), sans-serif; letter-spacing: .28em; }
-}
-
+// Announce connection state without laying UI text over the composition.
 .caption {
   position: absolute;
-  bottom: 64px;
-  left: calc(3.5vw + 24px);
-  font-size: 13px;
-  letter-spacing: .18em;
-  opacity: var(--scene-opacity);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .skip {
   position: absolute;
-  bottom: 57px;
-  right: calc(3.5vw + 18px);
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  min-height: 44px;
 }
 
 .failure {
@@ -124,38 +98,9 @@
   a { display: inline-block; }
 }
 
-.still-umbrella {
-  position: absolute;
-  width: min(60vw, 60vh);
-  height: min(60vw, 60vh);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  opacity: var(--scene-opacity);
-  path { fill: var(--umbrella-cloth); stroke: var(--umbrella-rib); stroke-width: .5; }
-  path:nth-child(even) { fill: #73b0c4; }
-  circle { fill: var(--umbrella-rib); }
-}
-
-:global(html[data-theme="dark"]) .sequence {
-  --umbrella-cloth: #5b9caf;
-  --umbrella-rib: #b8dce4;
-}
-
-@media (prefers-color-scheme: dark) {
-  :global(html[data-theme="system"]) .sequence {
-    --umbrella-cloth: #5b9caf;
-    --umbrella-rib: #b8dce4;
-  }
-}
-
-@media (max-width: 540px) {
-  .scene-lines { inset: 10px; }
-  .signature { top: 30px; left: 28px; }
-  .caption { bottom: 96px; left: 28px; font-size: 12px; }
-  .skip { bottom: max(28px, env(safe-area-inset-bottom)); right: 28px; }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .sequence button, .sequence a { transition: none; }
+  .sequence *, .sequence *::before, .sequence *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

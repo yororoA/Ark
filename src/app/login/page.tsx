@@ -42,9 +42,6 @@ function Login() {
   useEffect(() => {
     if (design !== 'rain') return;
     void import('@/components/appearance/rain-connection-sequence').catch(() => {});
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      void import('@/components/appearance/rain-umbrella-scene').catch(() => {});
-    }
   }, [design]);
   const location = useGetLocation(); // 用户ip定位
   const ensureInitialized = useAuthStore((state) => state.ensureInitialized);

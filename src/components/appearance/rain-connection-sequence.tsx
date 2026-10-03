@@ -2,9 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import Portal from '@/components/Portal'
+import { drawRainConnection, type RainPalette } from './rain-connection-drawing'
 import { RAIN_TIMING, smooth } from './rain-connection-timeline'
 import type { RainConnection } from './rain-connection-store'
-import type { createUmbrellaScene } from './rain-umbrella-scene'
 import styles from './rain-connection.module.scss'
 
 interface Props extends RainConnection {
@@ -14,22 +14,13 @@ interface Props extends RainConnection {
   onComplete: () => void
 }
 
-function StillUmbrella() {
-  return <svg className={styles['still-umbrella']} viewBox="-110 -110 220 220" aria-hidden="true">
-    {Array.from({ length: 8 }, (_, i) => <path key={i} transform={`rotate(${i * 45})`}
-      d="M0 0L0-100Q34-91 70.71-70.71Z" />)}
-    <circle r="3" />
-  </svg>
-}
-
 export default function RainConnectionSequence(props: Props) {
   const { status, error, destination, pageReady, navigationSlow, onDismiss } = props
   const sectionRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const latest = useRef(props)
   const skip = useRef(false)
-  const [phase, setPhase] = useState('opening')
-  const [fallback, setFallback] = useState(false)
+  const [phase, setPhase] = useState('umbrellas')
 
   useLayoutEffect(() => { latest.current = props }, [props])
 
@@ -41,108 +32,112 @@ export default function RainConnectionSequence(props: Props) {
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     section.focus({ preventScroll: true })
+    // The falling sheet must expose real DOM through transparent canvas pixels.
+    const context = canvas.getContext('2d')
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)')
-    let simplified = reducedMotion.matches
+    let simplified = reducedMotion.matches || !context
     let disposed = false
-    let scene: ReturnType<typeof createUmbrellaScene> | undefined
-    let frame = 0
+    let animationFrame = 0
     let previousTime = 0
     let elapsed = 0
-    let closingTime = -1
-    let covered = false
-    let announcedPhase = 'opening'
-    let rendererReady = false
-    const travelDuration = RAIN_TIMING.orbit + RAIN_TIMING.cover
+    let exitTime = -1
+    let navigationStarted = false
+    let announcedPhase = 'umbrellas'
+    let width = 0
+    let height = 0
+    const rootStyle = getComputedStyle(document.documentElement)
+    const token = (name: string, fallback: string) => rootStyle.getPropertyValue(name).trim() || fallback
+    const palette: RainPalette = {
+      paper: token('--ark-paper', '#eceeee'),
+      sheet: token('--ark-rain-sheet', '#f7f9f9'),
+      rain: token('--ark-rain', '#7bd3e2'),
+      deep: token('--ark-rain-deep', '#5fa4bd'),
+      line: token('--ark-line', '#a4bfc5'),
+      font: `${token('--font-noto-serif-loaded', '"Noto Serif SC"')}, serif`,
+    }
 
-    function announce(next: string) {
+    const resize = () => {
+      const ratio = Math.min(devicePixelRatio || 1, 1.5)
+      width = section.clientWidth
+      height = section.clientHeight
+      canvas.width = Math.round(width * ratio)
+      canvas.height = Math.round(height * ratio)
+      context?.setTransform(ratio, 0, 0, ratio, 0, 0)
+    }
+    const observer = new ResizeObserver(resize)
+    observer.observe(section)
+    resize()
+
+    const announce = (next: string) => {
       if (next === announcedPhase) return
       announcedPhase = next
       setPhase(next)
     }
-    function simplify() {
-      simplified = true
-      setFallback(true)
-      scene?.dispose()
-      scene = undefined
-      rendererReady = true
+    const motionChanged = () => {
+      if (reducedMotion.matches) simplified = true
     }
-    const motionChanged = () => { if (reducedMotion.matches) simplify() }
-    const contextLost = (event: Event) => { event.preventDefault(); simplify() }
+    const contextLost = () => { simplified = true }
     reducedMotion.addEventListener('change', motionChanged)
-    canvas.addEventListener('webglcontextlost', contextLost)
+    canvas.addEventListener('contextlost', contextLost)
 
     const render = (now: number) => {
       if (disposed) return
-      // Do not leap through the choreography after a background tab resumes.
-      const delta = previousTime ? Math.min(now - previousTime, 64) : 0
+      const delta = previousTime && !document.hidden ? Math.min(now - previousTime, 64) : 0
       previousTime = now
       const current = latest.current
       const failed = current.status === 'error'
       const quick = simplified || skip.current
-      if (rendererReady && !failed) elapsed = Math.min(travelDuration, elapsed + delta)
-      if (quick) elapsed = travelDuration
-
-      if (failed) announce('error')
-      else if (elapsed >= travelDuration) announce(closingTime < 0 ? 'covered' : 'closing')
-      else if (elapsed > RAIN_TIMING.orbit) announce('covering')
-      else if (elapsed > 500) announce('orbiting')
-
-      const canNavigate = elapsed >= travelDuration && current.status === 'success'
-      if (canNavigate && !covered) {
-        covered = true
+      // Hold the sheet over all four corners until the destination commits.
+      // Authentication and navigation can both outlast the drawing sequence.
+      if (!failed) elapsed = quick ? RAIN_TIMING.covered : Math.min(RAIN_TIMING.covered, elapsed + delta)
+      const atCover = elapsed >= RAIN_TIMING.covered
+      const canNavigate = atCover && current.status === 'success' && !navigationStarted
+      if (canNavigate) {
+        navigationStarted = true
         current.onCovered()
       }
-      if (covered && current.pageReady && closingTime < 0) closingTime = 0
-      if (closingTime >= 0 && !failed) closingTime += delta
-      const closingDuration = quick ? 200 : RAIN_TIMING.close
-      const closure = closingTime < 0 ? 0 : smooth(closingTime / closingDuration)
-      // Spatial motion is replaced with a short crossfade for reduced motion,
-      // an unavailable renderer, or the explicit skip action.
-      const opacity = quick
-        ? 1 - closure
-        : 1 - smooth((closingTime - closingDuration) / RAIN_TIMING.fade)
-      section.style.setProperty('--scene-opacity', `${opacity}`)
-      section.style.setProperty('--veil-opacity', `${closingTime >= 0 && !quick ? 0 : opacity}`)
-      section.dataset.elapsed = `${Math.round(elapsed)}`
-      section.dataset.closure = closure.toFixed(3)
-      if (scene) scene.render(elapsed, quick ? 0 : closure)
+      const canExit = current.pageReady && atCover && !failed
+      if (canExit && exitTime < 0) exitTime = 0
+      if (exitTime >= 0 && !failed) exitTime += delta
+      const exitDuration = quick ? RAIN_TIMING.quickReveal : RAIN_TIMING.reveal
+      const reveal = exitTime < 0 ? 0 : Math.min(1, exitTime / exitDuration)
 
-      if (closingTime >= closingDuration + (quick ? 0 : RAIN_TIMING.fade)) {
+      if (failed) announce('error')
+      else if (exitTime >= 0) announce('revealing')
+      else if (atCover && !current.pageReady) announce('covered')
+      else if (elapsed >= RAIN_TIMING.paper) announce('covering')
+      else if (elapsed >= RAIN_TIMING.chamber) announce('gathering')
+      else if (elapsed >= RAIN_TIMING.flash) announce('flash')
+      else announce('umbrellas')
+
+      if (context && !quick) drawRainConnection(context, width, height, elapsed, reveal, palette)
+      section.dataset.renderer = quick ? 'static' : 'canvas'
+      // A short fade is reserved for reduced motion, skip and Canvas fallback.
+      // Normal playback remains fully opaque and reveals by moving the paper.
+      section.style.setProperty('--stage-opacity', `${quick ? 1 - smooth(reveal) : 1}`)
+      section.dataset.elapsed = `${Math.round(elapsed)}`
+      section.dataset.reveal = reveal.toFixed(3)
+      if (exitTime >= exitDuration) {
         current.onComplete()
         return
       }
-      frame = requestAnimationFrame(render)
+      animationFrame = requestAnimationFrame(render)
     }
 
-    if (simplified) simplify()
-    else {
-      void import('./rain-umbrella-scene').then(({ createUmbrellaScene }) => {
-        if (disposed || simplified) return
-        try {
-          scene = createUmbrellaScene(canvas)
-          scene.render(0, 0)
-          rendererReady = true
-          canvas.dataset.renderer = 'ready'
-        } catch {
-          simplify()
-        }
-      }).catch(() => { if (!disposed) simplify() })
-    }
-    frame = requestAnimationFrame(render)
+    animationFrame = requestAnimationFrame(render)
     return () => {
       disposed = true
-      cancelAnimationFrame(frame)
-      scene?.dispose()
+      cancelAnimationFrame(animationFrame)
+      observer.disconnect()
       reducedMotion.removeEventListener('change', motionChanged)
-      canvas.removeEventListener('webglcontextlost', contextLost)
+      canvas.removeEventListener('contextlost', contextLost)
       document.body.style.overflow = previousOverflow
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true })
     }
   }, [])
 
   const failed = status === 'error'
-  const closing = phase === 'closing'
-  const canSkip = status === 'success' && !closing
+  const revealing = phase === 'revealing'
   const cancelOrSkip = () => {
     if (status === 'success') skip.current = true
     else onDismiss()
@@ -163,22 +158,26 @@ export default function RainConnectionSequence(props: Props) {
 
   return <Portal black={false}>
     <section ref={sectionRef} className={styles.sequence} data-testid="rain-connection"
-      data-phase={failed ? 'error' : phase} data-fallback={fallback}
+      data-phase={failed ? 'error' : phase}
       role="dialog" aria-modal="true" aria-label="雨声 · 接入" aria-busy={status === 'pending'}
       tabIndex={-1} onKeyDown={onKeyDown}>
-      <div className={styles.veil} aria-hidden="true" />
-      <div className={styles['scene-lines']} aria-hidden="true"><i /><i /><i /></div>
-      <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
-      {fallback ? <StillUmbrella /> : null}
-      <div className={styles.signature} aria-hidden="true"><span>雨声</span><small>YOROROICE / ARK</small></div>
+      <div className={styles.stage} aria-hidden="true">
+        <div className={styles['static-paper']}>
+          <svg viewBox="0 0 220 150">
+            <path d="M31 92H189C181 116 151 130 110 130S39 116 31 92Z" />
+            <path className={styles['umbrella-handle']} d="M110 92V50c0-12 15-15 20-5 3 7-2 13-8 13" />
+          </svg>
+        </div>
+        <canvas ref={canvasRef} className={styles.canvas} />
+      </div>
       <div className={styles.caption} role="status">
-        {failed ? '这场雨，稍作停留。' : status === 'pending' ? '正在确认身份…' : pageReady ? '雨停之后，继续书写。' : '穿过雨声，与你相见。'}
+        {failed ? '这场雨，稍作停留。' : status === 'pending' ? '正在确认身份…' : pageReady ? '连接已建立。' : '正在打开页面…'}
       </div>
       {failed ? <div className={styles.failure}>
         <p role="alert">{error || '暂时无法连接，请重试。'}</p>
         <button type="button" onClick={onDismiss}>返回登录 ↗</button>
-      </div> : !closing ? <button className={styles.skip} type="button" onClick={cancelOrSkip}>
-        {canSkip ? '跳过动画 ↗' : '返回登录 ↗'}
+      </div> : !revealing ? <button className={styles.skip} type="button" onClick={cancelOrSkip}>
+        {status === 'success' ? '跳过动画 ↗' : '返回登录 ↗'}
       </button> : null}
       {navigationSlow && !pageReady ? <div className={styles.failure}>
         <p>页面仍在路上。</p>
