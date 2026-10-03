@@ -8,6 +8,7 @@
     .blog-root {
       --rain-frame-inset-block: 39px;
       --rain-frame-inset-inline: 3.5vw;
+      --rain-header-height: 86px;
     }
     .blog-root::before {
       content: '';
@@ -168,6 +169,10 @@
     .comment { border-left: 1px solid var(--ark-rain-deep); padding: 18px; margin-top: 18px; background: var(--ark-rain-panel); }
 
     .chat-page { max-width: 1520px; padding-top: 20px; padding-bottom: 20px; }
+    .chat-page[data-expanded="false"] {
+      height: calc(100vh - var(--rain-header-height) - var(--rain-frame-inset-block));
+      height: calc(100svh - var(--rain-header-height) - var(--rain-frame-inset-block));
+    }
     .chat-page .page-heading { min-height: 100px; padding: 12px 24px; margin-bottom: 18px; align-items: center; }
     .chat-page .heading-index { display: none; }
     .chat-page .heading-title { gap: 10px; }
@@ -227,6 +232,9 @@
       .manifesto { gap: 40px; margin-top: 64px; }
       .chat-layout { grid-template-columns: 164px minmax(0, 1fr); }
       .conversation-list button { gap: 8px; padding-inline: 8px; }
+    }
+    @media (max-width: 820px) {
+      .blog-root { --rain-header-height: 75px; }
     }
     @media (max-width: 540px) {
       .blog-root {
