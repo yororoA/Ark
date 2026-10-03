@@ -7,6 +7,7 @@ import BgImage from "@/components/arks/bg-image";
 import RouteScrollManager from "@/components/route-scroll-manager";
 import AppearanceBootstrap from "@/components/appearance/appearance-bootstrap";
 import { AppearanceObserver } from "@/components/appearance/appearance-store";
+import RainConnectionBoundary from "@/components/appearance/rain-connection-boundary";
 
 // ------------------------------------ 字体配置 ------------------------------------
 import { Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
@@ -77,7 +78,7 @@ export default function RootLayout({
         <RouteScrollManager />
         <div id="portal-root" />
         <BgImage />
-        {children}
+        <RainConnectionBoundary>{children}</RainConnectionBoundary>
         <Analytics />
       </body>
     </html>

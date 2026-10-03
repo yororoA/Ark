@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRef, type CSSProperties } from 'react'
 import { ArrowDown, ArrowRight, ArrowUpRight, Plus } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt, Locale, PROFILE } from '@/lib/blog'
+import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
 import RainArtwork from './rain-artwork'
@@ -129,7 +130,7 @@ export default function Home() {
       <div className={styles['hero-content']}>
         <div className={styles['eyebrow']}>00 / A CONTINUING STORY</div>
         <h1>Yororo<span>Ice. Ark</span></h1>
-        <h2>{t('intro')}</h2>
+        <h2><span className={styles['archive-only']}>{t('intro')}</span><span className={styles['rain-only']}>{QINGJIAN_COPY[locale].headline}</span></h2>
         <p>{t('introBody')}</p>
         <div className={styles['hero-actions']}><Link href="/articles" className={styles['primary-button']}>{t('read')}<ArrowUpRight size={18} /></Link><Link href="/moments" className={styles['text-link']}>{t('explore')}<ArrowRight size={17} /></Link></div>
       </div>
