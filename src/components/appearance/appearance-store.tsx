@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useSyncExternalStore } from 'react'
+import { useLayoutEffect, useSyncExternalStore } from 'react'
 import { COLOR_MODE_KEY, DESIGN_KEY, parseColorMode, parseDesign, type ColorMode, type Design } from '@/lib/appearance'
 
 const listeners = new Set<() => void>()
@@ -11,6 +11,15 @@ const serverColorMode = (): ColorMode => 'system'
 
 function emit() {
   listeners.forEach(listener => listener())
+}
+
+function syncFromStorage() {
+  try {
+    const root = document.documentElement
+    root.dataset.design = parseDesign(localStorage.getItem(DESIGN_KEY))
+    root.dataset.theme = parseColorMode(localStorage.getItem(COLOR_MODE_KEY))
+    emit()
+  } catch { /* Keep the server defaults when storage is unavailable. */ }
 }
 
 function onStorage(event: StorageEvent) {
@@ -56,9 +65,12 @@ export function useAppearance() {
   return { design, colorMode, setDesign, setColorMode }
 }
 
-// Keep cross-tab synchronization alive through every route, without an effect
-// that overwrites the pre-paint bootstrap with React's SSR defaults.
+// Some route-level fallbacks reconcile the server defaults after the head
+// bootstrap runs, so restore persisted values before the browser paints.
 export function AppearanceObserver() {
-  useEffect(() => subscribe(() => {}), [])
+  useLayoutEffect(() => {
+    syncFromStorage()
+    return subscribe(() => {})
+  }, [])
   return null
 }
