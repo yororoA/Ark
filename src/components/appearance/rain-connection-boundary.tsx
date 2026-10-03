@@ -16,6 +16,7 @@ function Transition({ connection }: { connection: RainConnection }) {
   const pathname = usePathname()
   const [navigating, setNavigating] = useState(false)
   const navigationStarted = useRef(false)
+  const completed = useRef(false)
   // A destination may redirect (for example an old bookmark). Its committed
   // non-login route is what the umbrella must uncover.
   const pageReady = navigating && pathname !== '/login'
@@ -28,17 +29,22 @@ function Transition({ connection }: { connection: RainConnection }) {
   }, [connection.status, connection.destination, router])
 
   const complete = useCallback(() => {
+    completed.current = true
     useRainConnection.getState().clear(connection.id)
-    requestAnimationFrame(() => {
-      const main = document.querySelector<HTMLElement>('main')
-      if (!main) return
-      const previous = main.getAttribute('tabindex')
-      main.setAttribute('tabindex', '-1')
-      main.focus({ preventScroll: true })
-      if (previous === null) main.removeAttribute('tabindex')
-      else main.setAttribute('tabindex', previous)
-    })
   }, [connection.id])
+
+  useEffect(() => () => {
+    // Passive unmount cleanup runs after React removes the curtain and inert.
+    // Removing tabindex immediately after focus would send focus back to body.
+    if (!completed.current) return
+    const main = document.querySelector<HTMLElement>('main')
+    if (!main) return
+    if (!main.hasAttribute('tabindex')) {
+      main.setAttribute('tabindex', '-1')
+      main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true })
+    }
+    main.focus({ preventScroll: true })
+  }, [])
 
   const dismiss = useCallback(() => {
     useRainConnection.getState().clear(connection.id)
