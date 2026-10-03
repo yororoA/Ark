@@ -190,7 +190,8 @@
     .chat-compose textarea { min-height: 58px; border: 1px solid var(--line); border-left-color: var(--ark-rain-deep); padding: 8px 12px; }
     .chat-compose .field { gap: 5px; }
     .chat-compose .primary-button { min-height: 44px; padding: 10px 18px; gap: 10px; box-shadow: none; }
-    .chat-page[data-expanded="true"] { padding: 0; }
+    .chat-page[data-expanded="true"] { width: auto; max-width: none; padding: 0; }
+    .blog-root:has(.chat-page[data-expanded="true"])::after { display: none; }
     .dialog { border-top-width: 1px; border-radius: 0; background: var(--ark-rain-panel); }
     .dialog-header { border-block: 1px solid var(--line); padding: 12px 0; }
     .dialog-header h2 { border-left: 4px solid var(--ark-rain); padding-left: 16px; }
