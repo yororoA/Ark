@@ -212,6 +212,46 @@ function waterStrokes(ctx: Context, width: number, height: number, seconds: numb
   ctx.globalAlpha = 1
 }
 
+type PaperLayer = 'behind-title' | 'in-front-of-title'
+
+// An object's depth is fixed for its lifetime, so overlapping strokes change
+// naturally as it moves without the paper jumping between title layers.
+const layerForPaper = (id: number): PaperLayer =>
+  seed(id + 173) < .42 ? 'in-front-of-title' : 'behind-title'
+
+function chamberPapers(ctx: Context, width: number, height: number, seconds: number, palette: RainPalette, layer: PaperLayer) {
+  const unit = Math.min(width, height)
+  const cloudCount = width < 500 ? 25 : 46
+  for (let index = 0; index < cloudCount; index++) {
+    const id = index + 520
+    if (layerForPaper(id) !== layer) continue
+    const x = width * seed(index + 520) + Math.sin(seconds * .6 + index) * unit * .008
+    const y = height * (-.015 + seed(index + 610) * .18)
+    const size = unit * (.04 + seed(index + 740) * .115)
+    paperSquare(ctx, x, y, size, seed(index + 820) * 1.4 - .7 + seconds * .018,
+      Math.sin(index + seconds * .3) * .45, index % 4 ? palette.sheet : palette.rain, palette.pencil, id)
+  }
+
+  const landing = height * .64
+  const funnelCount = width < 500 ? 36 : 58
+  for (let index = 0; index < funnelCount; index++) {
+    const id = index + 910
+    if (layerForPaper(id) !== layer) continue
+    const fall = (seed(index + 910) + seconds * (.12 + seed(index + 930) * .06)) % 1
+    const spread = .22 + .78 * Math.pow(1 - fall, 1.65)
+    const x = width * .5 + (seed(index + 980) - .5) * width * .66 * spread
+      + Math.sin(index * 1.4 + seconds * .8) * unit * .012
+    const y = lerp(height * .12, landing, fall)
+    const variation = seed(index + 1030)
+    const scale = index % 5 === 0 ? .095 + variation * .07
+      : index % 5 === 1 ? .009 + variation * .015
+      : .032 + variation * .043
+    const size = unit * scale * lerp(1, .82, fall)
+    paperSquare(ctx, x, y, size, index * 2.4 + seconds * (seed(index + 1160) - .5),
+      Math.sin(index + seconds) * .65, index % 6 ? palette.sheet : palette.rain, palette.pencil, id)
+  }
+}
+
 function paperChamber(ctx: Context, width: number, height: number, time: number, palette: RainPalette) {
   const seconds = (time - RAIN_TIMING.chamber) / 1000
   const unit = Math.min(width, height)
@@ -226,38 +266,15 @@ function paperChamber(ctx: Context, width: number, height: number, time: number,
   ctx.save()
   ctx.translate(0, height * .09 * cover * cover)
   waterStrokes(ctx, width, height, seconds, palette)
+  chamberPapers(ctx, width, height, seconds, palette, 'behind-title')
   ctx.fillStyle = palette.deep
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.font = `300 ${Math.min(width * .102, height * .16)}px ${palette.font}`
   ctx.fillText('把片刻，留给雨声。', width * .5, height * .2, width * .94)
-
-  const cloudCount = width < 500 ? 25 : 46
-  for (let index = 0; index < cloudCount; index++) {
-    const x = width * seed(index + 520) + Math.sin(seconds * .6 + index) * unit * .008
-    const y = height * (-.015 + seed(index + 610) * .18)
-    const size = unit * (.04 + seed(index + 740) * .115)
-    paperSquare(ctx, x, y, size, seed(index + 820) * 1.4 - .7 + seconds * .018,
-      Math.sin(index + seconds * .3) * .45, index % 4 ? palette.sheet : palette.rain, palette.pencil, index + 520)
-  }
+  chamberPapers(ctx, width, height, seconds, palette, 'in-front-of-title')
 
   const landing = height * .64
-  const funnelCount = width < 500 ? 36 : 58
-  for (let index = 0; index < funnelCount; index++) {
-    const fall = (seed(index + 910) + seconds * (.12 + seed(index + 930) * .06)) % 1
-    const spread = .22 + .78 * Math.pow(1 - fall, 1.65)
-    const x = width * .5 + (seed(index + 980) - .5) * width * .66 * spread
-      + Math.sin(index * 1.4 + seconds * .8) * unit * .012
-    const y = lerp(height * .12, landing, fall)
-    const variation = seed(index + 1030)
-    const scale = index % 5 === 0 ? .095 + variation * .07
-      : index % 5 === 1 ? .009 + variation * .015
-      : .032 + variation * .043
-    const size = unit * scale * lerp(1, .82, fall)
-    paperSquare(ctx, x, y, size, index * 2.4 + seconds * (seed(index + 1160) - .5),
-      Math.sin(index + seconds) * .65, index % 6 ? palette.sheet : palette.rain, palette.pencil, index + 910)
-  }
-
   const radius = Math.min(width * .16, height * .165)
   invertedUmbrella(ctx, width * .5, landing + Math.sin(seconds * 2) * unit * .007, radius, palette, Math.sin(seconds) * .012)
   ctx.fillStyle = palette.deep
