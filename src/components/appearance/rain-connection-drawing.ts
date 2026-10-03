@@ -271,7 +271,7 @@ function paperChamber(ctx: Context, width: number, height: number, time: number,
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.font = `300 ${Math.min(width * .102, height * .16)}px ${palette.font}`
-  ctx.fillText('把片刻，留给雨声。', width * .5, height * .2, width * .94)
+  ctx.fillText('让片刻，落在纸上。', width * .5, height * .2, width * .94)
   chamberPapers(ctx, width, height, seconds, palette, 'in-front-of-title')
 
   const landing = height * .64

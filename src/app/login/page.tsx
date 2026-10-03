@@ -17,6 +17,7 @@ import ThemePicker from '@/components/appearance/theme-picker';
 import RainPlanes from '@/components/appearance/rain-planes';
 import { useAppearance } from '@/components/appearance/appearance-store';
 import { useRainConnection } from '@/components/appearance/rain-connection-store';
+import { QINGJIAN_COPY } from '@/lib/qingjian-copy';
 import type { Design } from '@/lib/appearance';
 import type { ConnectParams } from './types';
 
@@ -162,7 +163,7 @@ function Login() {
           <section className={styles['login-copy']}>
             <div className={styles['login-signature']} aria-hidden="true"><Image src="/bines_sign.png" alt="" fill sizes="300px" priority /></div>
             <div className={styles['login-rain']} aria-hidden="true">
-              <span>雨声</span><small>YOROROICE / ARK</small>
+              <span>{QINGJIAN_COPY.zh.name}</span><small>YOROROICE / ARK</small>
             </div>
             <div className={styles['login-eyebrow']}>IDENTITY ACCESS / 01</div>
             <h1>身份验证</h1>

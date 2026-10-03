@@ -3,12 +3,13 @@
 import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { useRainConnection, type RainConnection } from './rain-connection-store'
 import styles from './rain-connection.module.scss'
 
 const RainSequence = dynamic(() => import('./rain-connection-sequence'), {
   ssr: false,
-  loading: () => <div className={styles['loading-curtain']} role="status">雨声 · 正在接入</div>,
+  loading: () => <div className={styles['loading-curtain']} role="status">{QINGJIAN_COPY.zh.name} · 正在接入</div>,
 })
 
 function Transition({ connection }: { connection: RainConnection }) {

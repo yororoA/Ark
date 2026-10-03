@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import Portal from '@/components/Portal'
+import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { drawRainConnection, type RainPalette } from './rain-connection-drawing'
 import { RAIN_TIMING, smooth } from './rain-connection-timeline'
 import type { RainConnection } from './rain-connection-store'
@@ -178,7 +179,7 @@ export default function RainConnectionSequence(props: Props) {
   return <Portal black={false}>
     <section ref={sectionRef} className={styles.sequence} data-testid="rain-connection"
       data-phase={failed ? 'error' : phase}
-      role="dialog" aria-modal="true" aria-label="雨声 · 接入" aria-busy={status === 'pending'}
+      role="dialog" aria-modal="true" aria-label={`${QINGJIAN_COPY.zh.name} · 接入`} aria-busy={status === 'pending'}
       tabIndex={-1} onKeyDown={onKeyDown}>
       <div className={styles.stage} aria-hidden="true">
         <div className={styles['stage-backdrop']} />
@@ -192,7 +193,7 @@ export default function RainConnectionSequence(props: Props) {
         <canvas ref={foregroundRef} className={`${styles.canvas} ${styles.foreground}`} data-layer="foreground" />
       </div>
       <div className={styles.caption} role="status">
-        {failed ? '这场雨，稍作停留。' : status === 'pending' ? '正在确认身份…' : pageReady ? '连接已建立。' : '正在打开页面…'}
+        {failed ? '连接失败，请重试。' : status === 'pending' ? '正在确认身份…' : pageReady ? '连接已建立。' : '正在打开页面…'}
       </div>
       {failed ? <div className={styles.failure}>
         <p role="alert">{error || '暂时无法连接，请重试。'}</p>
@@ -201,7 +202,7 @@ export default function RainConnectionSequence(props: Props) {
         {status === 'success' ? '跳过动画 ↗' : '返回登录 ↗'}
       </button> : null}
       {navigationSlow && !pageReady ? <div className={styles.failure}>
-        <p>页面仍在路上。</p>
+        <p>页面加载较慢，可直接打开目标页或返回重试。</p>
         <a href={destination}>直接打开目标页 ↗</a>
         <button type="button" onClick={onDismiss}>返回</button>
       </div> : null}

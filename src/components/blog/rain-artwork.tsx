@@ -1,19 +1,14 @@
 import { useId } from 'react'
 import type { Locale } from '@/lib/blog'
+import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { UMBRELLA_CROWN_HEIGHT, UMBRELLA_RIB_PATH, UMBRELLA_SIDE_PATH, UMBRELLA_TOP_PATH } from '@/components/appearance/rain-umbrella-geometry'
 import styles from './rain-artwork.module.scss'
-
-const CAPTIONS = {
-  zh: ['雨声', '把片刻，写成回声。'],
-  en: ['Rain', 'Moments, echoed.'],
-  ja: ['雨音', 'ひとときを、こだまに。'],
-  de: ['Regen', 'Ein leises Echo.'],
-}
 
 // Geometry drawn from the video's umbrella columns, octagonal field and paper
 // fragments. No frames or illustrations from the source are shipped.
 export default function RainArtwork({ locale }: { locale: Locale }) {
   const id = useId().replaceAll(':', '')
+  const copy = QINGJIAN_COPY[locale]
   return <div className={styles['rain-art']} aria-hidden="true">
     <svg className={styles['rain-space']} viewBox="0 0 760 720" fill="none">
       <defs>
@@ -53,7 +48,7 @@ export default function RainArtwork({ locale }: { locale: Locale }) {
     </div>
     <div className={styles['rain-ripples']}><i /><i /><i /><i /></div>
     <div className={styles['rain-fragments']}>{Array.from({ length: 12 }, (_, index) => <i key={index} />)}</div>
-    <div className={styles['rain-caption']}><span>{CAPTIONS[locale][0]}</span><small>{CAPTIONS[locale][1]}</small></div>
-    <div className={styles['rain-footnote']}>SOMEWHERE, IT IS RAINING.<span>YOROROICE / ARK</span></div>
+    <div className={styles['rain-caption']} data-script={locale === 'en' || locale === 'de' ? 'latin' : 'cjk'}><span>{copy.name}</span><small>{copy.caption}</small></div>
+    <div className={styles['rain-footnote']}>MOMENTS, KEPT ON PAPER.<span>YOROROICE / ARK</span></div>
   </div>
 }
