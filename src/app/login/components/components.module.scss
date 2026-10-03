@@ -238,9 +238,9 @@
 
 :global(html[data-design="rain"]) {
   .dialog-overlay { background: color-mix(in srgb, var(--ark-paper) 60%, transparent); backdrop-filter: blur(5px); }
-  .accountManagement { width: min(590px, 100%); padding: 16px 16px 16px 36px; border: 1px solid var(--line); border-radius: 0; background: var(--ark-rain-panel); box-shadow: 10px 10px 0 var(--soft); }
+  .accountManagement { width: min(590px, 100%); padding: 16px 16px 16px 36px; border: 1px solid var(--line); outline: 1px solid color-mix(in srgb, var(--line) 58%, transparent); outline-offset: 6px; border-radius: 0; background: var(--ark-rain-panel); box-shadow: none; }
   .accountManagement::before { content: ''; position: absolute; inset: 0 auto 0 16px; width: 1px; background: var(--line); pointer-events: none; }
-  .accountManagement::after { width: 10px; height: 14px; left: 11px; top: 40px; border: 0; background: var(--ark-rain-deep); box-shadow: 5px 4px 0 var(--ark-rain); }
+  .accountManagement::after { width: 10px; height: 14px; left: 11px; top: 40px; border: 0; background: linear-gradient(135deg, var(--ark-rain-deep) 0 50%, var(--ark-rain) 50%); clip-path: polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%); }
   .accountManagementTitle { min-height: 102px; padding: 14px 12px 22px; background: linear-gradient(90deg, transparent 50%, var(--soft) 50% 55%, transparent 55% 64%, var(--soft) 64% 70%, transparent 70%); }
   .accountManagementTitle h1 { font-size: 34px; letter-spacing: 3px; }
   .accountManagementTitle h1::after { display: block; content: 'YOROROICE / ARK'; font: 8px/1.6 var(--font-ibm-plex), sans-serif; letter-spacing: 2px; color: var(--muted); margin-top: 10px; }
@@ -253,8 +253,8 @@
   .inputGroup { gap: 22px; }
   .inputGroup input { border-radius: 0; border-left: 3px solid var(--ark-rain); font-size: 16px; background: var(--ark-rain-panel); }
   .account { border-radius: 0; background: var(--ark-rain-panel); }
-  .avatar { border: 1px solid var(--line); border-radius: 0; background: var(--soft); color: var(--accent); font-weight: 400; box-shadow: 4px 4px 0 var(--ark-rain); }
-  .accountManagementContent { border-top-width: 1px; border-radius: 0; padding: 8px; box-shadow: 5px 5px 0 var(--soft); }
+  .avatar { border: 1px solid var(--line); outline: 1px solid color-mix(in srgb, var(--line) 42%, transparent); outline-offset: 2px; border-radius: 0; background: var(--soft); color: var(--accent); font-weight: 400; box-shadow: none; }
+  .accountManagementContent { border-top-width: 1px; outline: 1px solid color-mix(in srgb, var(--line) 50%, transparent); outline-offset: 3px; border-radius: 0; padding: 8px; box-shadow: none; }
 
   @media (max-width: 600px) {
     .accountManagement { padding: 8px 8px 8px 24px; }

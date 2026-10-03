@@ -108,11 +108,11 @@
 :global(html[data-design="rain"]) {
   .theme-trigger, .close-button { border-radius: 0; }
   .theme-trigger { border-color: var(--ark-line); color: var(--ark-accent); }
-  .theme-panel { border: 1px solid var(--line); border-radius: 0; padding: 22px; background: var(--ark-rain-panel); box-shadow: 7px 7px 0 var(--soft); }
+  .theme-panel { border: 1px solid var(--line); outline: 1px solid color-mix(in srgb, var(--line) 58%, transparent); outline-offset: 5px; border-radius: 0; padding: 22px; background: var(--ark-rain-panel); box-shadow: none; }
   .panel-heading { margin-bottom: 22px; padding-left: 12px; border-left: 4px solid var(--ark-rain); }
   .design-preview { border-radius: 0; }
   .mode-option > span { border-radius: 0; }
-  .mode-option input:checked + span { color: var(--paper); background: var(--ink); border-color: var(--ink); box-shadow: 2px 2px 0 var(--ark-rain); }
+  .mode-option input:checked + span { color: var(--paper); background: var(--ink); border-color: var(--ink); box-shadow: none; }
   .panel-note { font-family: var(--font-noto-serif), serif; line-height: 1.8; }
 }
 @media (max-width: 540px) { .theme-trigger { width: 44px; height: 44px; } }
