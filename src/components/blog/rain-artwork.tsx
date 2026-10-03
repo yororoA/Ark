@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import type { Locale } from '@/lib/blog'
+import { UMBRELLA_CROWN_HEIGHT, UMBRELLA_RIB_PATH, UMBRELLA_SIDE_PATH, UMBRELLA_TOP_PATH } from '@/components/appearance/rain-umbrella-geometry'
 import styles from './rain-artwork.module.scss'
 
 const CAPTIONS = {
@@ -17,7 +18,10 @@ export default function RainArtwork({ locale }: { locale: Locale }) {
     <svg className={styles['rain-space']} viewBox="0 0 760 720" fill="none">
       <defs>
         <pattern id={`${id}-octagons`} width="68" height="68" patternUnits="userSpaceOnUse">
-          <path d="M21 6H47L62 21V47L47 62H21L6 47V21Z" fill="currentColor" />
+          <g transform="translate(34 34) scale(30)">
+            <path d={UMBRELLA_TOP_PATH} fill="currentColor" />
+            <path d={UMBRELLA_RIB_PATH} stroke="var(--ark-rain-sheet)" strokeWidth=".016" opacity=".7" />
+          </g>
         </pattern>
       </defs>
       <circle cx="412" cy="325" r="288" stroke="currentColor" strokeWidth=".6" />
@@ -42,9 +46,8 @@ export default function RainArtwork({ locale }: { locale: Locale }) {
           </defs>
           <path d="M10 95H230V600H10Z" fill={`url(#${id}-water-${index})`} />
           <path d="M10 95H230V600H10Z" fill={`url(#${id}-streak-${index})`} />
-          <path d="M10 95C48 51 72 47 120 38C168 47 192 51 230 95Z" fill="var(--ark-rain-deep)" opacity=".84" />
-          <path d="M10 95C64 65 96 58 120 38C144 58 176 65 230 95M120 38V24M120 95V259C120 282 96 282 96 261" stroke="var(--ark-rain-deep)" strokeWidth="2" strokeLinecap="round" />
-          <path d="M62 94Q84 51 120 38Q156 51 178 94" stroke="var(--ark-rain-sheet)" strokeWidth=".6" opacity=".55" />
+          <path data-umbrella="side" d={UMBRELLA_SIDE_PATH} transform="translate(120 95) scale(110)" fill="var(--ark-rain-deep)" opacity=".84" />
+          <path d={`M120 ${95 - 110 * UMBRELLA_CROWN_HEIGHT}v-11M120 95V259C120 282 96 282 96 261`} stroke="var(--ark-rain-deep)" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </div>)}
     </div>
