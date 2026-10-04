@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type TextareaHTMLAttributes } from 'react'
 import Link from '@/components/appearance/p3r-link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Play, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
@@ -243,7 +243,7 @@ export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Medi
   if (!files.length) return null
   const hasVideo = files.some(file => file.mime.startsWith('video'))
   const hasImage = files.some(file => !file.mime.startsWith('video'))
-  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <div className={styles['media-item']} data-kind="video" key={file.url}><video src={file.url} controls preload="metadata" onLoadedMetadata={onMediaLoad} /></div> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
+  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
 export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; descriptions?: Record<string, string> }) {
   const [media, setMedia] = useState<Media[]>([])
@@ -261,19 +261,22 @@ export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; de
   }, [files])
   return <MediaGrid files={media.map(file => ({ ...file, desc: descriptions[file.filename] || file.filename }))} />
 }
-export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean; label?: string }) {
+export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label, onBeforeSelect }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean; label?: string; onBeforeSelect?: () => void }) {
   const { t, notify } = useBlog()
   const input = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   function choose(next: File[]) {
     const limit = imageOnly ? 10 : 50
-    const invalidType = next.some(file => !file.type.startsWith('image/') && (imageOnly || !file.type.startsWith('video/')))
-    if (invalidType || next.length > max || next.some(file => file.size > limit * 1024 * 1024)) { notify(`${t('upload')}: ≤ ${max} · ≤ ${limit} MB · ${imageOnly ? 'image' : 'image / video'}`); return }
-    setFiles(next)
+    const selected = max > 1
+      ? [...new Map([...files, ...next].map(file => [`${file.name}:${file.size}:${file.lastModified}:${file.type}`, file])).values()]
+      : next
+    const invalidType = selected.some(file => !file.type.startsWith('image/') && (imageOnly || !file.type.startsWith('video/')))
+    if (invalidType || selected.length > max || selected.some(file => file.size > limit * 1024 * 1024)) { notify(`${label || t('upload')}: ≤ ${max} · ≤ ${limit} MB · ${imageOnly ? 'image' : 'image / video'}`); return }
+    setFiles(selected)
   }
-  return <div className={styles['file-drop']} data-dragging={dragging} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); choose(Array.from(e.dataTransfer.files)) }}>
-    <input ref={input} type="file" hidden multiple accept={imageOnly ? 'image/*' : 'image/*,video/*'} onChange={e => { choose(Array.from(e.target.files || [])); e.target.value = '' }} />
-    <button type="button" className={styles['upload-trigger']} disabled={!max} onClick={() => input.current?.click()}>
+  return <div className={styles['file-drop']} data-dragging={dragging} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); onBeforeSelect?.(); choose(Array.from(e.dataTransfer.files)) }}>
+    <input ref={input} type="file" hidden multiple={max > 1} accept={imageOnly ? 'image/*' : 'image/*,video/*'} onChange={e => { onBeforeSelect?.(); choose(Array.from(e.target.files || [])); e.target.value = '' }} />
+    <button type="button" className={styles['upload-trigger']} disabled={!max} onClick={() => { onBeforeSelect?.(); input.current?.click() }}>
       <span className={styles['upload-symbol']}><Upload size={22} strokeWidth={1} /></span>
       <span><strong>{label || t('upload')}</strong><small>{t('dropFiles')} · {imageOnly ? '10' : '50'} MB / {t('file')}</small></span>
       <span className={styles['upload-count']}>{String(files.length).padStart(2, '0')}<small>/ {max}</small></span>

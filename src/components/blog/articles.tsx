@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Article covers are stored as arbitrary external Markdown URLs. */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSWRConfig } from 'swr'
 import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -87,6 +87,23 @@ function Editor({ article }: { article?: Entry }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [images, setImages] = useState<File[]>([])
+  const editor = useRef<HTMLTextAreaElement>(null)
+  const selection = useRef({ start: content.length, end: content.length })
+  const restoreCursor = useRef<number | null>(null)
+  function rememberSelection(textarea: HTMLTextAreaElement) {
+    editor.current = textarea
+    selection.current = { start: textarea.selectionStart, end: textarea.selectionEnd }
+  }
+  useEffect(() => {
+    const cursor = restoreCursor.current
+    if (busy || preview || cursor === null || !editor.current?.isConnected) return
+    const frame = requestAnimationFrame(() => {
+      editor.current?.focus()
+      editor.current?.setSelectionRange(cursor, cursor)
+      restoreCursor.current = null
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [busy, content, preview])
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setError('')
     try {
@@ -98,15 +115,26 @@ function Editor({ article }: { article?: Entry }) {
   }
   async function upload() {
     if (!images[0]) return
+    const image = images[0]
+    const range = selection.current
     setBusy(true); setError('')
     try {
-      const form = new FormData(); form.append('image', images[0])
+      const form = new FormData(); form.append('image', image)
       const result = await send<Envelope<{ url: string }>>('knowledge/upload-image', form)
-      setContent(value => `${value}\n\n![${images[0].name.replace(/[\[\]]/g, '')}](${result.data.url})\n`)
+      const markdown = `![${image.name.replace(/[\[\]]/g, '')}](${result.data.url})`
+      let cursor = range.start + markdown.length
+      setContent(value => {
+        const start = Math.min(range.start, value.length)
+        const end = Math.max(start, Math.min(range.end, value.length))
+        cursor = start + markdown.length
+        return `${value.slice(0, start)}${markdown}${value.slice(end)}`
+      })
+      selection.current = { start: cursor, end: cursor }
+      restoreCursor.current = cursor
       setImages([])
     } catch (error) { setError((error as Error).message) } finally { setBusy(false) }
   }
-  return <form className={styles['form']} onSubmit={submit}><label className={styles['field']}>{t('title')}<input required value={title} maxLength={200} onChange={e => setTitle(e.target.value)} /></label><div className={styles['form-row']}><label className={styles['field']}>{t('category')}<input value={category} onChange={e => setCategory(e.target.value)} /></label><label className={styles['field']}>{t('tags')}<input value={tags} onChange={e => setTags(e.target.value)} /></label></div><div className={styles['form-actions']}><button type="button" className={styles['secondary-button']} aria-pressed={preview} onClick={() => setPreview(!preview)}>{t(preview ? 'edit' : 'preview')}</button><FilePicker files={images} setFiles={setImages} max={1} imageOnly label={t('insertMedia')} />{!!images.length && <button type="button" className={styles['secondary-button']} disabled={busy} onClick={upload}>{t('insertMedia')}</button>}</div>{preview ? <><Markdown content={content} /><LocalMediaGrid files={images} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea required minRows={14} className={styles['editor-textarea']} value={content} onChange={e => setContent(e.target.value)} /></label>}{error && <p role="alert" className={styles['error']}>{error}</p>}<div className={styles['form-actions']}><button className={styles['primary-button']} disabled={busy || !title.trim() || !content.trim()}>{t(busy ? 'saving' : article ? 'save' : 'publish')}</button><Link href={article ? `/articles/${article._id}` : '/articles'} className={styles['secondary-button']}>{t('cancel')}</Link></div></form>
+  return <form className={styles['form']} onSubmit={submit}><label className={styles['field']}>{t('title')}<input required value={title} maxLength={200} onChange={e => setTitle(e.target.value)} /></label><div className={styles['form-row']}><label className={styles['field']}>{t('category')}<input value={category} onChange={e => setCategory(e.target.value)} /></label><label className={styles['field']}>{t('tags')}<input value={tags} onChange={e => setTags(e.target.value)} /></label></div><div className={styles['form-actions']}><button type="button" className={styles['secondary-button']} aria-pressed={preview} onClick={() => setPreview(!preview)}>{t(preview ? 'edit' : 'preview')}</button><FilePicker files={images} setFiles={setImages} max={1} imageOnly label={t('insertMedia')} onBeforeSelect={() => { if (editor.current?.isConnected) rememberSelection(editor.current) }} />{!!images.length && <button type="button" className={styles['secondary-button']} disabled={busy} onClick={upload}>{t('insertMedia')}</button>}</div>{preview ? <><Markdown content={content} /><LocalMediaGrid files={images} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea required minRows={14} disabled={busy} className={styles['editor-textarea']} value={content} onChange={e => { setContent(e.target.value); rememberSelection(e.currentTarget) }} onSelect={e => rememberSelection(e.currentTarget)} onBlur={e => rememberSelection(e.currentTarget)} /></label>}{error && <p role="alert" className={styles['error']}>{error}</p>}<div className={styles['form-actions']}><button className={styles['primary-button']} disabled={busy || !title.trim() || !content.trim()}>{t(busy ? 'saving' : article ? 'save' : 'publish')}</button><Link href={article ? `/articles/${article._id}` : '/articles'} className={styles['secondary-button']}>{t('cancel')}</Link></div></form>
 }
 export function ArticleEditor({ id }: { id?: string }) {
   const { session } = useBlog()
