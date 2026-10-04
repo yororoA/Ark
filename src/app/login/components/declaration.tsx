@@ -48,6 +48,7 @@ export default function Declaration(props: { onClose: () => void }) {
             + '通用对话气泡与选项：https://www.bilibili.com/video/BV1LJ4m1J7B1/\n'
             + '日期切换：https://www.bilibili.com/video/BV1zf421U7vo/\n'
             + '武器店：https://www.bilibili.com/video/BV1CE42157wQ/\n'
+            + '入水与圆形转场参考：草莓红豆汤《P3R 全UI展示》https://www.bilibili.com/video/BV1XK42117LJ/。本站以原创棱角石替代角色，使用代码重新绘制水痕、泡沫、气泡与圆形铺色。\n'
           }
           </pre>
         </div>
