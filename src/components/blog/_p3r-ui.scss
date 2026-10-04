@@ -82,6 +82,7 @@
     .heading-title h1 { font-weight: 700; line-height: 1.15; font-size: clamp(38px, 4.5vw, 64px); letter-spacing: -.04em; margin-top: 16px; }
     .page-heading .english-title { display: block; margin: 10px 0 0; font: italic 800 30px/1 var(--serif); letter-spacing: -.01em; text-transform: uppercase; color: #58e5ff; }
     .heading-actions .primary-button { background: #f4fbff; color: #032369 !important; box-shadow: 4px 4px 0 #eb2676; }
+    .heading-actions .primary-button:hover:not(:disabled) { color: #fff !important; }
     .toolbar { gap: 18px; }
     .filters { gap: 8px; }
     .filters button { background: var(--soft); border: 0; padding-inline: 17px; font-weight: 700; transform: skewX(-8deg); }
@@ -180,7 +181,7 @@
     .chat-compose { background: var(--soft); border-top: 3px solid #0754e4; padding: 16px 20px; }
     .chat-compose textarea { border-bottom: 3px solid var(--accent); background: var(--ark-p3r-panel); }
     .chat-compose .primary-button { padding: 12px 22px; }
-    .chat-page[data-expanded="true"] { inset-block-start: 76px; height: auto; padding: 0; }
+    .chat-page[data-expanded="true"] { inset-block-start: 76px; inset-inline: 0; width: auto; max-width: none; height: auto; padding: 0; }
     .dialog { background: var(--ark-p3r-panel); border: 3px solid #0754e4; box-shadow: 9px 9px 0 #032369; animation: p3r-panel-in .32s ease-in-out; }
     .dialog::backdrop { background: #02163bc9; backdrop-filter: blur(4px); }
     .dialog-header { border-bottom: 3px solid #0754e4; }
