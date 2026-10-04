@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import Portal from '@/components/Portal'
 import type { RainConnection } from './rain-connection-store'
+import P3RWater, { WATER_ENTRY_MS, WATER_REVEAL_MS } from './p3r-water'
 import styles from './p3r-connection.module.scss'
 
 interface Props extends RainConnection {
@@ -16,11 +17,11 @@ export default function P3RConnectionSequence({ status, username, error, destina
   const ref = useRef<HTMLElement>(null)
   const [covered, setCovered] = useState(false)
   const [quick, setQuick] = useState(false)
-  const [date] = useState(() => new Date().toISOString().slice(0, 10))
   const started = useRef(false)
   const failed = status === 'error'
   const revealing = covered && pageReady && !failed
   const phase = failed ? 'error' : revealing ? 'revealing' : covered ? 'covered' : 'opening'
+  const makeQuick = useCallback(() => { setQuick(true); setCovered(true) }, [])
 
   useEffect(() => {
     const section = ref.current
@@ -29,11 +30,11 @@ export default function P3RConnectionSequence({ status, username, error, destina
     document.body.style.overflow = 'hidden'
     section?.focus({ preventScroll: true })
     const media = matchMedia('(prefers-reduced-motion: reduce)')
-    const skip = () => { if (media.matches) { setQuick(true); setCovered(true) } }
+    const skip = () => { if (media.matches) makeQuick() }
     const timer = window.setTimeout(() => {
       setCovered(true)
       if (media.matches) setQuick(true)
-    }, media.matches ? 0 : 1600)
+    }, media.matches ? 0 : WATER_ENTRY_MS + 34)
     media.addEventListener('change', skip)
     return () => {
       clearTimeout(timer)
@@ -41,7 +42,7 @@ export default function P3RConnectionSequence({ status, username, error, destina
       document.body.style.overflow = previous
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
     }
-  }, [])
+  }, [makeQuick])
 
   useEffect(() => {
     if (!covered || status !== 'success' || started.current) return
@@ -51,12 +52,12 @@ export default function P3RConnectionSequence({ status, username, error, destina
 
   useEffect(() => {
     if (!revealing) return
-    const timer = window.setTimeout(onComplete, quick ? 120 : 700)
+    const timer = window.setTimeout(onComplete, quick ? 120 : WATER_REVEAL_MS + 34)
     return () => clearTimeout(timer)
   }, [revealing, quick, onComplete])
 
   function cancelOrSkip() {
-    if (status === 'success') { setQuick(true); setCovered(true) }
+    if (status === 'success') makeQuick()
     else onDismiss()
   }
   function keyDown(event: KeyboardEvent<HTMLElement>) {
@@ -71,14 +72,11 @@ export default function P3RConnectionSequence({ status, username, error, destina
   }
   return <Portal black={false}>
     <section ref={ref} className={styles.sequence} data-phase={phase} data-quick={quick} data-testid="p3r-connection"
+      data-p3r-effect="none"
       role="dialog" aria-modal="true" aria-label="P3R · 接入" aria-busy={status === 'pending'} tabIndex={-1} onKeyDown={keyDown}>
+      {/* The previous crossed date-axis sequence is preserved in e2ef28d. */}
       <div className={styles.curtain} aria-hidden="true" />
-      <div className={styles['date-scene']} aria-hidden="true">
-        <div className={styles['cross-axis']} />
-        <span className={styles['month-word']}>{new Date(`${date}T00:00:00Z`).toLocaleDateString('en', { month: 'long', timeZone: 'UTC' })}</span>
-        <div className={styles['date-band']}><span>{date.slice(5, 7)}</span><i>/</i><strong>{date.slice(8)}</strong><small>YOUR DAYS.<br />YOUR STORY.</small></div>
-        <div className={styles['date-rings']}><i /><i /></div>
-      </div>
+      <P3RWater phase={phase} quick={quick} onUnavailable={makeQuick} />
       <div className={styles.identity}>
         <small>YOROROICE / ARK</small>
         <strong>{username}</strong>
