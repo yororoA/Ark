@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import { useSWRConfig } from 'swr'
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, Download, Pencil, Plus, Search, Share2 } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt } from '@/lib/blog'

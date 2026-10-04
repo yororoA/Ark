@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- Migrated media has arbitrary dimensions and hosts; preserve its original aspect ratio. */
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'

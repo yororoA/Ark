@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useSyncExternalStore, type CSSProperties, type KeyboardEvent } from 'react'
 import { ArrowDown, ArrowUpRight, X } from 'lucide-react'

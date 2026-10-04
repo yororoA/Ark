@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Article covers are stored as arbitrary external Markdown URLs. */
 
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { useRef, type CSSProperties } from 'react'
 import { ArrowDown, ArrowRight, ArrowUpRight, Plus } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt, Locale, PROFILE } from '@/lib/blog'

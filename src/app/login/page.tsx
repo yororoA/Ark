@@ -1,7 +1,7 @@
 'use client'
 import { Suspense, useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { ArrowUpRight, BookOpen, CircleUserRound, ShieldCheck, UsersRound } from 'lucide-react'
 import { useGetLocation } from '@/hooks/useGetLocation';
 import { useAuthStore } from '@/store/auth';

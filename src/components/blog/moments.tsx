@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- Preserve dimensions of existing blog media. */
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useSWR, { useSWRConfig } from 'swr'
 import { ArrowLeft, ArrowUpRight, MessageSquare, Plus, Reply, Share2, X } from 'lucide-react'

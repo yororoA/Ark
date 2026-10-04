@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { ArrowUpRight } from 'lucide-react'
 import { Entry, Envelope } from '@/lib/blog'
 import { useBlog, useBlogData } from './blog-provider'

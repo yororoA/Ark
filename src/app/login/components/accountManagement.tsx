@@ -1,5 +1,5 @@
 import Portal from "@/components/Portal";
-import Link from 'next/link';
+import Link from '@/components/appearance/p3r-link';
 import { cn } from "@/lib/utils";
 import styles from "./components.module.scss";
 import Lenis from "lenis";
