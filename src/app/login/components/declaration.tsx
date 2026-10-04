@@ -49,6 +49,7 @@ export default function Declaration(props: { onClose: () => void }) {
             + '日期切换：https://www.bilibili.com/video/BV1zf421U7vo/\n'
             + '武器店：https://www.bilibili.com/video/BV1CE42157wQ/\n'
             + '入水与圆形转场参考：草莓红豆汤《P3R 全UI展示》https://www.bilibili.com/video/BV1XK42117LJ/。本站以原创棱角石替代角色，使用代码重新绘制水痕、泡沫、气泡与圆形铺色。\n'
+            + '入水形态与水下配色参考：Cuthorns《p3re菜单动画无字纯享版》https://www.bilibili.com/video/BV15V4y117GZ/。本站独立实现水体、泡沫与水面碎光，未使用原视频画面或角色素材。\n'
           }
           </pre>
         </div>
