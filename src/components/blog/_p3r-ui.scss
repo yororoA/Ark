@@ -159,6 +159,7 @@
     .field input:focus, .field textarea:focus { box-shadow: 0 2px 0 #eb2676; }
     .file-drop { border: 1px solid var(--line); background: var(--paper); }
     .upload-symbol { background: #0754e4; color: #fff; border: 0; transform: skewX(-8deg); }
+    .upload-trigger:hover .upload-symbol { color: #fff; background: #03338c; transform: skewX(-8deg) translateY(-3px); }
     .state-box { padding: 45px 20px; background: var(--ark-p3r-panel); border-left: 5px solid #0754e4; }
     .loading-line { height: 4px; }
     .chat-page { height: calc(100svh - 76px); padding-top: 20px; padding-bottom: 20px; }
