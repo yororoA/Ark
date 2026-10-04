@@ -11,10 +11,13 @@ import { legacyDestination } from '@/lib/legacy-route'
 import { BlogSelect } from './controls'
 import ArchiveLogo from '@/components/brand/archive-logo'
 import ThemePicker from '@/components/appearance/theme-picker'
+import { useAppearance } from '@/components/appearance/appearance-store'
+import { P3RMenu } from './p3r-navigation'
 import styles from './blog.module.scss'
 
 function Shell({ children }: { children: React.ReactNode }) {
   const { t, locale, setLocale, session, refreshSession, toast, notify } = useBlog()
+  const { design } = useAppearance()
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -54,7 +57,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <button className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={open ? t('close') : t('menu')} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
-      {open && <nav className={styles['mobile-nav']} aria-label={t('menu')}>{sections.map(([key, number]) => <Link href={`/${key}`} key={key} onClick={() => setOpen(false)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span>{number}</span>{t(key)}<ArrowUpRight size={18} /></Link>)}<Link href="/chat" onClick={() => setOpen(false)} aria-current={pathname.startsWith('/chat') ? 'page' : undefined}><span>07</span>{t('chat')}<ArrowUpRight size={18} /></Link></nav>}
+      {open && (design === 'p3r' ? <P3RMenu locale={locale} close={() => setOpen(false)} /> : <nav className={styles['mobile-nav']} aria-label={t('menu')}>{sections.map(([key, number]) => <Link href={`/${key}`} key={key} onClick={() => setOpen(false)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span>{number}</span>{t(key)}<ArrowUpRight size={18} /></Link>)}<Link href="/chat" onClick={() => setOpen(false)} aria-current={pathname.startsWith('/chat') ? 'page' : undefined}><span>07</span>{t('chat')}<ArrowUpRight size={18} /></Link></nav>)}
       <main id="main-content" className={styles['main-content']}>{children}</main>
       <footer className={styles['site-footer']}>
         <div className={styles['footer-signatures']}>

@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
 import RainPlanes from '@/components/appearance/rain-planes'
+import P3RScene from '@/components/appearance/p3r-scene'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
@@ -23,6 +24,8 @@ export function PageHeading({ title, english, number, children }: { title: TextK
   const scene = isChronological ? 'calendar' : isPersonal ? 'sheets' : 'curtain'
   return <header className={styles['page-heading']} data-vertical={verticalTitle}>
     <RainPlanes variant={scene} />
+    <P3RScene variant="heading" />
+    <span className={styles['p3r-heading-word']} aria-hidden="true">{english}</span>
     <span className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>
       <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span> / {number}</div>
