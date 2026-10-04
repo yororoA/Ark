@@ -10,6 +10,71 @@ const clamp = (n: number) => Math.min(1, Math.max(0, n))
 const smooth = (n: number) => { const t = clamp(n); return t * t * (3 - 2 * t) }
 const seed = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x) }
 
+interface Ribbon {
+  x: number
+  top: number
+  bottom: number
+  width: number
+  drift: number
+  phase: number
+  fill: string
+  alpha?: number
+  taper?: number
+}
+
+function waterRibbon(ctx: CanvasRenderingContext2D, ribbon: Ribbon) {
+  if (ribbon.bottom <= ribbon.top) return
+  const point = (u: number, side: number) => {
+    const y = ribbon.top + (ribbon.bottom - ribbon.top) * u
+    const wave = Math.sin(u * 7 + ribbon.phase) * ribbon.drift
+      + Math.sin(u * 19 - ribbon.phase * 1.7) * ribbon.drift * .28
+    const torn = 1 + Math.sin(u * 17 + ribbon.phase) * .14 + Math.sin(u * 43 - ribbon.phase) * .065
+    const half = ribbon.width * (1 - u * (ribbon.taper ?? .42)) * torn
+    return [ribbon.x + wave + side * half, y] as const
+  }
+  ctx.save()
+  ctx.globalAlpha = ribbon.alpha ?? 1
+  ctx.beginPath()
+  for (const side of [-1, 1]) {
+    for (let i = 0; i <= 36; i++) {
+      const u = side === -1 ? i / 36 : 1 - i / 36
+      const [x, y] = point(u, side)
+      if (side === -1 && i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+  }
+  ctx.closePath()
+  ctx.fillStyle = ribbon.fill
+  ctx.fill()
+  ctx.restore()
+}
+
+function waterBlob(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, color: string, alpha: number, id: number, rotation = 0) {
+  ctx.save()
+  ctx.globalAlpha = alpha
+  const points = Array.from({ length: 16 }, (_, i) => {
+    const angle = Math.PI * 2 * i / 16
+    const radius = .86 + seed(id * 31 + i) * .26
+    const dx = Math.cos(angle) * rx * radius
+    const dy = Math.sin(angle) * ry * radius
+    return [x + dx * Math.cos(rotation) - dy * Math.sin(rotation), y + dx * Math.sin(rotation) + dy * Math.cos(rotation)] as const
+  })
+  const midpoint = (a: readonly [number, number], b: readonly [number, number]) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] as const
+  ctx.beginPath()
+  const start = midpoint(points.at(-1)!, points[0])
+  ctx.moveTo(start[0], start[1])
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i]
+    const next = points[(i + 1) % points.length]
+    const middle = midpoint(point, next)
+    ctx.quadraticCurveTo(point[0], point[1], middle[0], middle[1])
+  }
+  ctx.closePath()
+  ctx.fillStyle = color
+  ctx.fill()
+  ctx.restore()
+}
+
 function underwater(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.fillStyle = '#0754e4'
   ctx.fillRect(0, 0, w, h)
@@ -28,70 +93,151 @@ function underwater(ctx: CanvasRenderingContext2D, w: number, h: number) {
 }
 
 function entry(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
-  const tip = -65 + (h * 2.5 + 65) * Math.pow(clamp(t / .96), 1.8)
-  const mouth = w * 2.2 * Math.pow(clamp((t - .12) / .88), 2) + 12
-  const top = -h * .3
-  const center = (y: number) => w * .53 + Math.sin(y / h * 1.5) * Math.min(w * .055, 60)
-  const edge = (u: number, side: number, scale = 1) => {
-    const y = top + (tip - top) * u
-    const taper = Math.pow(1 - u, .73)
-    const uneven = 1 + Math.sin(u * 23 + t * 6 + side) * .055 + Math.sin(u * 57 - t * 3) * .025
-    return [center(y) + side * mouth * taper * uneven * scale, y] as const
+  const scale = Math.min(w, h)
+  const fall = clamp(t / .62)
+  const tip = -60 + (h * 1.15 + 60) * Math.pow(fall, 1.65)
+  const center = (y: number) => w * .52 + Math.sin(y / h * 2.1 + t * 2) * Math.min(w * .018, 22)
+  const trail = smooth((t - .06) / .34)
+  const splash = smooth((t - .26) / .5)
+  const impact = smooth((t - .36) / .28)
+  const beforeSettle = 1 - smooth((t - .91) / .05)
+
+  if (trail > 0) {
+    const trailWidth = Math.min(w * .055, scale * .09) * (.45 + trail * .55)
+    waterRibbon(ctx, {
+      x: w * .52, top: -h * .16, bottom: tip + scale * .035, width: trailWidth * 1.65,
+      drift: scale * .012, phase: 1.4 + t * 3, fill: '#58e5ff', alpha: .72,
+    })
+    waterRibbon(ctx, {
+      x: w * .515, top: -h * .18, bottom: tip + scale * .025, width: trailWidth,
+      drift: scale * .01, phase: 2.3 + t * 3, fill: '#d9fbff', alpha: .94,
+    })
+    waterRibbon(ctx, {
+      x: w * .525, top: -h * .2, bottom: tip, width: trailWidth * .42,
+      drift: scale * .008, phase: 3.1 + t * 3, fill: '#0b6cdf', alpha: .8,
+    })
   }
-  const wake = (scale: number, fill: string, stroke?: string, lineWidth = 0) => {
-    ctx.beginPath()
-    for (const side of [-1, 1]) {
-      for (let i = 0; i <= 64; i++) {
-        const u = side === -1 ? i / 64 : 1 - i / 64
-        const [x, y] = edge(u, side, scale)
-        if (side === -1 && i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-    }
-    ctx.closePath()
-    ctx.fillStyle = fill; ctx.fill()
-    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth; ctx.stroke() }
-  }
-  if (t > .12) {
-    ctx.lineJoin = 'round'
-    wake(1, '#0754e4', '#58e5ff', Math.min(w * .04, 30))
-    wake(1, '#0754e4', '#f4fbff', Math.min(w * .012, 9))
-    wake(.72, '#0640b2')
-    wake(.39, '#032369')
-    // Broad torn ribbons give the wake volume, with unequal lengths on each
-    // side. Their tips stretch into the falling stone's narrow pressure trail.
-    for (const side of [-1, 1]) {
-      for (const outer of [true, false]) {
-        ctx.beginPath()
-        for (const bank of [-1, 1]) for (let i = 0; i <= 40; i++) {
-          const step = bank === -1 ? i / 40 : 1 - i / 40
-          const u = .03 + step * (side === -1 ? .88 : .8)
-          const [x, y] = edge(u, side, side === -1 ? .86 : .68)
-          const torn = 1 + Math.sin(u * 39 + side + t * 7) * .24 + Math.sin(u * 87) * .12
-          const half = Math.min(w * .07, 95, mouth * .22) * Math.pow(1 - step, .65) * torn * (outer ? 1.35 : .8)
-          const px = x + bank * half
-          if (bank === -1 && i === 0) ctx.moveTo(px, y)
-          else ctx.lineTo(px, y)
+
+  if (splash > 0) {
+    const streams = w / h < .7
+      ? [
+          { x: .08, width: .16, delay: .34, phase: .7, drift: .055, reach: .76 },
+          { x: .5, width: .19, delay: .22, phase: 4.1, drift: .072, reach: 1.08 },
+          { x: .9, width: .15, delay: .3, phase: 7.4, drift: .062, reach: .82 },
+        ]
+      : [
+          { x: .08, width: .09, delay: .35, phase: .7, drift: .055, reach: .72 },
+          { x: .3, width: .105, delay: .28, phase: 2.2, drift: .038, reach: 1.12 },
+          { x: .5, width: .13, delay: .22, phase: 4.1, drift: .064, reach: .82 },
+          { x: .71, width: .095, delay: .33, phase: 5.8, drift: .046, reach: 1.14 },
+          { x: .92, width: .085, delay: .26, phase: 7.4, drift: .058, reach: .76 },
+        ]
+    ctx.save()
+    ctx.shadowColor = '#58e5ff'
+    ctx.shadowBlur = Math.min(22, scale * .022) * impact
+    streams.forEach((stream, index) => {
+      const progress = smooth((t - stream.delay) / (.83 - stream.delay))
+      if (progress <= 0) return
+      const bottom = -h * .12 + h * 1.22 * progress * stream.reach
+      const width = Math.min(w * stream.width, scale * (.12 + seed(index + 20) * .06))
+      const x = w * stream.x + Math.sin(t * 5 + stream.phase) * scale * .018
+      waterRibbon(ctx, {
+        x, top: -h * .24, bottom, width: width * 1.3, drift: scale * stream.drift,
+        phase: stream.phase + t * 4, fill: '#0878de', alpha: .5 * beforeSettle, taper: .52,
+      })
+      waterRibbon(ctx, {
+        x: x + (seed(index + 9) - .5) * width * .36, top: -h * .27, bottom: bottom + scale * .025,
+        width, drift: scale * stream.drift, phase: stream.phase + .8 + t * 4,
+        fill: '#58e5ff', alpha: .82 * beforeSettle, taper: .47,
+      })
+      const paleX = x + (seed(index + 31) - .5) * width * .55
+      if (index === 2) {
+        waterRibbon(ctx, {
+          x: paleX, top: -h * .3, bottom: bottom - scale * .01,
+          width: width * .72, drift: scale * stream.drift * .82,
+          phase: stream.phase + 1.7 + t * 4, fill: '#dbfbff', alpha: .88 * beforeSettle, taper: .58,
+        })
+      } else {
+        for (let segment = 0; segment < 3; segment++) {
+          const span = bottom + h * .24
+          const start = -h * .24 + span * (segment * .29 + seed(index * 8 + segment + 70) * .08)
+          const end = Math.min(bottom, start + span * (.18 + seed(index * 8 + segment + 90) * .16))
+          waterRibbon(ctx, {
+            x: paleX + (seed(index * 7 + segment + 110) - .5) * width * .55,
+            top: start, bottom: end, width: width * (.56 + seed(index * 9 + segment + 130) * .3),
+            drift: scale * stream.drift * .95, phase: stream.phase + segment * 1.3 + t * 4,
+            fill: '#dbfbff', alpha: .94 * beforeSettle, taper: -.08,
+          })
+          waterBlob(ctx, paleX, end, width * .6, width * .34, '#dffcff', .86 * beforeSettle, index * 10 + segment + 310)
         }
-        ctx.closePath()
-        ctx.fillStyle = outer ? '#58e5ff' : '#c8faff'
-        ctx.fill()
+      }
+      if (index % 2 === 0) {
+        waterRibbon(ctx, {
+          x: x + (seed(index + 55) - .5) * width * .7, top: -h * .12, bottom: bottom - scale * .1,
+          width: width * .14, drift: scale * stream.drift * .62,
+          phase: stream.phase + 2.4 + t * 4, fill: '#148eea', alpha: .5 * beforeSettle, taper: .18,
+        })
+      }
+    })
+    ctx.restore()
+
+    const topFoam = smooth((t - .34) / .28) * beforeSettle
+    if (topFoam > 0) {
+      ctx.save()
+      ctx.shadowColor = '#aaf7ff'
+      ctx.shadowBlur = Math.min(28, scale * .028)
+      for (let i = 0; i < 10; i++) {
+        const x = w * (-.03 + i * .12 + (seed(i + 120) - .5) * .055)
+        const y = h * (-.035 + seed(i + 130) * .17)
+        const rx = scale * (.055 + seed(i + 140) * .09)
+        const ry = scale * (.06 + seed(i + 150) * .12)
+        waterBlob(ctx, x, y, rx, ry, i % 3 === 0 ? '#baf7ff' : '#e3fcff', topFoam * .92, i + 210)
+      }
+      ctx.restore()
+    }
+
+    // Foam is embedded in the columns and impact front rather than tracing a
+    // single outer perimeter.
+    for (let i = 0; i < 30; i++) {
+      const born = .3 + seed(i + 4) * .28
+      const growth = smooth((t - born) / .25)
+      if (growth <= 0) continue
+      const column = i % streams.length
+      const x = w * (streams[column].x + (seed(i + 10) - .5) * .14)
+      const y = h * (-.03 + seed(i + 17) * .72) + splash * h * .11
+      const rx = scale * (.025 + seed(i + 23) * .065) * growth
+      const ry = rx * (.65 + seed(i + 29) * 1.25)
+      const color = i % 4 === 0 ? '#58e5ff' : i % 3 === 0 ? '#baf7ff' : '#e1fcff'
+      waterBlob(ctx, x, y, rx, ry, color, (.7 + seed(i + 12) * .28) * beforeSettle, i + 80)
+    }
+    ctx.save()
+    ctx.shadowColor = '#8af1ff'
+    ctx.shadowBlur = Math.min(24, scale * .024) * impact
+    for (let i = 0; i < 16; i++) {
+      const born = .41 + seed(i + 180) * .18
+      const growth = smooth((t - born) / .24)
+      if (growth <= 0) continue
+      const side = i % 2 ? 1 : -1
+      const x = w * .5 + side * w * (.05 + seed(i + 190) * .43) * impact
+      const y = h * (.48 + seed(i + 200) * .44)
+      const rx = scale * (.065 + seed(i + 210) * .12) * growth
+      const ry = rx * (.32 + seed(i + 220) * .42)
+      waterBlob(
+        ctx, x, y, rx * 1.45, ry, i % 4 === 0 ? '#58e5ff' : '#dffcff',
+        (.74 + seed(i + 230) * .24) * beforeSettle, i + 260, side * (-.55 + seed(i + 240) * .25),
+      )
+      if (i % 3 !== 0) {
+        waterBlob(
+          ctx, x - side * rx * .72, y + ry * .32, rx * .78, ry * .82, '#dffcff',
+          .84 * beforeSettle, i + 360, side * (-.35 + seed(i + 250) * .2),
+        )
       }
     }
-    // Broken, elongated foam streaks along both edges; not a uniform outline.
-    for (let i = 0; i < 30; i++) {
-      const side = i % 2 ? 1 : -1
-      const u = .1 + seed(i + 7) * .83
-      const [x, y] = edge(u, side, 1 + seed(i + 3) * .13)
-      const length = (12 + seed(i + 19) * 70) * clamp(t * 2)
-      ctx.fillStyle = i % 3 === 0 ? '#58e5ff' : '#c8faff'
-      ctx.beginPath()
-      ctx.ellipse(x, y, 3 + seed(i + 2) * Math.min(w * .022, 18), length, side * -.14, 0, Math.PI * 2)
-      ctx.fill()
-    }
+    ctx.restore()
   }
+
   // Original silver, faceted pebble: no character or video texture.
-  if (tip < h + 60) {
+  if (tip < h + 60 && t < .68) {
     ctx.save()
     ctx.translate(center(tip), tip)
     ctx.rotate(.3 + t * 4)
@@ -111,20 +257,38 @@ function entry(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
     ctx.closePath(); ctx.fill()
     ctx.restore()
   }
-  for (let i = 0; i < 44; i++) {
-    const born = .18 + seed(i + 4) * .56
-    const age = (t - born) / .65
+  for (let i = 0; i < 76; i++) {
+    const born = .32 + seed(i + 4) * .36
+    const age = (t - born) / .48
     if (age < 0 || age > 1) continue
-    const y0 = -65 + (h * 2.5 + 65) * Math.pow(born / .96, 1.8)
-    const x = center(y0) + (i % 2 ? 1 : -1) * (18 + age * w * (.15 + seed(i) * .55))
-    const y = y0 - age * h * (.16 + seed(i + 1) * .24)
-    const radius = (2 + seed(i + 10) * 10) * (1 - age * .55)
-    ctx.strokeStyle = `rgba(222,250,255,${1 - age * .8})`
-    ctx.lineWidth = 1.5
-    ctx.beginPath(); ctx.ellipse(x, y, radius, radius * 1.6, -.15, 0, Math.PI * 2); ctx.stroke()
+    const side = i % 2 ? 1 : -1
+    const spread = w * (.04 + seed(i + 15) * .43) * (impact * .65 + age * .35)
+    const x = w * .52 + side * spread + Math.sin(i * 2.1) * scale * .02
+    const y = h * (.5 + seed(i + 2) * .48) - age * h * (.04 + seed(i + 1) * .16)
+    const radius = scale * (.004 + seed(i + 10) * .018) * (1 - age * .42)
+    const alpha = (1 - age * .72) * beforeSettle
+    if (i % 6 === 0) {
+      waterBlob(ctx, x, y, radius * 1.35, radius, '#dffcff', alpha, i + 160)
+    } else {
+      ctx.strokeStyle = `rgba(222,250,255,${alpha})`
+      ctx.lineWidth = Math.max(1.5, radius * .14)
+      ctx.beginPath()
+      ctx.ellipse(x, y, radius * (.72 + seed(i + 40) * .55), radius * (1 + seed(i + 41) * .8), -.25 + seed(i) * .5, 0, Math.PI * 2)
+      ctx.stroke()
+    }
   }
-  // End on exactly the same opaque frame used by the route handshake.
-  const settle = smooth((t - .91) / .09)
+
+  // Keep the explosive frame translucent until the final beat, then land on
+  // the exact opaque frame used by the route handshake.
+  const wash = smooth((t - .7) / .24) * beforeSettle
+  if (wash > 0) {
+    ctx.save()
+    ctx.globalAlpha = wash * .2
+    ctx.fillStyle = '#0754e4'
+    ctx.fillRect(0, 0, w, h)
+    ctx.restore()
+  }
+  const settle = smooth((t - .94) / .06)
   if (settle > 0) { ctx.globalAlpha = settle; underwater(ctx, w, h); ctx.globalAlpha = 1 }
 }
 
