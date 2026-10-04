@@ -6,7 +6,6 @@ import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { drawRainConnection, type RainPalette } from './rain-connection-drawing'
 import { RAIN_TIMING, smooth } from './rain-connection-timeline'
 import type { RainConnection } from './rain-connection-store'
-import { UMBRELLA_SIDE_PATH } from './rain-umbrella-geometry'
 import styles from './rain-connection.module.scss'
 
 interface Props extends RainConnection {
@@ -179,16 +178,12 @@ export default function RainConnectionSequence(props: Props) {
   return <Portal black={false}>
     <section ref={sectionRef} className={styles.sequence} data-testid="rain-connection"
       data-phase={failed ? 'error' : phase}
+      data-renderer="pending"
       role="dialog" aria-modal="true" aria-label={`${QINGJIAN_COPY.zh.name} · 接入`} aria-busy={status === 'pending'}
       tabIndex={-1} onKeyDown={onKeyDown}>
       <div className={styles.stage} aria-hidden="true">
         <div className={styles['stage-backdrop']} />
-        <div className={styles['static-paper']}>
-          <svg viewBox="0 0 220 150">
-            <path d={UMBRELLA_SIDE_PATH} transform="translate(110 92) scale(79 -79)" />
-            <path className={styles['umbrella-handle']} d="M110 92V50c0-12 15-15 20-5 3 7-2 13-8 13" />
-          </svg>
-        </div>
+        <div className={styles['static-paper']} />
         <canvas ref={canvasRef} className={styles.canvas} data-layer="scene" />
         <canvas ref={foregroundRef} className={`${styles.canvas} ${styles.foreground}`} data-layer="foreground" />
       </div>

@@ -7,13 +7,19 @@ import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { useRainConnection, type RainConnection } from './rain-connection-store'
 import styles from './rain-connection.module.scss'
 
+function LoadingCurtain({ label }: { label: string }) {
+  return <div className={styles['loading-curtain']} role="status">
+    <span className={styles['loading-label']}>{label}</span>
+  </div>
+}
+
 const RainSequence = dynamic(() => import('./rain-connection-sequence'), {
   ssr: false,
-  loading: () => <div className={styles['loading-curtain']} role="status">{QINGJIAN_COPY.zh.name} · 正在接入</div>,
+  loading: () => <LoadingCurtain label={`${QINGJIAN_COPY.zh.name} · 正在接入`} />,
 })
 const P3RSequence = dynamic(() => import('./p3r-connection-sequence'), {
   ssr: false,
-  loading: () => <div className={styles['loading-curtain']} role="status">P3R · 正在接入</div>,
+  loading: () => <LoadingCurtain label="P3R · 正在接入" />,
 })
 
 function Transition({ connection }: { connection: RainConnection }) {
