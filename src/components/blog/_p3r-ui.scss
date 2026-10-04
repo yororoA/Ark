@@ -41,6 +41,13 @@
     .section-heading .eyebrow { font: italic 800 20px/1 var(--serif); color: #a1efff; }
     .section-heading .eyebrow::before { display: none; }
     .section-heading .text-link { color: #fff; border-color: #58e5ff; white-space: nowrap; }
+    .section-heading .secondary-button {
+      color: var(--ark-p3r-deep); background: var(--ark-p3r-white); border-color: #58e5ff; white-space: nowrap;
+      box-shadow: 4px 4px 0 var(--ark-p3r-deep);
+    }
+    .section-heading .secondary-button:hover:not(:disabled) {
+      color: var(--ark-p3r-deep); background: #58e5ff; border-color: #58e5ff; box-shadow: 6px 6px 0 #eb2676;
+    }
     .recent-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 34px; }
     .featured-entry { border: 0; padding: 24px; background: var(--ark-p3r-panel); border-left: 5px solid var(--accent); }
     .featured-body h3 { font-weight: 700; font-size: 32px; line-height: 1.4; letter-spacing: -.035em; }
