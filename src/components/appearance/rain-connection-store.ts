@@ -5,6 +5,7 @@ import type { ConnectionState } from '@/app/login/components/connectionSequence'
 
 export interface RainConnection extends ConnectionState {
   id: number
+  design?: 'rain' | 'p3r'
   destination: string
   onDismiss: () => void
 }

@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Article covers are stored as arbitrary external Markdown URLs. */
 
-import Link from 'next/link'
+import Link from '@/components/appearance/p3r-link'
 import { useRef, type CSSProperties } from 'react'
 import { ArrowDown, ArrowRight, ArrowUpRight, Plus } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt, Locale, PROFILE } from '@/lib/blog'
@@ -9,6 +9,7 @@ import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
 import RainArtwork from './rain-artwork'
+import { P3RHome } from './p3r-navigation'
 
 const ORBIT_SLOTS = [
   { track: 'outer', start: '8%', duration: '72s', delay: '-5.76s' },
@@ -116,6 +117,7 @@ export default function Home() {
   const calendarStart = new Date()
   calendarStart.setUTCDate(calendarStart.getUTCDate() - 83)
   return <>
+    <P3RHome locale={locale} featured={featured} status={statusLabel} />
     <section className={styles['hero']} onPointerMove={event => {
       if (event.pointerType !== 'mouse' || !art.current || matchMedia('(prefers-reduced-motion: reduce)').matches) return
       const rect = event.currentTarget.getBoundingClientRect()

@@ -40,6 +40,16 @@ export default function Declaration(props: { onClose: () => void }) {
             + '1、【鹰角网络】-《明日方舟》\n'
             + '2、2086丷《有空再做了【明日方舟】》(https://www.bilibili.com/video/BV1Qj411x745/)\n'
             + `3、明石缪《他人事の音がする / 声不关己》翻唱视频（影片：kkmfd；插画：ミツ蜂）(https://www.bilibili.com/video/BV1qtMc6HEis/)。本站“${QINGJIAN_COPY.zh.name}”主题的页面视觉与登录过渡动画参考该视频，并以代码复刻其中的伞阵、落纸与揭幕等视觉表现。相关图形与动画由本站重新绘制和实现，未直接使用原视频画面、插画或音频素材；原作品及相关素材的著作权归各自权利人所有。\n`
+            + '4、【ATLUS / SEGA】-《Persona 3 Reload / 女神异闻录3 Reload》。本站“P3R”主题参考其界面结构、配色与动态表现，由本站独立编写代码、绘制几何场景；未使用游戏角色立绘、视频画面、音频或商标素材。原作名称及界面美术等权利归各自权利人所有，本站与 ATLUS / SEGA 无合作或授权关系。\n'
+            + '参考视频：绿川リュウジ《女神异闻录3Re 界面UI&动效一览》：\n'
+            + '流体风格菜单：https://www.bilibili.com/video/BV1vD421K72T/\n'
+            + '主界面：https://www.bilibili.com/video/BV1rm411C7Uy/\n'
+            + '手机与邮件：https://www.bilibili.com/video/BV11T421X7Cz/\n'
+            + '通用对话气泡与选项：https://www.bilibili.com/video/BV1LJ4m1J7B1/\n'
+            + '日期切换：https://www.bilibili.com/video/BV1zf421U7vo/\n'
+            + '武器店：https://www.bilibili.com/video/BV1CE42157wQ/\n'
+            + '入水与圆形转场参考：草莓红豆汤《P3R 全UI展示》https://www.bilibili.com/video/BV1XK42117LJ/。本站以原创棱角石替代角色，使用代码重新绘制水痕、泡沫、气泡与圆形铺色。\n'
+            + '入水形态与水下配色参考：Cuthorns《p3re菜单动画无字纯享版》https://www.bilibili.com/video/BV15V4y117GZ/。本站独立实现水体、泡沫与水面碎光，未使用原视频画面或角色素材。\n'
           }
           </pre>
         </div>

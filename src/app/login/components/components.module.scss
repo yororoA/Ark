@@ -266,6 +266,30 @@
   }
 }
 
+:global(html[data-design="p3r"]) {
+  .dialog-overlay { background: #031e55ba; backdrop-filter: blur(4px); }
+  .accountManagement, .declaration { border: 3px solid #0754e4; border-left: 7px solid #58e5ff; background: var(--ark-p3r-panel); box-shadow: 8px 8px 0 #032369; animation: p3r-dialog-in .32s ease-in-out; }
+  .accountManagementTitle { padding: 20px 24px; background: #0754e4; color: #fff; border: 0; }
+  .accountManagementTitle h1 { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; }
+  .accountManagementTitle h1::after { color: #58e5ff; font: italic 800 26px/1 var(--ark-p3r-display); }
+  .accountManagementTitle .icon-button { color: #fff; border-color: #58e5ff; }
+  .accountManagement .form { padding: 28px 24px; }
+  .inputGroup input { border: 1px solid var(--line); border-bottom: 3px solid #0754e4; border-radius: 0; background: var(--paper); }
+  .inputGroup input:focus { box-shadow: 0 2px 0 #eb2676; }
+  .accountManagement .loginBtn, .accountManagementFooter > button, .code-button { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; background: #0754e4; border-color: #0754e4; color: #fff; box-shadow: 3px 3px 0 #032369; }
+  .accountManagement .loginBtn:hover:not(:disabled), .accountManagementFooter > button:hover:not(:disabled), .code-button:hover:not(:disabled) { background: #032369; box-shadow: 3px 3px 0 #eb2676; color: #fff; }
+  .account { border: 1px solid var(--line); border-left: 4px solid #0754e4; background: var(--paper); }
+  .account .account-name { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; }
+  .avatar { font: italic 800 28px/1 var(--ark-p3r-display); color: #fff; background: #0754e4; border-left-color: #58e5ff; transform: skewX(-8deg); }
+  .accountManagementContent { border: 2px solid #0754e4; box-shadow: 5px 5px 0 #032369; background: var(--ark-p3r-panel); }
+  .declarationContentWrapper h1 { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; color: var(--accent); }
+  .declarationBtn { background: #0754e4; color: #fff; border-color: #58e5ff; }
+}
+@keyframes p3r-dialog-in { from { opacity: 0; transform: translate(35px, -10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  :global(html[data-design="p3r"]) { .accountManagement, .declaration { animation: none; } }
+}
+
 @media (max-width: 600px) {
   .dialog-overlay { align-items: flex-end; padding: 12px; }
   .accountManagement, .declaration { max-height: calc(100dvh - 24px); }

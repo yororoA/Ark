@@ -4,11 +4,16 @@
   position: fixed;
   inset: 0;
   z-index: 10000;
-  display: grid;
-  place-items: center;
-  color: var(--ark-ink);
-  background: var(--ark-paper);
-  font: 15px var(--font-noto-serif-loaded), serif;
+  background: transparent;
+}
+
+.loading-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .sequence {
@@ -39,6 +44,7 @@
   &[data-phase="revealing"] .caption { visibility: hidden; }
   &[data-renderer="canvas"] .static-paper { display: none; }
   &[data-renderer="canvas"] .canvas { visibility: visible; }
+  &[data-renderer="static"] .static-paper { display: block; }
   &[data-reveal-started="true"] .stage-backdrop { visibility: hidden; }
 }
 
@@ -57,15 +63,8 @@
 .static-paper {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: none;
   background: var(--ark-paper);
-  svg { width: 200px; fill: var(--ark-rain-deep); }
-  .umbrella-handle {
-    fill: none;
-    stroke: var(--ark-rain-deep);
-    stroke-width: 2;
-  }
 }
 
 .canvas {

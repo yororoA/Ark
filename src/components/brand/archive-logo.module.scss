@@ -19,6 +19,12 @@
 .logo-light { filter: grayscale(1) contrast(1.5) brightness(.55); }
 .logo-dark { display: none; }
 
+:global(html[data-design="p3r"]) {
+  .archive-logo { color: #f4fbff; }
+  .logo-light { display: none; }
+  .logo-dark { display: block; }
+}
+
 .logo-caption {
   max-width: 72px;
   font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;

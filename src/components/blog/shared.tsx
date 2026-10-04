@@ -1,14 +1,15 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Migrated media has arbitrary dimensions and hosts; preserve its original aspect ratio. */
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import Link from 'next/link'
+import { useCallback, useEffect, useId, useRef, useState, type TextareaHTMLAttributes } from 'react'
+import Link from '@/components/appearance/p3r-link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Play, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
 import RainPlanes from '@/components/appearance/rain-planes'
+import P3RScene from '@/components/appearance/p3r-scene'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
@@ -23,6 +24,8 @@ export function PageHeading({ title, english, number, children }: { title: TextK
   const scene = isChronological ? 'calendar' : isPersonal ? 'sheets' : 'curtain'
   return <header className={styles['page-heading']} data-vertical={verticalTitle}>
     <RainPlanes variant={scene} />
+    <P3RScene variant="heading" />
+    <span className={styles['p3r-heading-word']} aria-hidden="true">{english}</span>
     <span className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>
       <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span> / {number}</div>
@@ -38,6 +41,17 @@ export function State({ loading, error, empty, retry }: { loading?: boolean; err
 }
 export function Markdown({ content }: { content: string }) {
   return <div className={styles['markdown']}><ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: ({ children, ...props }) => <a {...props} target="_blank" rel="noreferrer">{children}</a> }}>{content}</ReactMarkdown></div>
+}
+export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const resize = useCallback(() => {
+    const textarea = ref.current
+    if (!textarea) return
+    textarea.style.height = '0'
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [])
+  useEffect(resize, [resize, value])
+  return <textarea {...props} ref={ref} rows={minRows} value={value} style={{ ...style, overflowY: 'hidden' }} onInput={event => { resize(); onInput?.(event) }} />
 }
 export function RequireLogin({ children, guestAllowed = false }: { children: React.ReactNode; guestAllowed?: boolean }) {
   const { session, sessionLoading, t } = useBlog()
@@ -85,7 +99,7 @@ export function Modal({ title, children, close, variant = 'default', description
   return <dialog ref={ref} className={styles['dialog']} data-variant={variant} role={variant === 'confirm' ? 'alertdialog' : undefined} aria-label={title} aria-describedby={descriptionId} onKeyDown={e => {
     const isNestedControl = e.target instanceof HTMLElement && !!e.target.closest('[data-blog-control-popup]')
     if (e.key === 'Escape' && !e.defaultPrevented && !isNestedControl) { e.preventDefault(); close() }
-  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
+  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button type="button" className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
 }
 
 export function DeleteButton({ name, onDelete, iconOnly = false }: { name: string; onDelete: () => Promise<void>; iconOnly?: boolean }) {
@@ -229,23 +243,42 @@ export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Medi
   if (!files.length) return null
   const hasVideo = files.some(file => file.mime.startsWith('video'))
   const hasImage = files.some(file => !file.mime.startsWith('video'))
-  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <div className={styles['media-item']} data-kind="video" key={file.url}><video src={file.url} controls preload="metadata" onLoadedMetadata={onMediaLoad} /></div> : <button className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
+  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
-export function FilePicker({ files, setFiles, max = 16, imageOnly = false }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean }) {
+export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; descriptions?: Record<string, string> }) {
+  const [media, setMedia] = useState<Media[]>([])
+  useEffect(() => {
+    const next = files.map(file => ({
+      filename: file.name,
+      url: URL.createObjectURL(file),
+      mime: file.type || (/\.(mp4|webm|mov|mkv|ogg)$/i.test(file.name) ? 'video/mp4' : 'image/jpeg'),
+    }))
+    const frame = requestAnimationFrame(() => setMedia(next))
+    return () => {
+      cancelAnimationFrame(frame)
+      next.forEach(file => URL.revokeObjectURL(file.url))
+    }
+  }, [files])
+  return <MediaGrid files={media.map(file => ({ ...file, desc: descriptions[file.filename] || file.filename }))} />
+}
+export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label, onBeforeSelect }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean; label?: string; onBeforeSelect?: () => void }) {
   const { t, notify } = useBlog()
   const input = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   function choose(next: File[]) {
     const limit = imageOnly ? 10 : 50
-    const invalidType = next.some(file => !file.type.startsWith('image/') && (imageOnly || !file.type.startsWith('video/')))
-    if (invalidType || next.length > max || next.some(file => file.size > limit * 1024 * 1024)) { notify(`${t('upload')}: ≤ ${max} · ≤ ${limit} MB · ${imageOnly ? 'image' : 'image / video'}`); return }
-    setFiles(next)
+    const selected = max > 1
+      ? [...new Map([...files, ...next].map(file => [`${file.name}:${file.size}:${file.lastModified}:${file.type}`, file])).values()]
+      : next
+    const invalidType = selected.some(file => !file.type.startsWith('image/') && (imageOnly || !file.type.startsWith('video/')))
+    if (invalidType || selected.length > max || selected.some(file => file.size > limit * 1024 * 1024)) { notify(`${label || t('upload')}: ≤ ${max} · ≤ ${limit} MB · ${imageOnly ? 'image' : 'image / video'}`); return }
+    setFiles(selected)
   }
-  return <div className={styles['file-drop']} data-dragging={dragging} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); choose(Array.from(e.dataTransfer.files)) }}>
-    <input ref={input} type="file" hidden multiple accept={imageOnly ? 'image/*' : 'image/*,video/*'} onChange={e => { choose(Array.from(e.target.files || [])); e.target.value = '' }} />
-    <button type="button" className={styles['upload-trigger']} disabled={!max} onClick={() => input.current?.click()}>
+  return <div className={styles['file-drop']} data-dragging={dragging} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); onBeforeSelect?.(); choose(Array.from(e.dataTransfer.files)) }}>
+    <input ref={input} type="file" hidden multiple={max > 1} accept={imageOnly ? 'image/*' : 'image/*,video/*'} onChange={e => { onBeforeSelect?.(); choose(Array.from(e.target.files || [])); e.target.value = '' }} />
+    <button type="button" className={styles['upload-trigger']} disabled={!max} onClick={() => { onBeforeSelect?.(); input.current?.click() }}>
       <span className={styles['upload-symbol']}><Upload size={22} strokeWidth={1} /></span>
-      <span><strong>{t('upload')}</strong><small>{t('dropFiles')} · {imageOnly ? '10' : '50'} MB / {t('file')}</small></span>
+      <span><strong>{label || t('upload')}</strong><small>{t('dropFiles')} · {imageOnly ? '10' : '50'} MB / {t('file')}</small></span>
       <span className={styles['upload-count']}>{String(files.length).padStart(2, '0')}<small>/ {max}</small></span>
     </button>
     {!!files.length && <ul className={styles['upload-files']}>{files.map((file, index) => <li key={`${file.name}-${index}`}>
