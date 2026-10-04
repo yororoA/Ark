@@ -8,7 +8,7 @@ import useSWR, { useSWRConfig } from 'swr'
 import { ArrowLeft, ArrowUpRight, MessageSquare, Plus, Reply, Share2, X } from 'lucide-react'
 import { Comment, dateLabel, Entry, Envelope, excerpt, Media, mediaFor, safeUrl } from '@/lib/blog'
 import { send, useBlog, useBlogData } from './blog-provider'
-import { DeleteButton, FilePicker, LikeButton, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
+import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
 
 function useMomentMedia(entry: Entry) {
@@ -134,7 +134,7 @@ function Compose() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [files, setFiles] = useState<File[]>([])
-  const [description, setDescription] = useState('')
+  const [descriptions, setDescriptions] = useState<Record<string, string>>({})
   const [acknowledge, setAcknowledge] = useState(false)
   const [preview, setPreview] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -148,7 +148,7 @@ function Compose() {
       const form = new FormData()
       form.append('title', title.trim()); form.append('content', content)
       form.append('published', String(published)); form.append('acknowledge', String(acknowledge))
-      form.append('descriptions', JSON.stringify(Object.fromEntries(files.map(file => [file.name, description]))))
+      form.append('descriptions', JSON.stringify(Object.fromEntries(files.map(file => [file.name, descriptions[file.name] || '']))))
       for (const file of files) form.append('files', file)
       const result = await send<Envelope<Entry>>('moments/post', form)
       const uploaded = Object.keys(result.data.filenames || {}).length
@@ -163,8 +163,12 @@ function Compose() {
   function restore() {
     const entry = draft.data?.data
     if (!entry) return
-    setTitle(entry.title); setContent(entry.content); setFiles([])
+    setTitle(entry.title); setContent(entry.content); setFiles([]); setDescriptions({})
     setRestoredMedia(!!Object.keys(entry.filenames || {}).length)
+  }
+  function changeFiles(next: File[]) {
+    setFiles(next)
+    setDescriptions(previous => Object.fromEntries(next.map(file => [file.name, previous[file.name] || ''])))
   }
   return <form className={styles['form']} onSubmit={e => { e.preventDefault(); void submit(true) }}>
     <State error={draft.error} retry={() => draft.mutate()} />
@@ -172,9 +176,9 @@ function Compose() {
     {restoredMedia && <p className={styles['form-note']}>{t('draftMedia')}</p>}
     <label className={styles['field']}>{t('title')}<input required maxLength={200} value={title} onChange={e => setTitle(e.target.value)} /></label>
     <div><button type="button" className={styles['secondary-button']} aria-pressed={preview} onClick={() => setPreview(!preview)}>{t(preview ? 'edit' : 'preview')}</button></div>
-    {preview ? <Markdown content={content} /> : <label className={styles['field']}>{t('content')} / Markdown<textarea rows={10} value={content} onChange={e => setContent(e.target.value)} /></label>}
-    <FilePicker files={files} setFiles={setFiles} max={50} />
-    {!!files.length && <><label className={styles['field']}>{t('description')}<input value={description} onChange={e => setDescription(e.target.value)} /></label><label className={styles['checkbox']}><input type="checkbox" checked={acknowledge} onChange={e => setAcknowledge(e.target.checked)} />{t('acknowledge')}</label></>}
+    {preview ? <><Markdown content={content} /><LocalMediaGrid files={files} descriptions={descriptions} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea minRows={10} value={content} onChange={e => setContent(e.target.value)} /></label>}
+    <FilePicker files={files} setFiles={changeFiles} max={50} />
+    {!!files.length && <><div className={styles['media-description-list']}><p className={styles['form-note']}>{t('mediaDescriptionHint')}</p>{files.map((file, index) => <label className={styles['field']} key={`${file.name}-${index}`}><span className={styles['media-description-label']} title={file.name}>{t('mediaDescription')} · {file.name}</span><input value={descriptions[file.name] || ''} onChange={event => setDescriptions(value => ({ ...value, [file.name]: event.target.value }))} /></label>)}</div><label className={styles['checkbox']}><input type="checkbox" checked={acknowledge} onChange={e => setAcknowledge(e.target.checked)} />{t('acknowledge')}</label></>}
     {error && <p role="alert" className={styles['error']}>{error}</p>}
     <div className={styles['form-actions']}><button disabled={busy || !title.trim()} className={styles['primary-button']}>{t(busy ? 'saving' : 'publish')}</button><button type="button" disabled={busy} className={styles['secondary-button']} onClick={() => submit(false)}>{t('draft')}</button><Link href="/moments" className={styles['secondary-button']}>{t('cancel')}</Link></div>
   </form>

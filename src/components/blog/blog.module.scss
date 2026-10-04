@@ -222,6 +222,7 @@
 .reader-header { padding: 40px 0; border-bottom: 1px solid var(--line); h1 { font: 400 clamp(32px, 4vw, 54px)/1.4 var(--song); letter-spacing: -.5px; margin: 20px 0; overflow-wrap: anywhere; } }
 .markdown { font-size: 16px; line-height: 1.95; overflow-wrap: anywhere; padding: 32px 0;
   > * + * { margin-top: 22px; } h1, h2, h3 { font-family: var(--song); line-height: 1.5; margin-top: 40px; } h1 { font-size: 32px; } h2 { font-size: 27px; } h3 { font-size: 21px; }
+  p { white-space: pre-wrap; }
   ul, ol { padding-left: 25px; list-style: revert; } li + li { margin-top: 8px; }
   a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
   blockquote { border-left: 2px solid var(--accent); margin-left: 0; padding: 8px 22px; background: var(--soft); color: var(--muted); }
@@ -259,6 +260,8 @@
   li { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); font-size: 11px; padding: 4px 0; }
   li > span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } small { color: var(--muted); white-space: nowrap; }
 }
+.media-description-list { display: grid; gap: 14px; padding-top: 4px; }
+.media-description-label { overflow-wrap: anywhere; word-break: break-word; }
 .error { color: var(--accent); font-size: 13px; }
 .checkbox { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: 12px; cursor: pointer;
   input { appearance: none; position: relative; flex-shrink: 0; width: 20px; height: 20px; border: 1px solid var(--muted); border-radius: 0; background: none; cursor: pointer; transition: background .2s, border-color .2s;
@@ -266,7 +269,7 @@
     &:checked { background: var(--accent); border-color: var(--accent); &::after { opacity: 1; } }
   }
 }
-.editor-textarea { min-height: 420px; font: 14px/1.9 "SFMono-Regular", Consolas, monospace !important; }
+.editor-textarea { min-height: 420px; overflow-y: hidden; font: 14px/1.9 "SFMono-Regular", Consolas, monospace !important; }
 .moments-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 60px; }
 .moment-card { border-top: 1px solid var(--ink); padding: 22px 0 30px; h2 { font: 26px/1.5 var(--song); margin: 15px 0; } p { color: var(--muted); margin-bottom: 20px; line-height: 1.9; } &:hover h2 { color: var(--accent); } }
 .moment-media { width: 100%; max-height: 360px; object-fit: cover; display: block; aspect-ratio: 4/3; background: var(--soft); margin-bottom: 20px; }

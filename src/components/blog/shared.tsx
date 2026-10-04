@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Migrated media has arbitrary dimensions and hosts; preserve its original aspect ratio. */
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type TextareaHTMLAttributes } from 'react'
 import Link from '@/components/appearance/p3r-link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
@@ -41,6 +41,17 @@ export function State({ loading, error, empty, retry }: { loading?: boolean; err
 }
 export function Markdown({ content }: { content: string }) {
   return <div className={styles['markdown']}><ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: ({ children, ...props }) => <a {...props} target="_blank" rel="noreferrer">{children}</a> }}>{content}</ReactMarkdown></div>
+}
+export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const resize = useCallback(() => {
+    const textarea = ref.current
+    if (!textarea) return
+    textarea.style.height = '0'
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [])
+  useEffect(resize, [resize, value])
+  return <textarea {...props} ref={ref} rows={minRows} value={value} style={{ ...style, overflowY: 'hidden' }} onInput={event => { resize(); onInput?.(event) }} />
 }
 export function RequireLogin({ children, guestAllowed = false }: { children: React.ReactNode; guestAllowed?: boolean }) {
   const { session, sessionLoading, t } = useBlog()
@@ -88,7 +99,7 @@ export function Modal({ title, children, close, variant = 'default', description
   return <dialog ref={ref} className={styles['dialog']} data-variant={variant} role={variant === 'confirm' ? 'alertdialog' : undefined} aria-label={title} aria-describedby={descriptionId} onKeyDown={e => {
     const isNestedControl = e.target instanceof HTMLElement && !!e.target.closest('[data-blog-control-popup]')
     if (e.key === 'Escape' && !e.defaultPrevented && !isNestedControl) { e.preventDefault(); close() }
-  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
+  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button type="button" className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
 }
 
 export function DeleteButton({ name, onDelete, iconOnly = false }: { name: string; onDelete: () => Promise<void>; iconOnly?: boolean }) {
@@ -232,9 +243,25 @@ export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Medi
   if (!files.length) return null
   const hasVideo = files.some(file => file.mime.startsWith('video'))
   const hasImage = files.some(file => !file.mime.startsWith('video'))
-  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <div className={styles['media-item']} data-kind="video" key={file.url}><video src={file.url} controls preload="metadata" onLoadedMetadata={onMediaLoad} /></div> : <button className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
+  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <div className={styles['media-item']} data-kind="video" key={file.url}><video src={file.url} controls preload="metadata" onLoadedMetadata={onMediaLoad} /></div> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
-export function FilePicker({ files, setFiles, max = 16, imageOnly = false }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean }) {
+export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; descriptions?: Record<string, string> }) {
+  const [media, setMedia] = useState<Media[]>([])
+  useEffect(() => {
+    const next = files.map(file => ({
+      filename: file.name,
+      url: URL.createObjectURL(file),
+      mime: file.type || (/\.(mp4|webm|mov|mkv|ogg)$/i.test(file.name) ? 'video/mp4' : 'image/jpeg'),
+    }))
+    const frame = requestAnimationFrame(() => setMedia(next))
+    return () => {
+      cancelAnimationFrame(frame)
+      next.forEach(file => URL.revokeObjectURL(file.url))
+    }
+  }, [files])
+  return <MediaGrid files={media.map(file => ({ ...file, desc: descriptions[file.filename] || file.filename }))} />
+}
+export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean; label?: string }) {
   const { t, notify } = useBlog()
   const input = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
@@ -248,7 +275,7 @@ export function FilePicker({ files, setFiles, max = 16, imageOnly = false }: { f
     <input ref={input} type="file" hidden multiple accept={imageOnly ? 'image/*' : 'image/*,video/*'} onChange={e => { choose(Array.from(e.target.files || [])); e.target.value = '' }} />
     <button type="button" className={styles['upload-trigger']} disabled={!max} onClick={() => input.current?.click()}>
       <span className={styles['upload-symbol']}><Upload size={22} strokeWidth={1} /></span>
-      <span><strong>{t('upload')}</strong><small>{t('dropFiles')} · {imageOnly ? '10' : '50'} MB / {t('file')}</small></span>
+      <span><strong>{label || t('upload')}</strong><small>{t('dropFiles')} · {imageOnly ? '10' : '50'} MB / {t('file')}</small></span>
       <span className={styles['upload-count']}>{String(files.length).padStart(2, '0')}<small>/ {max}</small></span>
     </button>
     {!!files.length && <ul className={styles['upload-files']}>{files.map((file, index) => <li key={`${file.name}-${index}`}>
