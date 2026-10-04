@@ -49,12 +49,41 @@
   --ark-sequence-network-point: #e7fbfc;
 }
 
+@mixin p3r-day {
+  --ark-paper: #eff7ff;
+  --ark-ink: #08245b;
+  --ark-muted: #395886;
+  --ark-line: #a4c4e9;
+  --ark-accent: #064ace;
+  --ark-soft: #d7eaff;
+  --ark-p3r-panel: #ffffff;
+  --ark-p3r-blue: #0754e4;
+  --ark-p3r-deep: #032369;
+  --ark-p3r-cyan: #58e5ff;
+  --ark-p3r-pink: #eb2676;
+  --ark-p3r-white: #f4fbff;
+  --ark-p3r-display: var(--font-barlow-condensed), "Arial Narrow", var(--font-noto-sans), sans-serif;
+}
+
+@mixin p3r-night {
+  --ark-paper: #071a3a;
+  --ark-ink: #f0f7ff;
+  --ark-muted: #a9c7eb;
+  --ark-line: #2c5285;
+  --ark-accent: #58e5ff;
+  --ark-soft: #103261;
+  --ark-p3r-panel: #0a244c;
+  --ark-p3r-blue: #063cb6;
+  --ark-p3r-deep: #020f3c;
+}
+
 @mixin night {
   --ark-color-scheme: dark;
   --ark-white-logo-filter: none;
   --ark-dark-logo-filter: invert(1) grayscale(1);
   @include archive-night;
   &[data-design="rain"] { @include rain-night; }
+  &[data-design="p3r"] { @include p3r-night; }
 }
 
 :root {
@@ -78,6 +107,7 @@
   background: var(--ark-paper);
 
   &[data-design="rain"] { @include rain-day; }
+  &[data-design="p3r"] { @include p3r-day; }
   &[data-theme="dark"] { @include night; }
   @media (prefers-color-scheme: dark) {
     &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }
