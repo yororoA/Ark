@@ -110,29 +110,11 @@ export default function P3REffects() {
       event.preventDefault()
       start((event as CustomEvent<P3RWipeRequest>).detail)
     }
-    const click = (event: MouseEvent) => {
-      const modified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
-      if (motion.matches || modified || event.button !== 0 || !(event.target instanceof Element)) return
-      const control = event.target.closest<HTMLElement>('a[href], button, summary, label, [role="option"], input[type="radio"], input[type="checkbox"]')
-      if (!control || control.matches(':disabled, [aria-disabled="true"], [data-p3r-link]') || control.closest('[data-p3r-effect="none"]')) return
-      if (control instanceof HTMLInputElement && control.getBoundingClientRect().width <= 1) return
-      if (control instanceof HTMLAnchorElement && (control.download || control.target === '_blank' || control.origin !== location.origin)) return
-      const rect = control.getBoundingClientRect()
-      const x = event.detail ? event.clientX : rect.left + rect.width / 2
-      const y = event.detail ? event.clientY : rect.top + rect.height / 2
-      // Let business handlers open their dialogs or begin authentication first.
-      queueMicrotask(() => {
-        const connecting = useRainConnection.getState().connection !== null
-        if (connecting) { clear(); return }
-        if (document.documentElement.dataset.design === 'p3r') start({ x, y })
-      })
-    }
     const key = (event: KeyboardEvent) => { if (active && event.key === 'Escape') skip() }
     const preference = () => { if (motion.matches) skip() }
     const visibility = () => { if (document.hidden) skip() }
     const unsubscribe = useRainConnection.subscribe(({ connection }) => { if (connection) clear() })
     document.addEventListener(P3R_WIPE_EVENT, request)
-    document.addEventListener('click', click, { capture: true, passive: true })
     document.addEventListener('keydown', key)
     document.addEventListener('visibilitychange', visibility)
     motion.addEventListener('change', preference)
@@ -140,7 +122,6 @@ export default function P3REffects() {
     return () => {
       unsubscribe()
       document.removeEventListener(P3R_WIPE_EVENT, request)
-      document.removeEventListener('click', click, true)
       document.removeEventListener('keydown', key)
       document.removeEventListener('visibilitychange', visibility)
       motion.removeEventListener('change', preference)

@@ -25,13 +25,10 @@ export default function P3RLink({ onClick, onNavigate, replace, scroll, transiti
       if (!href) { onNavigate?.(event); return }
       const url = new URL(href, location.href)
       const changesPage = url.origin === location.origin && url.pathname !== location.pathname
-      // Hashes, same-page filters, modified clicks, downloads and external
-      // links keep Next/browser semantics. onNavigate excludes the latter three.
-      if (!changesPage) {
-        onNavigate?.(event)
-        requestP3RWipe({ x, y })
-        return
-      }
+      // Only a new pathname gets the full-page wipe. Hashes and same-page
+      // filters keep their immediate behavior; modified clicks, downloads and
+      // external links do not reach onNavigate.
+      if (!changesPage) { onNavigate?.(event); return }
       const accepted = requestP3RWipe({ x, y, navigate: () => {
         let cancelled = false
         onNavigate?.({ preventDefault: () => { cancelled = true } })
