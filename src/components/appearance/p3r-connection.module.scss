@@ -1,0 +1,62 @@
+.sequence {
+  position: fixed; inset: 0; isolation: isolate; overflow: hidden; color: #f4fbff;
+  font: 14px/1.6 var(--font-noto-sans-loaded), sans-serif; outline: none;
+  button, a { padding: 12px 22px; min-height: 46px; border: 0; background: #f4fbff; color: #032369; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; box-shadow: 4px 4px 0 #eb2676; }
+  button:hover, a:hover { background: #58e5ff; }
+  :focus-visible { outline: 2px solid #58e5ff; outline-offset: 6px; }
+}
+.curtain { position: absolute; inset: -30%; background: #0754e4; transform: skewX(-20deg); }
+.date-scene { position: absolute; inset: 0; }
+.cross-axis {
+  position: absolute; top: 45%; left: -20%; width: 140%; height: 2px; background: #58e5ff; transform: rotate(-16deg);
+  &::after { content: ''; position: absolute; left: 58%; top: -70vh; height: 140vh; width: 16px; background: #58e5ff; transform: rotate(-26deg); }
+}
+.month-word { position: absolute; top: 4%; left: -2%; color: #043694; font: italic 800 clamp(110px, 24vw, 390px)/.9 var(--ark-p3r-display); letter-spacing: -.04em; text-transform: uppercase; transform: rotate(-16deg); animation: month-enter 1s ease-in-out both; }
+.date-band {
+  position: absolute; top: 39%; left: -10%; width: 120%; padding: 15px 10%; display: flex; justify-content: center; align-items: baseline; gap: 24px;
+  background: #f4fbff; color: #032369; transform: rotate(-16deg); box-shadow: 0 9px 0 #58e5ff;
+  font: italic 800 clamp(84px, 15vw, 235px)/.85 var(--ark-p3r-display); animation: date-enter 1.1s .1s ease-in-out both;
+  strong { font: inherit; color: #0754e4; }
+  i { font: inherit; font-size: .6em; }
+  small { align-self: center; font: italic 800 clamp(15px, 2.4vw, 38px)/.95 var(--ark-p3r-display); margin-left: 26px; }
+}
+.date-rings { position: absolute; left: 58%; top: 43%; width: 1px; height: 1px; i { position: absolute; inset: -110px; border: 4px solid #f4fbff; border-radius: 50%; animation: date-pulse .9s .6s ease-out both; } i + i { inset: -75px; border-color: #58e5ff; animation-delay: .78s; } }
+.identity {
+  position: absolute; bottom: 13%; left: 12%; max-width: 65%; padding: 16px 24px; border-left: 5px solid #58e5ff; background: #032369;
+  animation: identity-enter .4s .65s ease-in-out both;
+  small { font-size: 9px; letter-spacing: 2px; color: #a9edff; }
+  strong { display: block; margin: 6px 0; font-size: clamp(24px, 3vw, 42px); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  p { margin: 0; color: #b5eaff; font-size: 12px; }
+}
+.skip { position: absolute; bottom: max(24px, env(safe-area-inset-bottom)); right: max(24px, env(safe-area-inset-right)); }
+.failure { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(390px, calc(100% - 48px)); padding: 28px; background: #032369; border: 3px solid #58e5ff; p { margin: 0 0 22px; overflow-wrap: anywhere; } a { display: inline-block; margin: 0 12px 16px 0; } }
+.sequence[data-phase="error"] .date-scene { opacity: .3; }
+.sequence[data-phase="revealing"] {
+  .curtain { animation: curtain-exit .7s ease-in-out both; }
+  .date-scene { animation: axis-exit .55s ease-in-out both; }
+  .identity { animation: identity-exit .3s ease-in-out both; }
+}
+.sequence[data-quick="true"] {
+  .date-scene { display: none; }
+  .identity { animation: none; }
+  &[data-phase="revealing"] { animation: quick-exit .12s ease-in-out both; .curtain { animation: none; } }
+}
+@keyframes date-enter { from { translate: -100vw 30vh; } to { translate: 0; } }
+@keyframes month-enter { from { translate: 60vw -25vh; opacity: 0; } to { translate: 0; opacity: 1; } }
+@keyframes date-pulse { from { transform: scale(.15); opacity: 1; } to { transform: scale(3.5); opacity: 0; } }
+@keyframes identity-enter { from { translate: 35px -10px; opacity: 0; } to { translate: 0; opacity: 1; } }
+@keyframes identity-exit { to { translate: -80px 25px; opacity: 0; } }
+@keyframes axis-exit { to { transform: translate(110vw, -40vh); } }
+@keyframes curtain-exit { to { transform: translateX(120%) skewX(-20deg); } }
+@keyframes quick-exit { to { opacity: 0; } }
+@media (max-width: 640px) {
+  .month-word { top: 14%; font-size: 37vw; }
+  .date-band { gap: 12px; font-size: 24vw; padding-block: 16px; }
+  .date-band small { font-size: 13px; margin-left: 10px; }
+  .identity { left: 8%; bottom: 20%; padding: 14px 18px; max-width: 80%; }
+  .date-rings { left: 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sequence *, .sequence *::before, .sequence *::after { animation: none !important; transition: none !important; }
+  .date-scene { display: none; }
+}

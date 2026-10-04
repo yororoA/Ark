@@ -11,6 +11,10 @@ const RainSequence = dynamic(() => import('./rain-connection-sequence'), {
   ssr: false,
   loading: () => <div className={styles['loading-curtain']} role="status">{QINGJIAN_COPY.zh.name} · 正在接入</div>,
 })
+const P3RSequence = dynamic(() => import('./p3r-connection-sequence'), {
+  ssr: false,
+  loading: () => <div className={styles['loading-curtain']} role="status">P3R · 正在接入</div>,
+})
 
 function Transition({ connection }: { connection: RainConnection }) {
   const router = useRouter()
@@ -72,7 +76,8 @@ function Transition({ connection }: { connection: RainConnection }) {
     return () => window.clearTimeout(timer)
   }, [navigating, pageReady])
 
-  return <RainSequence
+  const Sequence = connection.design === 'p3r' ? P3RSequence : RainSequence
+  return <Sequence
     {...connection}
     pageReady={pageReady}
     navigationSlow={navigationSlow}

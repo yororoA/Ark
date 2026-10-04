@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ArchiveLogo from '@/components/brand/archive-logo';
 import ThemePicker from '@/components/appearance/theme-picker';
 import RainPlanes from '@/components/appearance/rain-planes';
+import P3RScene from '@/components/appearance/p3r-scene';
 import { useAppearance } from '@/components/appearance/appearance-store';
 import { useRainConnection } from '@/components/appearance/rain-connection-store';
 import { QINGJIAN_COPY } from '@/lib/qingjian-copy';
@@ -41,6 +42,10 @@ function Login() {
   const destination = loginDestination(returnTo);
   const { design } = useAppearance();
   useEffect(() => {
+    if (design === 'p3r') {
+      void import('@/components/appearance/p3r-connection-sequence').catch(() => {});
+      return;
+    }
     if (design !== 'rain') return;
     void import('@/components/appearance/rain-connection-sequence').catch(() => {});
   }, [design]);
@@ -89,8 +94,8 @@ function Login() {
     setConnectionDesign(design);
     setConnection(initial);
     setIsDeclarationVisible(false);
-    const rainId = design === 'rain'
-      ? useRainConnection.getState().begin({ ...initial, destination, onDismiss: handleDismissConnection })
+    const rainId = design === 'rain' || design === 'p3r'
+      ? useRainConnection.getState().begin({ ...initial, design, destination, onDismiss: handleDismissConnection })
       : null;
     const updateConnection = (state: ConnectionState) => {
       setConnection(state);
@@ -154,6 +159,7 @@ function Login() {
       )}
       {/* The previous dark sphere composition remains available in commit 26f4085. */}
       <div className={styles['login-scene']} inert={isConnecting || showAccountManagement || isDeclarationVisible}>
+        <P3RScene variant="login" />
         <header className={styles['login-header']}>
           <Link href="/home" aria-label="YororoIce Ark"><ArchiveLogo priority /></Link>
           <nav aria-label="登录页导航"><Link href="/home">浏览首页</Link><Link href="/terms">社区约定</Link><ThemePicker /></nav>
@@ -161,6 +167,7 @@ function Login() {
         <main className={styles['login-main']}>
           <RainPlanes variant="identity" />
           <section className={styles['login-copy']}>
+            <div className={styles['login-p3r']} aria-hidden="true"><span>CONTINUE</span><strong>YOUR STORY.</strong></div>
             <div className={styles['login-signature']} aria-hidden="true"><Image src="/bines_sign.png" alt="" fill sizes="300px" priority /></div>
             <div className={styles['login-rain']} aria-hidden="true">
               <span>{QINGJIAN_COPY.zh.name}</span><small>YOROROICE / ARK</small>
