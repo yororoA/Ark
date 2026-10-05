@@ -13,6 +13,7 @@ const state = globalThis as typeof globalThis & {
   arkPublicReaderUntil?: number
 }
 const renewals = state.arkRenewals ??= new Map<string, Renewal>()
+const MAX_STORED_ACCOUNTS = 5
 
 export class BackendError extends Error {
   constructor(message: string, public status = 502) { super(message) }
@@ -49,7 +50,7 @@ export async function saveCredential(credential: Credential, activate = false) {
     const entries = (store.get('blog_tokens')?.value || '').split(',').filter(Boolean)
       .filter(entry => !entry.startsWith(`${credential.uid}:`))
     entries.push(`${credential.uid}:${credential.token}`)
-    store.set('blog_tokens', entries.join(','), { ...options, maxAge: 604800 })
+    store.set('blog_tokens', entries.slice(-MAX_STORED_ACCOUNTS).join(','), { ...options, maxAge: 604800 })
   }
   if (activate) store.set('blog_active_uid', credential.uid, { ...options, httpOnly: false, maxAge: 31536000 })
 }

@@ -1,0 +1,30 @@
+{
+  "_readme": [
+    "web-mascot 的默认动画配置档。",
+    "引擎已经内建了下面这套默认值，所以本文件通常不必存在：配好精灵路径即可。",
+    "要改某项，就把它写进 defaults —— 对象型字段（behaviorWeights/actionDurations/zone/spawn/partnerWeights）按 key 合并，数组与数值整体替换。",
+    "要完全退回 pack 原生行为（无 pacer、无权重覆盖、无长序列豁免），写 ignoreBuiltin: true。",
+    "字段逐条说明见 ANIMATION_CONFIG.md。"
+  ],
+  "version": 1,
+  "respectReducedMotion": true,
+  "defaults": {
+    "spawn": {
+      "topOffset": 100,
+      "staggerPx": 180
+    },
+    "forcedSwitchTicks": 200,
+    "pacerExemptBehaviors": [
+      "SitWhileDanglingLegs"
+    ],
+    "exitToPoolBehaviors": [
+      "SitWhileDanglingLegs"
+    ],
+    "maxBehaviorTicks": 1100,
+    "behaviorWeights": {
+      "SitWhileDanglingLegs": 150,
+      "SitAndFaceMouse": 8
+    }
+  },
+  "mascots": {}
+}

@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js">
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React">
   <img src="https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/License-MIT%20%2B%20third--party-blue" alt="License: MIT + third-party terms">
 </p>
 
 ---
@@ -29,7 +29,7 @@ Ark 迁移自 [yororoIceBlog_React](https://github.com/yororoA/yororoIceBlog_Rea
 | 样式 | Tailwind CSS 4 + SCSS Modules |
 | 组件 | shadcn/ui + Radix UI |
 | 状态管理 | Zustand + SWR |
-| 动画 | Lenis 平滑滚动 |
+| 动画与交互 | Lenis 平滑滚动、web-mascot 桌宠 |
 | 内容与工具 | react-markdown, remark-gfm, Node crypto, zod |
 
 ## 快速开始
@@ -91,4 +91,8 @@ src/
 
 ## License
 
-[MIT](LICENSE) © 2026 yororoA, YororoIce
+Ark 自有代码使用 [MIT](LICENSE) © 2026 yororoA, YororoIce。
+
+项目集成的 `web-mascot` 引擎使用 `GPL-3.0-or-later`；Neuron 与 Eviling
+素材使用 `CC-BY-NC-SA-4.0`，仅限非商业用途。完整归属与对应源码见
+[第三方说明](docs/third-party/web-mascot.md)。

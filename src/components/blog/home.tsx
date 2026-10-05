@@ -4,7 +4,7 @@
 import Link from '@/components/appearance/p3r-link'
 import { useRef, type CSSProperties } from 'react'
 import { ArrowDown, ArrowRight, ArrowUpRight, Plus } from 'lucide-react'
-import { articlePreview, dateLabel, Entry, Envelope, excerpt, Locale, PROFILE } from '@/lib/blog'
+import { articlePreview, dateLabel, Entry, Envelope, excerpt, HomeMomentSummary, Locale, PROFILE } from '@/lib/blog'
 import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
@@ -99,21 +99,33 @@ function OrbitRecords({ articles, moments, locale }: { articles: Entry[]; moment
   </div>
 }
 
-export default function Home() {
+export default function Home({
+  initialArticles,
+  initialMoments,
+}: {
+  initialArticles?: Envelope<Entry[]>
+  initialMoments?: Envelope<HomeMomentSummary>
+}) {
   const { t, locale } = useBlog()
   const art = useRef<HTMLDivElement>(null)
-  const articles = useBlogData<Envelope<Entry[]>>('knowledge?limit=4')
-  const moments = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false')
+  const articles = useBlogData<Envelope<Entry[]>>('knowledge?limit=4', {
+    fallbackData: initialArticles,
+    revalidateOnMount: !initialArticles,
+  })
+  const moments = useBlogData<Envelope<HomeMomentSummary>>('moments/summary?limit=8&days=84', {
+    fallbackData: initialMoments,
+    revalidateOnMount: !initialMoments,
+  })
   const status = useBlogData<Envelope<{ online: boolean }>>('status/bines', { refreshInterval: 60000 })
   const github = useBlogData<Envelope<{ reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }>>('github/summary')
   const featured = articles.data?.data[0]
   const orbitArticles = articles.data?.data || []
-  const orbitMoments = moments.data?.data || []
+  const orbitMoments = moments.data?.data.entries || []
   const featuredPreview = featured ? articlePreview(featured.content) : null
   const recent = articles.data?.data.slice(1, 4) || []
   const isOnline = status.data?.data.online
   const statusLabel = isOnline === undefined ? 'unknown' : isOnline ? 'online' : 'offline'
-  const dates = new Set(moments.data?.data.map(entry => entry.createdAt.slice(0, 10)))
+  const dates = new Set(moments.data?.data.activeDates || [])
   const calendarStart = new Date()
   calendarStart.setUTCDate(calendarStart.getUTCDate() - 83)
   return <>
@@ -152,6 +164,6 @@ export default function Home() {
       {featured && featuredPreview && <div className={styles['recent-grid']}><Link href={`/articles/${featured._id}`} prefetch={false} className={styles['featured-entry']} data-cover={!!featuredPreview.coverUrl}>{featuredPreview.coverUrl && <figure className={styles['featured-cover']}><img src={featuredPreview.coverUrl} alt={featuredPreview.coverAlt || featured.title} /><span>FEATURED / 01</span></figure>}<div className={styles['featured-body']}><div className={styles['entry-meta']}><span>{featured.category}</span><time>{dateLabel(featured.createdAt, locale)}</time>{!featuredPreview.coverUrl && <span>FEATURED / 01</span>}</div><h3>{featured.title}</h3><p>{excerpt(featuredPreview.content, 155)}</p><ArrowUpRight size={30} strokeWidth={1} /></div></Link><div className={styles['entry-list']}>{recent.map((entry, index) => <Link href={`/articles/${entry._id}`} prefetch={false} className={styles['entry-row']} key={entry._id}><span>0{index + 2}</span><div><div className={styles['entry-meta']}><time>{dateLabel(entry.createdAt, locale)}</time><span>{entry.category}</span></div><h3>{entry.title}</h3></div><ArrowUpRight size={19} strokeWidth={1} /></Link>)}</div></div>}
     </section>
     <section className={styles['manifesto']}><div><div className={styles['eyebrow']}>IN WORDS, WE REMAIN.</div><blockquote>Time mends the wounds,<br />love soothes the scars.</blockquote><a href={PROFILE.github} className={styles['text-link']} target="_blank" rel="noreferrer" style={{ marginTop: 25 }}>YOROROICE / GITHUB<ArrowUpRight size={15} /></a></div><div><div className={styles['eyebrow']}>{t('activity')}</div>{github.data ? <><div className={styles['activity']}><div><strong>{github.data.data.reposCount}</strong><small>{t('repositories')}</small></div><div><strong>{github.data.data.monthCommits}</strong><small>{t('commits')}</small></div></div><div className={styles['tags']}>{github.data.data.languages.slice(0, 4).map(language => <span key={language.name}>{language.name} · {Math.round(language.percent)}%</span>)}</div></> : <State loading={github.isLoading} error={github.error} retry={() => github.mutate()} />}</div></section>
-    <section className={styles['home-section']}><div className={styles['section-heading']}><div><div className={styles['eyebrow']}>02 / FRAGMENTS OF LIFE</div><h2>{t('moments')}</h2></div><Link href="/moments" className={styles['text-link']}>{t('all')}<ArrowUpRight size={18} /></Link></div><State loading={moments.isLoading} error={moments.error} retry={() => moments.mutate()} /><div className={styles['recent-grid']}><div className={styles['entry-list']}>{moments.data?.data.slice(0, 3).map((entry, index) => <Link href={`/moments/${entry._id}`} key={entry._id} className={styles['entry-row']}><span>0{index + 1}</span><div><div className={styles['entry-meta']}>{dateLabel(entry.createdAt, locale)}</div><h3>{entry.title}</h3></div><ArrowUpRight size={18} /></Link>)}</div><div><div className={styles['eyebrow']}>{t('calendar')} / 12 WEEKS</div><div className={styles['calendar']}>{Array.from({ length: 84 }, (_, index) => { const date = new Date(calendarStart); date.setUTCDate(calendarStart.getUTCDate() + index); const day = date.toISOString().slice(0, 10); return dates.has(day) ? <Link key={day} href={`/moments?date=${day}`} prefetch={false} data-active="true" title={day} aria-label={`${t('date')} ${day}`} /> : <span key={day} data-active="false" aria-hidden="true" /> })}</div><p className={styles['form-note']} style={{ marginTop: 20 }}>{t('introBody')}</p><Link href="/archive" className={styles['text-link']} style={{ marginTop: 30 }}>{t('archive')}<ArrowUpRight size={16} /></Link></div></div></section>
+    <section className={styles['home-section']}><div className={styles['section-heading']}><div><div className={styles['eyebrow']}>02 / FRAGMENTS OF LIFE</div><h2>{t('moments')}</h2></div><Link href="/moments" className={styles['text-link']}>{t('all')}<ArrowUpRight size={18} /></Link></div><State loading={moments.isLoading} error={moments.error} retry={() => moments.mutate()} /><div className={styles['recent-grid']}><div className={styles['entry-list']}>{orbitMoments.slice(0, 3).map((entry, index) => <Link href={`/moments/${entry._id}`} key={entry._id} className={styles['entry-row']}><span>0{index + 1}</span><div><div className={styles['entry-meta']}>{dateLabel(entry.createdAt, locale)}</div><h3>{entry.title}</h3></div><ArrowUpRight size={18} /></Link>)}</div><div><div className={styles['eyebrow']}>{t('calendar')} / 12 WEEKS</div><div className={styles['calendar']}>{Array.from({ length: 84 }, (_, index) => { const date = new Date(calendarStart); date.setUTCDate(calendarStart.getUTCDate() + index); const day = date.toISOString().slice(0, 10); return dates.has(day) ? <Link key={day} href={`/moments?date=${day}`} prefetch={false} data-active="true" title={day} aria-label={`${t('date')} ${day}`} /> : <span key={day} data-active="false" aria-hidden="true" /> })}</div><p className={styles['form-note']} style={{ marginTop: 20 }}>{t('introBody')}</p><Link href="/archive" className={styles['text-link']} style={{ marginTop: 30 }}>{t('archive')}<ArrowUpRight size={16} /></Link></div></div></section>
   </>
 }
