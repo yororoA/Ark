@@ -124,7 +124,11 @@ const server = createServer(async (req, res) => {
     if (path === '/api/knowledge/view') return ok({ views: 13 })
     if (path === '/api/knowledge') {
       if (req.method === 'POST') { const item = { ...article, ...body, _id: (++sequence).toString(16).padStart(24, '0'), uid: user.uid }; articles.unshift(item); return ok(item) }
-      const filtered = articles.filter(item => (!url.searchParams.get('keyword') || item.title.includes(url.searchParams.get('keyword'))) && (!url.searchParams.get('category') || item.category === url.searchParams.get('category')))
+      const filtered = articles.filter(item => (
+        (!url.searchParams.get('keyword') || item.title.includes(url.searchParams.get('keyword')))
+        && (!url.searchParams.get('category') || item.category === url.searchParams.get('category'))
+        && (!url.searchParams.get('date') || item.createdAt.startsWith(url.searchParams.get('date')))
+      ))
       const page = +(url.searchParams.get('page') || 1), limit = +(url.searchParams.get('limit') || 20)
       return ok(filtered.slice((page - 1) * limit, page * limit), { pagination: { page, limit, total: filtered.length, pages: Math.ceil(filtered.length / limit) } })
     }
@@ -135,7 +139,13 @@ const server = createServer(async (req, res) => {
       if (req.method === 'DELETE') { articles.splice(index, 1); return ok({ deleted: true }) }
       return ok(articles[index])
     }
-    if (path === '/api/moments/get') return ok(url.searchParams.get('isEditing') === 'true' ? draft : moments)
+    if (path === '/api/moments/get') {
+      if (url.searchParams.get('isEditing') === 'true') return ok(draft)
+      const filtered = moments.filter(item => !url.searchParams.get('date') || item.createdAt.startsWith(url.searchParams.get('date')))
+      if (!url.searchParams.has('page') && !url.searchParams.has('limit') && !url.searchParams.has('date')) return ok(filtered)
+      const page = +(url.searchParams.get('page') || 1), limit = +(url.searchParams.get('limit') || 20)
+      return ok(filtered.slice((page - 1) * limit, page * limit), { pagination: { page, limit, total: filtered.length, pages: Math.ceil(filtered.length / limit) } })
+    }
     if (/\/moments\/[a-f0-9]{24}$/.test(path)) {
       const item = moments.find(entry => entry._id === path.split('/').pop())
       return item ? ok(item) : json({ message: 'Not found' }, 404)
@@ -158,7 +168,15 @@ const server = createServer(async (req, res) => {
     if (path === '/api/about') return ok({ title: 'YororoIce', description: 'A personal chronicle', author: 'YororoIce' })
     if (path === '/api/status/bines') return ok({ online: true })
     if (path === '/api/github/summary') return ok({ reposCount: 8, monthCommits: 21, languages: [{ name: 'TypeScript', percent: 72 }] })
-    if (path === '/api/guestbook') { if (req.method === 'POST') guestbook.push({ ...body, _id: `${++sequence}`, createdAt: article.createdAt }); return ok(req.method === 'POST' ? guestbook.at(-1) : guestbook) }
+    if (path === '/api/guestbook') {
+      if (req.method === 'POST') {
+        guestbook.push({ ...body, _id: `${++sequence}`, createdAt: article.createdAt })
+        return ok(guestbook.at(-1))
+      }
+      if (!url.searchParams.has('page') && !url.searchParams.has('limit')) return ok(guestbook)
+      const page = +(url.searchParams.get('page') || 1), limit = +(url.searchParams.get('limit') || 20)
+      return ok(guestbook.slice((page - 1) * limit, page * limit), { pagination: { page, limit, total: guestbook.length, pages: Math.ceil(guestbook.length / limit) } })
+    }
     if (path === '/api/chat/conversations') return ok([
       { id: 'group', type: 'group' },
       { id: 'admin', type: 'private' },
@@ -224,6 +242,19 @@ try {
     assert.equal((await anonymous.request('/api/blog/moments/get?isEditing=true')).response.status, 401)
     assert.equal((await anonymous.request('/api/blog/admin/users')).response.status, 404)
   })
+  await check('article, moment and guestbook pagination contracts', async () => {
+    const articlePage = (await anonymous.request('/api/blog/knowledge?page=1&limit=1&date=2026-10-01')).data
+    assert.equal(articlePage.data.length, 1)
+    assert.deepEqual(articlePage.pagination, { page: 1, limit: 1, total: 1, pages: 1 })
+
+    const momentPage = (await anonymous.request('/api/blog/moments/get?isEditing=false&page=1&limit=1&date=2026-10-01')).data
+    assert.equal(momentPage.data.length, 1)
+    assert.deepEqual(momentPage.pagination, { page: 1, limit: 1, total: 1, pages: 1 })
+
+    const guestbookPage = (await anonymous.request('/api/blog/guestbook?page=1&limit=1')).data
+    assert.equal(guestbookPage.data.length, 0)
+    assert.deepEqual(guestbookPage.pagination, { page: 1, limit: 1, total: 0, pages: 0 })
+  })
   await check('server-rendered public detail contracts', async () => {
     const articleResponse = await fetch(`${origin}/articles/${articleId}`)
     const articleHtml = await articleResponse.text()
@@ -284,6 +315,15 @@ try {
   })
   await check('V1/V2 renewal, second account retention, switching/logout', async () => {
     await client.request('/api/auth/login', { username: 'second', password: 'fixture-password' })
+    const storedAccounts = (await client.request('/api/session?all=true')).data.data
+    assert.deepEqual(new Set(storedAccounts.map(account => account.uid)), new Set(['test-admin', 'test-second']))
+
+    await client.request('/api/auth/login', { username: 'expired', password: 'fixture-password' })
+    rotate(users.get('test-expired'))
+    const reconciledAccounts = (await client.request('/api/session?all=true')).data.data
+    assert.equal(reconciledAccounts.some(account => account.uid === 'test-expired'), false)
+    assert.equal(decodeURIComponent(client.jar.get('blog_tokens')).includes('test-expired:'), false)
+
     await client.request('/api/auth/switch', { uid: 'test-admin' })
     for (const kind of ['rotateV1', 'rotateV2']) {
       controls[kind] = true
@@ -298,6 +338,8 @@ try {
     assert.equal((await client.request('/api/session')).data.data, null)
     assert.equal((await client.request('/api/auth/switch', { uid: 'test-second' })).data.uid, 'test-second')
     await client.request('/api/auth/login', { username: 'tester', password: 'fixture-password' })
+    await client.request('/api/session?uid=test-second', undefined, 'DELETE')
+    assert.equal(decodeURIComponent(client.jar.get('blog_tokens')).includes('test-second:'), false)
   })
   await check('article CRUD and server-controlled sender identity', async () => {
     const created = await client.request('/api/blog/knowledge', { title: 'Contract writing', content: 'Markdown content', category: 'Life', tags: [] })
