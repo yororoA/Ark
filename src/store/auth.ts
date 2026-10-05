@@ -3,6 +3,7 @@ import type { Session } from '@/lib/blog';
 
 const STORAGE_KEY = 'authDetails:v2';
 const LEGACY_STORAGE_KEY = 'authDetails';
+const MAX_STORED_ACCOUNTS = 5;
 
 export interface AuthDetail {
   username?: string;
@@ -66,7 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         updated[idx] = { ...updated[idx], ...detail };
         return { details: updated };
       }
-      return { details: [...state.details, detail] };
+      return { details: [...state.details, detail].slice(-MAX_STORED_ACCOUNTS) };
     });
   },
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
-import { sameOrigin, verifiedSession, type Session } from '@/lib/server/blog-session'
+import { sameOrigin, upstream, verifiedSession, type Session } from '@/lib/server/blog-session'
 
 const cookieOptions = {
   httpOnly: true,
@@ -16,38 +16,61 @@ function uidFromCredential(value: string) {
   return separator > 0 ? value.slice(0, separator) : ''
 }
 
+function parseCredential(value: string) {
+  const separator = value.indexOf(':')
+  if (separator <= 0) return null
+  return { uid: value.slice(0, separator), token: value.slice(separator + 1) }
+}
+
 export async function GET(request: NextRequest) {
   try {
     if (request.nextUrl.searchParams.get('all') === 'true') {
       const store = await cookies()
-      const tokenEntries = (store.get('blog_tokens')?.value || '').split(',').filter(Boolean)
+      const tokenEntries = (store.get('blog_tokens')?.value || '').split(',').filter(Boolean).slice(-5)
       const guestEntry = store.get('blog_guest_token')?.value || ''
-      const uids = [...new Set([
-        ...tokenEntries.map(uidFromCredential),
-        uidFromCredential(guestEntry),
-      ].filter(Boolean))]
-      const sessions: Session[] = []
-
-      for (const uid of uids) {
-        const auth = await verifiedSession(uid)
-        if (auth) sessions.push(auth.session)
+      const accounts = tokenEntries.map(parseCredential).filter((credential): credential is NonNullable<typeof credential> => !!credential)
+      const guestCredential = parseCredential(guestEntry)
+      if (guestCredential && !accounts.some(account => account.uid === guestCredential.uid)) {
+        accounts.push(guestCredential)
       }
+      const validation = await upstream('/api/session/accounts/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accounts }),
+      })
+      if (!validation.ok) throw new Error('账号验证失败')
+      const payload = await validation.json() as {
+        data?: Array<{ uid: string; username?: string; isGuest?: boolean; token: string }>
+      }
+      if (!Array.isArray(payload.data)) throw new Error('账号验证响应无效')
 
+      const admins = new Set((process.env.ADMIN_UIDS || '').split(',').map(value => value.trim()).filter(Boolean))
+      const sessions: Session[] = payload.data.map(account => ({
+        uid: account.uid,
+        username: account.username || 'Guest',
+        isGuest: !!account.isGuest,
+        isAdmin: !account.isGuest && admins.has(account.uid),
+      }))
       const validUids = new Set(sessions.map(session => session.uid))
+      const validatedByUid = new Map(payload.data.map(account => [account.uid, account]))
       const refreshedStore = await cookies()
-      const validTokenEntries = (refreshedStore.get('blog_tokens')?.value || '')
-        .split(',')
-        .filter(Boolean)
-        .filter(entry => validUids.has(uidFromCredential(entry)))
+      const validTokenEntries = tokenEntries.flatMap(entry => {
+        const uid = uidFromCredential(entry)
+        const validated = validatedByUid.get(uid)
+        return validated && !validated.isGuest ? [`${uid}:${validated.token}`] : []
+      })
       if (validTokenEntries.length) {
         refreshedStore.set('blog_tokens', validTokenEntries.join(','), cookieOptions)
       } else {
         refreshedStore.delete('blog_tokens')
       }
 
-      const refreshedGuest = refreshedStore.get('blog_guest_token')?.value || ''
-      const guestUid = uidFromCredential(refreshedGuest)
-      if (guestUid && !validUids.has(guestUid)) refreshedStore.delete('blog_guest_token')
+      const validGuest = payload.data.find(account => account.isGuest)
+      if (validGuest) {
+        refreshedStore.set('blog_guest_token', `${validGuest.uid}:${validGuest.token}`, { ...cookieOptions, maxAge: 1800 })
+      } else if (guestEntry) {
+        refreshedStore.delete('blog_guest_token')
+      }
 
       const activeUid = refreshedStore.get('blog_active_uid')?.value || null
       if (activeUid && !validUids.has(activeUid)) refreshedStore.delete('blog_active_uid')
