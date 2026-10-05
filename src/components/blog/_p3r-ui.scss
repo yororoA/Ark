@@ -66,7 +66,8 @@
     .manifesto .tags span { background: #0754e4; color: #fff; border-color: transparent; }
     .activity strong { font-style: italic; font-size: 64px; }
     .calendar { gap: 5px; }
-    .calendar a { width: 24px; height: 26px; background: var(--soft); border: 0; transform: skewX(-8deg); transition: background .15s ease-in-out; }
+    .calendar > * { width: 24px; height: 26px; background: var(--soft); border: 0; transform: skewX(-8deg); transition: background .15s ease-in-out, box-shadow .15s ease-in-out; }
+    .calendar a[data-active="true"] { background: #0754e4; box-shadow: 2px 2px 0 #eb2676; }
     .calendar a:hover { background: #eb2676; }
     .page { max-width: 1500px; padding: 38px 6% 0; }
     .page-heading {

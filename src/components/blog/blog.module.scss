@@ -341,7 +341,10 @@
   gap: 75px; border-top: 1px solid var(--ink); padding-top: 40px;
   > * { min-width: 0; max-width: 100%; }
 }
-.calendar { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 20px; a { height: 16px; width: 16px; border: 1px solid var(--line); &[data-active="true"] { background: var(--accent); border-color: var(--accent); } } }
+.calendar { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 20px;
+  > * { height: 16px; width: 16px; border: 1px solid var(--line); }
+  a[data-active="true"] { background: var(--accent); border-color: var(--accent); }
+}
 .chat-page {
   display: flex; flex-direction: column; height: calc(100vh - 86px); height: calc(100svh - 86px); min-height: 0; padding-top: 22px; padding-bottom: 22px; overflow: hidden;
   .page-heading { flex: none; align-items: center; padding-bottom: 18px; margin-bottom: 18px; }
@@ -459,13 +462,15 @@
 .date-day {
   position: relative; width: 100%; min-height: 38px; border: 1px solid transparent; background: none; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink);
   &[data-outside="true"] { color: var(--muted); opacity: .55; }
+  &[data-has-content="false"]:not([data-selected="true"]) { color: var(--muted); opacity: .28; cursor: default; }
+  &[data-has-content="false"]:not([data-selected="true"]):hover { border-color: transparent; background: none; }
   &:hover { border-color: var(--line); background: var(--soft); }
   &[aria-current="date"]::after { content: ''; position: absolute; bottom: 4px; left: calc(50% - 2px); width: 4px; height: 1px; background: var(--accent); }
   &[data-selected="true"] { background: var(--accent); color: var(--paper); opacity: 1; &::after { background: var(--paper); } }
   &:focus-visible { outline-offset: -2px; }
 }
 .calendar-footer { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 10px 3px 0; margin-top: 8px; border-top: 1px solid var(--line);
-  button { font-size: 11px; min-height: 38px; background: none; border: 0; color: var(--ink); padding: 5px; &:hover { color: var(--accent); } }
+  button { font-size: 11px; min-height: 38px; background: none; border: 0; color: var(--ink); padding: 5px; &:hover:not(:disabled) { color: var(--accent); } }
   > span { color: var(--line); font-family: var(--serif); }
 }
 @keyframes panel-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
@@ -492,7 +497,7 @@
 }
 @media (max-width: 540px) {
   .site-header { gap: 10px; }.chat-link { display: none; }.header-tools { gap: 4px; }.icon-button { width: 44px; height: 44px; }.control-field[data-quiet="true"] .select-trigger { min-height: 44px; }
-  .secondary-button, .filters button, .pagination button { min-height: 44px; }.calendar { gap: 6px; }.calendar a { width: 24px; height: 24px; }.hero-actions { flex-wrap: wrap; }
+  .secondary-button, .filters button, .pagination button { min-height: 44px; }.calendar { gap: 6px; }.calendar > * { width: 24px; height: 24px; }.hero-actions { flex-wrap: wrap; }
   .hero { min-height: 690px; padding-top: 25px; }.hero-top { font-size: 8px; letter-spacing: 1px; }.hero-content { padding-top: 85px; }.hero-content h1 { font-size: 104px; letter-spacing: -7px; margin-left: -5px; margin-bottom: 35px; }.hero-content h1 span { font-size: 58px; letter-spacing: -4px; margin: 12px 0 0 22%; }.hero-content h2 { font-size: 22px; max-width: 260px; line-height: 1.8; }.hero-content p { font-size: 11px; max-width: 225px; line-height: 1.9; }.hero-actions { gap: 20px; }
   .hero-art { top: 30px; right: -45%; width: 130%; height: 75%; }.orbital-art { top: 0; opacity: .38; }.orbit-core { width: 76px; height: 76px; opacity: .72; }.orbit-core::before { inset: 18px; }.orbit-core span { inset: -10px 37px; }.orbit-node[data-slot="2"], .orbit-node[data-slot="3"], .orbit-node[data-slot="4"], .orbit-node[data-slot="5"], .orbit-node[data-slot="6"], .orbit-node[data-slot="7"] { display: none; }.orbit-preview { display: none; }
   .home-section { margin: 50px 6% 0; }.section-heading { margin-bottom: 25px; }.section-heading h2 { font-size: 28px; }.recent-grid { grid-template-columns: 1fr; gap: 10px; }.featured-entry { min-height: auto; }.featured-entry h3 { font-size: 29px; }.entry-row { padding: 20px 0; gap: 15px; }.entry-row h3 { font-size: 20px; }
