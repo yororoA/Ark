@@ -38,7 +38,7 @@ function readStoredDetails(): AuthDetails {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter((detail): detail is AuthDetail => (
       !!detail && typeof detail === 'object' && typeof detail.uid === 'string' && detail.uid.length > 0
-    ));
+    )).slice(-MAX_STORED_ACCOUNTS);
   } catch {
     return [];
   }

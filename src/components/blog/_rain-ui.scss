@@ -110,7 +110,7 @@
     .date-grid td { border: 1px solid var(--line); }
     .date-day { border-radius: 0; min-height: 40px; }
     .calendar { gap: 3px; }
-    .calendar a { width: 25px; height: 30px; }
+    .calendar > * { width: 25px; height: 30px; }
 
     .article-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 40px 36px; padding: 16px 0; }
     .article-card, .article-card[data-cover="true"] { position: relative; display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 20px; padding: 22px 22px 22px 0; border: 1px solid var(--line); outline: 1px solid color-mix(in srgb, var(--line) 62%, transparent); outline-offset: 5px; min-width: 0; background: var(--ark-rain-panel); box-shadow: none; }

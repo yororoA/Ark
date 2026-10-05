@@ -74,7 +74,7 @@ function moveMonth(date: Date, offset: number) {
   return new Date(date.getFullYear(), date.getMonth() + offset, Math.min(date.getDate(), lastDay))
 }
 
-function DateCalendar({ value, choose }: { value: string; choose: (value: string) => void }) {
+function DateCalendar({ value, choose, availableDates }: { value: string; choose: (value: string) => void; availableDates?: ReadonlySet<string> }) {
   const { locale, t } = useBlog()
   const [focusedDate, setFocusedDate] = useState(() => readDate(value))
   const [month, setMonth] = useState(() => readDate(value))
@@ -129,6 +129,7 @@ function DateCalendar({ value, choose }: { value: string; choose: (value: string
           <tr key={row}>{days.slice(row * 7, row * 7 + 7).map(date => {
             const key = dateKey(date)
             const focused = key === dateKey(focusedDate)
+            const hasContent = !availableDates || availableDates.has(key)
             return (
               <td key={key} role="gridcell" aria-selected={key === value}>
                 <button
@@ -138,10 +139,12 @@ function DateCalendar({ value, choose }: { value: string; choose: (value: string
                   className={styles['date-day']}
                   data-outside={date.getMonth() !== month.getMonth()}
                   data-selected={key === value}
+                  data-has-content={hasContent}
+                  aria-disabled={!hasContent}
                   aria-current={key === today ? 'date' : undefined}
                   aria-label={date.toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
                   onKeyDown={event => navigate(event, date)}
-                  onClick={() => choose(key)}
+                  onClick={() => { if (hasContent) choose(key) }}
                 >{date.getDate()}</button>
               </td>
             )
@@ -151,13 +154,13 @@ function DateCalendar({ value, choose }: { value: string; choose: (value: string
       <div className={styles['calendar-footer']}>
         <button type="button" onClick={() => choose('')}>{t('reset')}</button>
         <span aria-hidden="true">/</span>
-        <button type="button" onClick={() => choose(today)}>{t('today')}</button>
+        <button type="button" disabled={!!availableDates && !availableDates.has(today)} onClick={() => choose(today)}>{t('today')}</button>
       </div>
     </div>
   )
 }
 
-export function DateField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+export function DateField({ value, onChange, availableDates }: { value: string; onChange: (value: string) => void; availableDates?: ReadonlySet<string> }) {
   const { t } = useBlog()
   const [open, setOpen] = useState(false)
   const { container, triggerRef } = useOverlayContainer()
@@ -174,7 +177,7 @@ export function DateField({ value, onChange }: { value: string; onChange: (value
         <Popover.Portal container={container}>
           <Popover.Positioner className={styles['control-positioner']} positionMethod="fixed" sideOffset={8} collisionPadding={12}>
             <Popover.Popup className={styles['calendar-popup']} data-blog-control-popup>
-              {open && <DateCalendar value={value} choose={date => { onChange(date); setOpen(false) }} />}
+              {open && <DateCalendar value={value} availableDates={availableDates} choose={date => { onChange(date); setOpen(false) }} />}
             </Popover.Popup>
           </Popover.Positioner>
         </Popover.Portal>

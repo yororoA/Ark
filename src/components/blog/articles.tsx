@@ -6,14 +6,15 @@ import { useSWRConfig } from 'swr'
 import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, Download, Pencil, Plus, Search, Share2 } from 'lucide-react'
-import { articlePreview, dateLabel, Entry, Envelope, excerpt } from '@/lib/blog'
+import { articlePreview, dateLabel, Entry, Envelope, excerpt, SitemapContent } from '@/lib/blog'
 import { send, useBlog, useBlogData } from './blog-provider'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
+import { detailPath, listPath, newestFirst, prepareListReturn, rememberListPosition, safeReturnPath, useRestoreListPosition } from './list-navigation'
 
-function ArticleListEntry({ entry, locale, read }: { entry: Entry; locale: Parameters<typeof dateLabel>[1]; read: string }) {
+function ArticleListEntry({ entry, locale, read, returnTo }: { entry: Entry; locale: Parameters<typeof dateLabel>[1]; read: string; returnTo: string }) {
   const preview = articlePreview(entry.content)
-  return <Link key={entry._id} href={`/articles/${entry._id}`} prefetch={false} className={styles['article-card']} data-cover={!!preview.coverUrl}>
+  return <Link key={entry._id} href={detailPath('articles', entry._id, returnTo)} prefetch={false} className={styles['article-card']} data-cover={!!preview.coverUrl} onNavigate={() => rememberListPosition(returnTo)}>
     <time className={styles['article-date']} dateTime={entry.createdAt}><strong>{new Date(entry.createdAt).getUTCDate().toString().padStart(2, '0')}</strong>{entry.createdAt.slice(0, 7).replace('-', ' / ')}</time>
     {preview.coverUrl && <figure className={styles['article-cover']}><img src={preview.coverUrl} alt={preview.coverAlt || entry.title} loading="lazy" /></figure>}
     <div className={styles['article-card-body']}><h2>{entry.title}</h2><p>{excerpt(preview.content, 190)}</p><div className={styles['entry-meta']}><span>{entry.category}</span><span>{entry.username || 'YororoIce'}</span><span>{dateLabel(entry.createdAt, locale)}</span><span>♡ {entry.likes || 0}</span></div></div>
@@ -30,11 +31,16 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
   const category = params.get('category') || ''
   const date = params.get('date') || ''
   const page = Math.max(1, Number(params.get('page')) || 1)
+  const returnTo = listPath('articles', params)
   const list = useBlogData<Envelope<Entry[]>>(`knowledge?limit=10&page=${page}&keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}&date=${encodeURIComponent(date)}`, {
     fallbackData: initialData,
     revalidateOnMount: !initialData,
   })
   const categories = useBlogData<Envelope<string[]>>('knowledge/meta/categories')
+  const sitemap = useBlogData<Envelope<SitemapContent>>('archive/sitemap')
+  const entries = newestFirst(list.data?.data || [])
+  const availableDates = sitemap.data ? new Set(sitemap.data.data.articles.map(entry => entry.createdAt.slice(0, 10))) : undefined
+  useRestoreListPosition(returnTo, !!list.data)
   function filter(key: string, value: string) {
     const next = new URLSearchParams(params)
     next.delete('page')
@@ -42,10 +48,10 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
     router.push(`/articles?${next}`)
   }
   return <div className={styles['page']}><PageHeading title="articles" english="Writings" number="01">{session && !session.isGuest && <Link href="/articles/new" className={styles['primary-button']}><Plus size={16} />{t('newArticle')}</Link>}</PageHeading>
-    <div className={styles['toolbar']}><DateField value={date} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
+    <div className={styles['toolbar']}><DateField value={date} availableDates={availableDates} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
     <div className={styles['toolbar']}><div className={styles['filters']}><button aria-pressed={!category} onClick={() => filter('category', '')}>{t('all')}</button>{categories.data?.data.map(item => <button key={item} aria-pressed={category === item} onClick={() => filter('category', item)}>{item}</button>)}</div><form className={styles['search-field']} onSubmit={e => { e.preventDefault(); filter('keyword', query) }}><Search size={16} /><input aria-label={t('search')} placeholder={t('search')} value={query} onChange={e => setQuery(e.target.value)} /><button aria-label={t('search')} className={styles['icon-button']}><ArrowUpRight size={16} /></button></form></div>
     <State loading={list.isLoading} error={list.error} empty={list.data?.data.length === 0} retry={() => { void list.mutate() }} />
-    <div className={styles['article-list']}>{list.data?.data.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} />)}</div>
+    <div className={styles['article-list']}>{entries.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} returnTo={returnTo} />)}</div>
     <Pagination page={page} pages={list.data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
   </div>
 }
@@ -53,6 +59,8 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
 export function ArticleDetail({ id, initialArticle }: { id: string; initialArticle: Entry }) {
   const { t, locale, session, notify } = useBlog()
   const router = useRouter()
+  const params = useSearchParams()
+  const returnTo = safeReturnPath(params.get('returnTo'), 'articles')
   const { mutate: refresh } = useSWRConfig()
   const viewed = useRef('')
   const [views, setViews] = useState(initialArticle.views || 0)
@@ -74,7 +82,11 @@ export function ArticleDetail({ id, initialArticle }: { id: string; initialArtic
   }, [id])
   async function remove() {
     await send(`knowledge/${id}`, {}, 'DELETE')
-    await refresh(key => typeof key === 'string' && (key.startsWith('/api/blog/knowledge?') || key.startsWith('/api/blog/archive/feed?')))
+    await refresh(key => typeof key === 'string' && (
+      key.startsWith('/api/blog/knowledge?')
+      || key.startsWith('/api/blog/archive/feed?')
+      || key === '/api/blog/archive/sitemap'
+    ))
     router.push('/articles')
   }
   function exportMarkdown() {
@@ -82,7 +94,7 @@ export function ArticleDetail({ id, initialArticle }: { id: string; initialArtic
     const url = URL.createObjectURL(new Blob([`# ${article.title}\n\n${article.content}`], { type: 'text/markdown;charset=utf-8' }))
     const link = document.createElement('a'); link.href = url; link.download = `${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`; link.click(); URL.revokeObjectURL(url)
   }
-  return <div className={styles['page']}><div className={styles['reader']}><Link href="/articles" className={styles['text-link']}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
+  return <div className={styles['page']}><div className={styles['reader']}><Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
 }
 
 function Editor({ article }: { article?: Entry }) {
@@ -119,7 +131,12 @@ function Editor({ article }: { article?: Entry }) {
     try {
       const result = await send<Envelope<Entry>>(article ? `knowledge/${article._id}` : 'knowledge', { title: title.trim(), content, category, tags: tags.split(/[,，]/).map(tag => tag.trim()).filter(Boolean) }, article ? 'PUT' : 'POST')
       await mutate(`/api/blog/knowledge/${result.data._id}`, result, { revalidate: false })
-      await mutate(key => typeof key === 'string' && (key.startsWith('/api/blog/knowledge?') || key.startsWith('/api/blog/archive/feed?') || key === '/api/blog/knowledge/meta/categories'))
+      await mutate(key => typeof key === 'string' && (
+        key.startsWith('/api/blog/knowledge?')
+        || key.startsWith('/api/blog/archive/feed?')
+        || key === '/api/blog/archive/sitemap'
+        || key === '/api/blog/knowledge/meta/categories'
+      ))
       notify(t('saved')); router.push(`/articles/${result.data._id}`)
     } catch (error) { setError((error as Error).message) } finally { setBusy(false) }
   }
