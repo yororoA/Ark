@@ -12,15 +12,17 @@ const work = resolve(root, '.git/ark-research/contract-app')
 const origin = 'http://127.0.0.1:10000'
 const backend = 'http://127.0.0.1:10001'
 const articleId = 'aaaaaaaaaaaaaaaaaaaaaaaa'
+const draftArticleId = 'dddddddddddddddddddddddd'
 const momentId = 'bbbbbbbbbbbbbbbbbbbbbbbb'
 const commentId = 'cccccccccccccccccccccccc'
 let sequence = 0
 const users = new Map()
 const calls = []
 const controls = { rotateV1: false, rotateV2: false, fail: false }
-const article = { _id: articleId, uid: 'test-admin', username: 'Tester', title: 'A small record of time', content: `![Archive specimen](${origin}/404.jpeg)\n\n# A small record\n\nWords, code, and quiet moments.\n\n- Read\n- Create\n- Remember`, category: 'Development', tags: ['Ark'], createdAt: '2026-10-01T12:00:00Z', likes: 2, views: 12 }
+const article = { _id: articleId, uid: 'test-admin', username: 'Tester', title: 'A small record of time', content: `![Archive specimen](${origin}/404.jpeg)\n\n# A small record\n\nWords, code, and quiet moments.\n\n- Read\n- Create\n- Remember`, category: 'Development', tags: ['Ark'], createdAt: '2026-10-01T12:00:00Z', updatedAt: '2026-10-01T12:00:00Z', likes: 2, views: 12, status: 'published' }
+const draftArticle = { ...article, _id: draftArticleId, title: 'Private draft', status: 'draft' }
 const moment = { ...article, _id: momentId, title: 'October, a beginning', comments: [commentId], published: true, filenames: {} }
-const articles = [article]
+const articles = [article, draftArticle]
 const moments = [moment]
 const messages = [
   { _id: 'first-message', uid: 'another-user', username: 'Visitor', text: 'Hello, Ark.', createdAt: '2026-10-01T12:00:00Z' },
@@ -30,6 +32,7 @@ const messages = [
 const guestbook = []
 const comments = [{ _id: commentId, uid: 'another-user', username: 'Visitor', content: 'A quiet place to return to.', createdAt: article.createdAt }]
 const likes = new Set()
+const viewed = new Set()
 let draft = null
 
 function rotate(user) { user.token = `fixture-token-${++sequence}`; return user.token }
@@ -74,6 +77,15 @@ const server = createServer(async (req, res) => {
       return json({ message: 'ok', data: { ...user, expiresAt: new Date(Date.now() + 1800000).toISOString() } })
     }
     if (path === '/api/v2/verification/send') return json({ status: 'ok' })
+    if (path === '/api/session/accounts/validate') {
+      const data = (body.accounts || []).flatMap(account => {
+        const accountUser = users.get(account.uid)
+        return accountUser?.token === account.token
+          ? [{ uid: accountUser.uid, username: accountUser.username, isGuest: accountUser.isGuest, token: accountUser.token }]
+          : []
+      })
+      return ok(data)
+    }
     const cookies = cookieValues(req.headers.cookie)
     let user = users.get(req.headers.uid)
     const valid = user && req.headers.authorization === `Bearer ${user.token}`
@@ -93,7 +105,11 @@ const server = createServer(async (req, res) => {
       }
       return json({ valid: true, uid: user.uid, username: user.username, isGuest: user.isGuest })
     }
-    const isPublic = req.method === 'GET' && /\/(?:knowledge|moments\/(?:[a-f0-9]{24}|get|files)|gallery|archive|about|guestbook|status|github)(?:\/|$)/.test(path)
+    const isPublicMomentList = path === '/api/moments/get' && url.searchParams.get('isEditing') !== 'true'
+    const isPublic = req.method === 'GET' && (
+      /\/(?:knowledge|moments\/(?:[a-f0-9]{24}|summary|files)|gallery|archive|about|guestbook|status|github)(?:\/|$)/.test(path)
+      || isPublicMomentList
+    )
     const publicWrite = path === '/api/guestbook' || path === '/api/knowledge/view' || path === '/api/moments/view'
     if (!isPublic && !publicWrite && !valid) return json({ message: 'Invalid token', tokenError: true }, 401)
     if (valid && user.isGuest && req.method !== 'GET' && !path.startsWith('/api/chat/') && !publicWrite && path !== '/api/moments/comment/get') return json({ message: 'Guests cannot publish' }, 403)
@@ -121,11 +137,17 @@ const server = createServer(async (req, res) => {
       return ok({ likes: likes.size })
     }
     if (path === '/api/knowledge/upload-image') return ok({ url: `${backend}/fixture.png`, filename: 'fixture.png' })
-    if (path === '/api/knowledge/view') return ok({ views: 13 })
+    if (path === '/api/knowledge/view') {
+      const key = `article:${body.articleId}`
+      const counted = !viewed.has(key)
+      viewed.add(key)
+      return ok({ views: counted ? 13 : 12, counted, reason: counted ? 'counted' : 'duplicate' })
+    }
     if (path === '/api/knowledge') {
       if (req.method === 'POST') { const item = { ...article, ...body, _id: (++sequence).toString(16).padStart(24, '0'), uid: user.uid }; articles.unshift(item); return ok(item) }
       const filtered = articles.filter(item => (
-        (!url.searchParams.get('keyword') || item.title.includes(url.searchParams.get('keyword')))
+        item.status === 'published'
+        && (!url.searchParams.get('keyword') || item.title.includes(url.searchParams.get('keyword')))
         && (!url.searchParams.get('category') || item.category === url.searchParams.get('category'))
         && (!url.searchParams.get('date') || item.createdAt.startsWith(url.searchParams.get('date')))
       ))
@@ -137,6 +159,7 @@ const server = createServer(async (req, res) => {
       if (index < 0) return json({ message: 'Not found' }, 404)
       if (req.method === 'PUT') Object.assign(articles[index], body)
       if (req.method === 'DELETE') { articles.splice(index, 1); return ok({ deleted: true }) }
+      if (articles[index].status !== 'published') return json({ message: 'Not found' }, 404)
       return ok(articles[index])
     }
     if (path === '/api/moments/get') {
@@ -145,6 +168,9 @@ const server = createServer(async (req, res) => {
       if (!url.searchParams.has('page') && !url.searchParams.has('limit') && !url.searchParams.has('date')) return ok(filtered)
       const page = +(url.searchParams.get('page') || 1), limit = +(url.searchParams.get('limit') || 20)
       return ok(filtered.slice((page - 1) * limit, page * limit), { pagination: { page, limit, total: filtered.length, pages: Math.ceil(filtered.length / limit) } })
+    }
+    if (path === '/api/moments/summary') {
+      return ok({ entries: moments.slice(0, 8), activeDates: [...new Set(moments.map(item => item.createdAt.slice(0, 10)))] })
     }
     if (/\/moments\/[a-f0-9]{24}$/.test(path)) {
       const item = moments.find(entry => entry._id === path.split('/').pop())
@@ -158,11 +184,34 @@ const server = createServer(async (req, res) => {
     }
     if (path === '/api/moments/delete') { const index = moments.findIndex(item => item._id === body.momentId); if (index >= 0) moments.splice(index, 1); return ok({ deleted: true }) }
     if (path === '/api/moments/files') return ok({})
-    if (path === '/api/moments/view') return ok({ views: 13 })
+    if (path === '/api/moments/view') {
+      const key = `moment:${body.momentId}`
+      const counted = !viewed.has(key)
+      viewed.add(key)
+      return ok({ views: counted ? 13 : 12, counted, reason: counted ? 'counted' : 'duplicate' })
+    }
     if (path === '/api/moments/comment/get') return ok(comments.filter(item => body.commentIds?.includes(item._id)))
     if (path === '/api/moments/comment/post') { const comment = { ...comments[0], _id: `${++sequence}`, content: body.comment, belong: body.belong, uid: user.uid }; comments.push(comment); moment.comments.push(comment._id); return ok(comment) }
     if (path === '/api/gallery/get') return ok({ files: [], count: 0, hasMore: false, breakpoint: null })
     if (path === '/api/gallery/post') return ok({ count: body.fileCount, files: ['fixture.png'] })
+    if (path === '/api/archive/feed') {
+      const type = url.searchParams.get('type') || 'all'
+      const year = url.searchParams.get('year') || 'all'
+      const page = +(url.searchParams.get('page') || 1), limit = +(url.searchParams.get('limit') || 50)
+      const entries = [
+        ...articles.filter(item => item.status === 'published').map(item => ({ _id: item._id, title: item.title, uid: item.uid, username: item.username, createdAt: item.createdAt, updatedAt: item.updatedAt, kind: 'articles' })),
+        ...moments.map(item => ({ _id: item._id, title: item.title, uid: item.uid, username: item.username, createdAt: item.createdAt, updatedAt: item.updatedAt, kind: 'moments' })),
+      ].filter(item => (type === 'all' || item.kind === type) && (year === 'all' || item.createdAt.startsWith(year)))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      return ok(entries.slice((page - 1) * limit, page * limit), { pagination: { page, limit, total: entries.length, pages: Math.ceil(entries.length / limit) } })
+    }
+    if (path === '/api/archive/years') return ok(['2026'])
+    if (path === '/api/archive/sitemap') {
+      return ok({
+        articles: articles.filter(item => item.status === 'published').map(item => ({ _id: item._id, createdAt: item.createdAt, updatedAt: item.updatedAt, coverUrl: `${origin}/404.jpeg` })),
+        moments: moments.map(item => ({ _id: item._id, createdAt: item.createdAt, updatedAt: item.updatedAt, images: [] })),
+      })
+    }
     if (path === '/api/links') return ok([{ _id: commentId, name: 'Project source', url: 'https://github.com/yororoA', category: 'friend' }])
     if (path.startsWith('/api/admin/links')) { if (user.uid !== 'test-admin') return json({ message: 'Forbidden' }, 403); return ok({ ...body, _id: commentId }) }
     if (path === '/api/about') return ok({ title: 'YororoIce', description: 'A personal chronicle', author: 'YororoIce' })
@@ -241,6 +290,26 @@ try {
     assert.equal((await anonymous.request('/api/blog/chat/history')).response.status, 401)
     assert.equal((await anonymous.request('/api/blog/moments/get?isEditing=true')).response.status, 401)
     assert.equal((await anonymous.request('/api/blog/admin/users')).response.status, 404)
+    assert.equal((await fetch(`${backend}/api/moments/get?isEditing=true`, { headers: { uid: 'test-admin' } })).status, 401)
+    assert.equal((await fetch(`${backend}/api/knowledge/${draftArticleId}`)).status, 404)
+  })
+  await check('home, archive and sitemap use lightweight contracts', async () => {
+    const summary = (await anonymous.request('/api/blog/moments/summary?limit=8&days=84')).data.data
+    assert.equal(summary.entries.length, 1)
+    assert.deepEqual(summary.activeDates, ['2026-10-01'])
+
+    const archive = (await anonymous.request('/api/blog/archive/feed?type=all&year=all&page=1&limit=50')).data
+    assert.equal(archive.data.length, 2)
+    assert.equal(archive.data.some(entry => 'content' in entry), false)
+    assert.equal((await anonymous.request('/api/blog/archive/years')).data.data[0], '2026')
+    assert.equal((await anonymous.request('/api/blog/archive/sitemap')).data.data.articles.length, 1)
+  })
+  await check('view tracking deduplicates repeated requests', async () => {
+    const first = (await anonymous.request('/api/blog/knowledge/view', { articleId })).data.data
+    const duplicate = (await anonymous.request('/api/blog/knowledge/view', { articleId })).data.data
+    assert.equal(first.counted, true)
+    assert.equal(duplicate.counted, false)
+    assert.equal(duplicate.reason, 'duplicate')
   })
   await check('article, moment and guestbook pagination contracts', async () => {
     const articlePage = (await anonymous.request('/api/blog/knowledge?page=1&limit=1&date=2026-10-01')).data
@@ -274,6 +343,15 @@ try {
     assert.equal(data.token, undefined)
     assert.ok(response.headers.getSetCookie().some(value => value.startsWith('blog_tokens=') && value.includes('HttpOnly')))
     assert.equal((await client.request('/api/session')).data.data.isAdmin, true)
+  })
+  await check('stored account credentials are capped at five', async () => {
+    const limited = new Client()
+    for (let index = 0; index < 6; index += 1) {
+      await limited.request('/api/auth/login', { username: `limit-${index}`, password: 'fixture-password' })
+    }
+    const tokens = decodeURIComponent(limited.jar.get('blog_tokens')).split(',').filter(Boolean)
+    assert.equal(tokens.length, 5)
+    assert.equal((await limited.request('/api/session?all=true')).data.data.length, 5)
   })
   await check('guest envelope normalization, cookie and verified session', async () => {
     const guest = new Client()
