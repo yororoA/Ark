@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next'
-import { articlePreview, mediaFor } from '@/lib/blog'
 import { absoluteUrl } from '@/lib/seo'
-import { getAllArticles, getPublishedMoments } from '@/lib/server/public-content'
+import { getSitemapContent } from '@/lib/server/public-content'
 
 export const revalidate = 3600
 
@@ -18,29 +17,23 @@ const staticRoutes: MetadataRoute.Sitemap = [
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articlesResult, momentsResult] = await Promise.allSettled([
-    getAllArticles(),
-    getPublishedMoments(),
-  ])
-  const articles = articlesResult.status === 'fulfilled' ? articlesResult.value : []
-  const moments = momentsResult.status === 'fulfilled' ? momentsResult.value : []
+  const content = await getSitemapContent().catch(() => undefined)
+  const articles = content?.data.articles || []
+  const moments = content?.data.moments || []
 
-  const articleRoutes: MetadataRoute.Sitemap = articles.map(article => {
-    const cover = articlePreview(article.content).coverUrl
-    return {
-      url: absoluteUrl(`/articles/${article._id}`),
-      lastModified: article.updatedAt || article.createdAt,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-      images: cover ? [cover] : undefined,
-    }
-  })
+  const articleRoutes: MetadataRoute.Sitemap = articles.map(article => ({
+    url: absoluteUrl(`/articles/${article._id}`),
+    lastModified: article.updatedAt || article.createdAt,
+    changeFrequency: 'monthly',
+    priority: 0.8,
+    images: article.coverUrl ? [article.coverUrl] : undefined,
+  }))
   const momentRoutes: MetadataRoute.Sitemap = moments.map(moment => ({
     url: absoluteUrl(`/moments/${moment._id}`),
     lastModified: moment.updatedAt || moment.createdAt,
     changeFrequency: 'monthly',
     priority: 0.6,
-    images: mediaFor(moment).filter(file => file.mime.startsWith('image')).map(file => file.url),
+    images: moment.images,
   }))
 
   return [...staticRoutes, ...articleRoutes, ...momentRoutes]

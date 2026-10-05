@@ -74,7 +74,7 @@ export function ArticleDetail({ id, initialArticle }: { id: string; initialArtic
   }, [id])
   async function remove() {
     await send(`knowledge/${id}`, {}, 'DELETE')
-    await refresh(key => typeof key === 'string' && (key.startsWith('/api/blog/knowledge?') || key === '/api/blog/archive/full-articles'))
+    await refresh(key => typeof key === 'string' && (key.startsWith('/api/blog/knowledge?') || key.startsWith('/api/blog/archive/feed?')))
     router.push('/articles')
   }
   function exportMarkdown() {
@@ -119,7 +119,7 @@ function Editor({ article }: { article?: Entry }) {
     try {
       const result = await send<Envelope<Entry>>(article ? `knowledge/${article._id}` : 'knowledge', { title: title.trim(), content, category, tags: tags.split(/[,，]/).map(tag => tag.trim()).filter(Boolean) }, article ? 'PUT' : 'POST')
       await mutate(`/api/blog/knowledge/${result.data._id}`, result, { revalidate: false })
-      await mutate(key => typeof key === 'string' && (key.startsWith('/api/blog/knowledge?') || key === '/api/blog/archive/full-articles' || key === '/api/blog/knowledge/meta/categories'))
+      await mutate(key => typeof key === 'string' && (key.startsWith('/api/blog/knowledge?') || key.startsWith('/api/blog/archive/feed?') || key === '/api/blog/knowledge/meta/categories'))
       notify(t('saved')); router.push(`/articles/${result.data._id}`)
     } catch (error) { setError((error as Error).message) } finally { setBusy(false) }
   }

@@ -5,15 +5,15 @@ import { acceptRefresh, BackendError, credentialHeaders, publicReader, rememberR
 const routes: Record<string, RegExp[]> = {
   GET: [
     /^knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories|liked))?$/,
-    /^moments\/(?:[a-f0-9]{24}|get|files|liked|comments\/liked)$/, /^gallery\/get$/,
-    /^archive(?:\/stats)?$/, /^(?:about|links|guestbook)$/, /^status\/bines$/, /^github\/summary$/,
+    /^moments\/(?:[a-f0-9]{24}|get|summary|files|liked|comments\/liked)$/, /^gallery\/get$/,
+    /^archive(?:\/(?:stats|feed|years|sitemap))?$/, /^(?:about|links|guestbook)$/, /^status\/bines$/, /^github\/summary$/,
     /^chat\/(?:conversations|history|hasPrivate)$/, /^sse\/subscribe$/,
   ],
   POST: [/^knowledge(?:\/(?:like|view|upload-image))?$/, /^moments\/(?:post|view|like|comment\/(?:get|post|like))$/, /^gallery\/post$/, /^guestbook$/, /^chat\/(?:send|upload)$/, /^admin\/links$/],
   PUT: [/^knowledge\/[a-f0-9]{24}$/, /^admin\/links\/[a-f0-9]{24}$/],
   DELETE: [/^knowledge\/[a-f0-9]{24}$/, /^moments\/delete$/, /^admin\/links\/[a-f0-9]{24}$/],
 }
-const publicGets = /^(knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories))?|moments\/(?:[a-f0-9]{24}|get|files)|gallery\/get|archive(?:\/stats)?|about|guestbook|status\/bines|github\/summary)$/
+const publicGets = /^(knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories))?|moments\/(?:[a-f0-9]{24}|get|summary|files)|gallery\/get|archive(?:\/(?:stats|feed|years|sitemap))?|about|guestbook|status\/bines|github\/summary)$/
 
 async function handle(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   try {
@@ -29,6 +29,13 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     if (!isPublic && !isReader && !auth) return NextResponse.json({ message: '请先登录', tokenError: true }, { status: 401 })
     const credential = auth?.credential ?? (isReader ? await publicReader() : null)
     const headers = new Headers(credential ? credentialHeaders(credential) : {})
+    if (path === 'knowledge/view' || path === 'moments/view') {
+      const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || request.headers.get('x-real-ip')
+      if (clientIp) headers.set('x-forwarded-for', clientIp)
+      const userAgent = request.headers.get('user-agent')
+      if (userAgent) headers.set('user-agent', userAgent)
+    }
     let body: BodyInit | undefined
     if (!isRead) {
       const multipart = request.headers.get('content-type')?.includes('multipart/form-data')

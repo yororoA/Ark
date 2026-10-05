@@ -113,7 +113,11 @@ function MomentReader({ entry, refresh }: { entry: Entry; refresh: () => Promise
   }, [entry._id])
   async function remove() {
     await send('moments/delete', { momentId: entry._id, moment_uid: entry.uid }, 'DELETE')
-    await mutate(key => typeof key === 'string' && key.startsWith('/api/blog/moments/get?'))
+    await mutate(key => typeof key === 'string' && (
+      key.startsWith('/api/blog/moments/get?')
+      || key.startsWith('/api/blog/archive/feed?')
+      || key.startsWith('/api/blog/moments/summary?')
+    ))
     router.push('/moments')
   }
   return <><header className={styles['reader-header']}><div className={styles['eyebrow']}>02 / FRAGMENTS</div><h1>{entry.title}</h1><div className={styles['entry-meta']}><span>{entry.username || 'YororoIce'}</span><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><span>↗ {views}</span></div></header>
@@ -161,7 +165,11 @@ function Compose() {
       notify(uploaded < files.length ? t('partialUpload') : t('saved'))
       await draft.mutate()
       if (published) {
-        await mutate(key => typeof key === 'string' && key.startsWith('/api/blog/moments/get?'))
+        await mutate(key => typeof key === 'string' && (
+          key.startsWith('/api/blog/moments/get?')
+          || key.startsWith('/api/blog/archive/feed?')
+          || key.startsWith('/api/blog/moments/summary?')
+        ))
         router.push(`/moments/${result.data._id}`)
       }
     } catch (error) { setError((error as Error).message) } finally { setBusy(false) }

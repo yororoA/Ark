@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { cache } from 'react'
-import type { Entry, Envelope } from '@/lib/blog'
+import type { ArchiveEntry, Entry, Envelope, HomeMomentSummary, SitemapContent } from '@/lib/blog'
 import { backendUrl } from './blog-session'
 
 const CONTENT_REVALIDATE_SECONDS = 300
@@ -46,28 +46,14 @@ export const getArticlesPage = cache(async (
   return publicEnvelope<Entry[]>(`knowledge?${query}`)
 })
 
-export const getAllArticles = cache(async () => {
-  const first = await getArticlesPage(1, 100)
-  const pages = first.pagination?.pages || 1
-  const remainder = await Promise.all(
-    Array.from({ length: Math.max(0, pages - 1) }, (_, index) => getArticlesPage(index + 2, 100)),
-  )
-  return [...first.data, ...remainder.flatMap(result => result.data)]
-})
-
 export const getArticle = cache(async (id: string) => {
   try {
-    const result = await publicEnvelope<Entry>(`knowledge/${id}?trackView=false`, true)
+    const result = await publicEnvelope<Entry>(`knowledge/${id}`, true)
     return result.data
   } catch (error) {
     if (error instanceof PublicContentError && error.status === 404) return null
     throw error
   }
-})
-
-export const getPublishedMoments = cache(async () => {
-  const result = await publicEnvelope<Entry[]>('moments/get?isEditing=false')
-  return result.data
 })
 
 export const getPublishedMomentsPage = cache(async (page = 1, limit = 12, date = '') => {
@@ -79,6 +65,24 @@ export const getPublishedMomentsPage = cache(async (page = 1, limit = 12, date =
   if (date) query.set('date', date)
   return publicEnvelope<Entry[]>(`moments/get?${query}`)
 })
+
+export const getHomeMomentSummary = cache(async () => (
+  publicEnvelope<HomeMomentSummary>('moments/summary?limit=8&days=84')
+))
+
+export const getArchivePage = cache(async (
+  page = 1,
+  limit = 50,
+  type: 'all' | 'articles' | 'moments' = 'all',
+  year = 'all',
+) => {
+  const query = new URLSearchParams({ page: String(page), limit: String(limit), type, year })
+  return publicEnvelope<ArchiveEntry[]>(`archive/feed?${query}`)
+})
+
+export const getArchiveYears = cache(async () => publicEnvelope<string[]>('archive/years'))
+
+export const getSitemapContent = cache(async () => publicEnvelope<SitemapContent>('archive/sitemap'))
 
 export const getMoment = cache(async (id: string) => {
   try {

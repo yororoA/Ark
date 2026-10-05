@@ -1,6 +1,6 @@
 import Archive from '@/components/blog/archive'
 import { pageMetadata } from '@/lib/seo'
-import { getAllArticles, getPublishedMoments } from '@/lib/server/public-content'
+import { getArchivePage, getArchiveYears } from '@/lib/server/public-content'
 
 export const metadata = pageMetadata({
   title: '归档',
@@ -9,15 +9,15 @@ export const metadata = pageMetadata({
 })
 
 export default async function Page() {
-  const [articles, moments] = await Promise.allSettled([
-    getAllArticles(),
-    getPublishedMoments(),
+  const [archive, years] = await Promise.allSettled([
+    getArchivePage(),
+    getArchiveYears(),
   ])
 
   return (
     <Archive
-      initialArticles={articles.status === 'fulfilled' ? articles.value : undefined}
-      initialMoments={moments.status === 'fulfilled' ? { data: moments.value } : undefined}
+      initialData={archive.status === 'fulfilled' ? archive.value : undefined}
+      initialYears={years.status === 'fulfilled' ? years.value : undefined}
     />
   )
 }
