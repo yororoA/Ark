@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from '@/components/appearance/p3r-link'
 import { ArrowUpRight, BookOpen, CircleUserRound, ShieldCheck, UsersRound } from 'lucide-react'
 import { useGetLocation } from '@/hooks/useGetLocation';
-import { useAuthStore } from '@/store/auth';
+import { syncAuthDetails, useAuthStore } from '@/store/auth';
 
 import styles from './login.module.scss';
 import Declaration from "./components/declaration";
@@ -66,6 +66,7 @@ function Login() {
 
   useEffect(() => {
     ensureInitialized();
+    void syncAuthDetails().catch(() => {});
   }, [ensureInitialized]);
 
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);

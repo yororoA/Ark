@@ -53,6 +53,8 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   const [formError, setFormError] = useState('');
   const [formBusy, setFormBusy] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const showOtherAccountForm = otherVisable || details.length === 0;
+
   async function run(action: () => Promise<void>) {
     if (formBusy) return;
     setFormBusy(true); setFormError('');
@@ -110,12 +112,12 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
       )}
       <div className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }} ref={setBoundaryEl}>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
-          {otherVisable && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
+          {otherVisable && details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
           <h1>账号管理</h1>
           <ThemePicker />
           {details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="关闭账号管理" title="关闭账号管理" onClick={onClose}><X size={22} strokeWidth={1.3} /></button>}
         </div>
-        {!otherVisable ?
+        {!showOtherAccountForm ?
           <>
             <div className={styles['account-body']}>
               {details.length > 0 ?
