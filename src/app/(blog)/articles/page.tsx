@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { ArticleList } from '@/components/blog/articles'
 import { legacyDestination, legacySearchParams, type LegacyQuery } from '@/lib/legacy-route'
 import { pageMetadata } from '@/lib/seo'
-import { getAllArticles, getArticlesPage } from '@/lib/server/public-content'
+import { getArticlesPage } from '@/lib/server/public-content'
 
 const description = '阅读 YororoIce 关于前端开发、编程实践与日常思考的文章。'
 
@@ -24,32 +24,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Leg
   const category = query.get('category') || ''
   const date = query.get('date') || ''
   const page = Math.max(1, Number(query.get('page')) || 1)
-  let initialData
-
-  try {
-    if (date) {
-      const limit = 10
-      const articles = await getAllArticles()
-      const filtered = articles.filter(entry => (
-        entry.createdAt.startsWith(date)
-        && (!category || entry.category === category)
-        && (!keyword || `${entry.title} ${entry.content}`.toLowerCase().includes(keyword.toLowerCase()))
-      ))
-      initialData = {
-        data: filtered.slice((page - 1) * limit, page * limit),
-        pagination: {
-          page,
-          limit,
-          total: filtered.length,
-          pages: Math.ceil(filtered.length / limit),
-        },
-      }
-    } else {
-      initialData = await getArticlesPage(page, 10, keyword, category)
-    }
-  } catch {
-    initialData = undefined
-  }
+  const initialData = await getArticlesPage(page, 10, keyword, category, date).catch(() => undefined)
 
   return <Suspense><ArticleList initialData={initialData} /></Suspense>
 }

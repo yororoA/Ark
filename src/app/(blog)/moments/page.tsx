@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { MomentList } from '@/components/blog/moments'
 import { legacyDestination, legacySearchParams, type LegacyQuery } from '@/lib/legacy-route'
 import { pageMetadata } from '@/lib/seo'
-import { getPublishedMoments } from '@/lib/server/public-content'
+import { getPublishedMomentsPage } from '@/lib/server/public-content'
 
 const description = '浏览 YororoIce 关于生活、摄影与即时灵感的短篇记录。'
 
@@ -20,6 +20,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Leg
   const mid = query.get('mid')
   if (mid && /^[a-f0-9]{24}$/.test(mid)) redirect(legacyDestination('/moments', query)!)
 
-  const moments = await getPublishedMoments().catch(() => undefined)
-  return <Suspense><MomentList initialData={moments ? { data: moments } : undefined} /></Suspense>
+  const date = query.get('date') || ''
+  const page = Math.max(1, Number(query.get('page')) || 1)
+  const moments = await getPublishedMomentsPage(page, 12, date).catch(() => undefined)
+  return <Suspense><MomentList initialData={moments} /></Suspense>
 }

@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, Download, Pencil, Plus, Search, Share2 } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt } from '@/lib/blog'
 import { send, useBlog, useBlogData } from './blog-provider'
-import { useAllArticles } from './content-data'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
 
@@ -31,28 +30,10 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
   const category = params.get('category') || ''
   const date = params.get('date') || ''
   const page = Math.max(1, Number(params.get('page')) || 1)
-  const list = useBlogData<Envelope<Entry[]>>(date ? null : `knowledge?limit=10&page=${page}&keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`, {
-    fallbackData: date ? undefined : initialData,
+  const list = useBlogData<Envelope<Entry[]>>(`knowledge?limit=10&page=${page}&keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}&date=${encodeURIComponent(date)}`, {
+    fallbackData: initialData,
     revalidateOnMount: !initialData,
   })
-  const full = useAllArticles(!!date && !initialData)
-  const filtered = (full.data || []).filter(entry => entry.createdAt.startsWith(date) && (!category || entry.category === category) && (!keyword || `${entry.title} ${entry.content}`.toLowerCase().includes(keyword.toLowerCase())))
-  const clientDateData: Envelope<Entry[]> | undefined = full.data ? {
-    data: filtered.slice((page - 1) * 10, page * 10),
-    pagination: { page, limit: 10, total: filtered.length, pages: Math.ceil(filtered.length / 10) },
-  } : undefined
-  const hasInitialDateData = !!initialData
-  const dateData = initialData || clientDateData
-  const dateError = hasInitialDateData ? undefined : full.error
-  const dateIsLoading = !hasInitialDateData && full.isLoading
-  const data = date ? dateData : list.data
-  const error = date ? dateError : list.error
-  const isLoading = date ? dateIsLoading : list.isLoading
-  const retryServerDateData = () => router.refresh()
-  const retryClientDateData = () => { void full.mutate() }
-  const retryDateData = hasInitialDateData ? retryServerDateData : retryClientDateData
-  const retryListData = () => { void list.mutate() }
-  const retry = date ? retryDateData : retryListData
   const categories = useBlogData<Envelope<string[]>>('knowledge/meta/categories')
   function filter(key: string, value: string) {
     const next = new URLSearchParams(params)
@@ -63,9 +44,9 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
   return <div className={styles['page']}><PageHeading title="articles" english="Writings" number="01">{session && !session.isGuest && <Link href="/articles/new" className={styles['primary-button']}><Plus size={16} />{t('newArticle')}</Link>}</PageHeading>
     <div className={styles['toolbar']}><DateField value={date} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
     <div className={styles['toolbar']}><div className={styles['filters']}><button aria-pressed={!category} onClick={() => filter('category', '')}>{t('all')}</button>{categories.data?.data.map(item => <button key={item} aria-pressed={category === item} onClick={() => filter('category', item)}>{item}</button>)}</div><form className={styles['search-field']} onSubmit={e => { e.preventDefault(); filter('keyword', query) }}><Search size={16} /><input aria-label={t('search')} placeholder={t('search')} value={query} onChange={e => setQuery(e.target.value)} /><button aria-label={t('search')} className={styles['icon-button']}><ArrowUpRight size={16} /></button></form></div>
-    <State loading={isLoading} error={error} empty={data?.data.length === 0} retry={retry} />
-    <div className={styles['article-list']}>{data?.data.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} />)}</div>
-    <Pagination page={page} pages={data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
+    <State loading={list.isLoading} error={list.error} empty={list.data?.data.length === 0} retry={() => { void list.mutate() }} />
+    <div className={styles['article-list']}>{list.data?.data.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} />)}</div>
+    <Pagination page={page} pages={list.data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
   </div>
 }
 

@@ -34,6 +34,7 @@ export const getArticlesPage = cache(async (
   limit = 10,
   keyword = '',
   category = '',
+  date = '',
 ) => {
   const query = new URLSearchParams({
     page: String(page),
@@ -41,6 +42,7 @@ export const getArticlesPage = cache(async (
   })
   if (keyword) query.set('keyword', keyword)
   if (category) query.set('category', category)
+  if (date) query.set('date', date)
   return publicEnvelope<Entry[]>(`knowledge?${query}`)
 })
 
@@ -66,6 +68,16 @@ export const getArticle = cache(async (id: string) => {
 export const getPublishedMoments = cache(async () => {
   const result = await publicEnvelope<Entry[]>('moments/get?isEditing=false')
   return result.data
+})
+
+export const getPublishedMomentsPage = cache(async (page = 1, limit = 12, date = '') => {
+  const query = new URLSearchParams({
+    isEditing: 'false',
+    page: String(page),
+    limit: String(limit),
+  })
+  if (date) query.set('date', date)
+  return publicEnvelope<Entry[]>(`moments/get?${query}`)
 })
 
 export const getMoment = cache(async (id: string) => {
