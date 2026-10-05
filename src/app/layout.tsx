@@ -1,7 +1,7 @@
-// import { Metadata } from 'next';
 import "@/styles/globals.scss";
 import "@/app/global.css";
 import "@/styles/appearance.scss";
+import type { Metadata } from 'next';
 import { cn } from "@/lib/utils";
 import BgImage from "@/components/arks/bg-image";
 import RouteScrollManager from "@/components/route-scroll-manager";
@@ -9,6 +9,8 @@ import AppearanceBootstrap from "@/components/appearance/appearance-bootstrap";
 import { AppearanceObserver } from "@/components/appearance/appearance-store";
 import RainConnectionBoundary from "@/components/appearance/rain-connection-boundary";
 import P3REffects from "@/components/appearance/p3r-effects";
+import StructuredData from "@/components/seo/structured-data";
+import { DEFAULT_SOCIAL_IMAGE, SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
 
 // ------------------------------------ 字体配置 ------------------------------------
 import { Barlow_Condensed, Gowun_Batang, IBM_Plex_Sans, Noto_Serif_SC, Noto_Sans_SC, Orbitron } from 'next/font/google';
@@ -61,10 +63,75 @@ const orbitron = Orbitron({
 });
 
 // -------------------------------------------------------------------------------
-// export const metadata: Metadata = {
-//   title: "YororoIce Ark",
-//   description: "...",
-// };
+export const metadata: Metadata = {
+  metadataBase: SITE_URL,
+  title: {
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_AUTHOR, url: absoluteUrl('/about') }],
+  creator: SITE_AUTHOR,
+  publisher: SITE_AUTHOR,
+  keywords: ['YororoIce', '个人博客', '编程', '前端开发', '摄影', '生活记录'],
+  referrer: 'origin-when-cross-origin',
+  formatDetection: {
+    telephone: false,
+    address: false,
+    email: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'zh_CN',
+    url: absoluteUrl('/home'),
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_SOCIAL_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    images: [DEFAULT_SOCIAL_IMAGE.url],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
+
+const siteStructuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': absoluteUrl('/#website'),
+    url: absoluteUrl('/home'),
+    name: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    inLanguage: 'zh-CN',
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': absoluteUrl('/about#person'),
+    name: SITE_AUTHOR,
+    url: absoluteUrl('/about'),
+    sameAs: [
+      'https://github.com/yororoA',
+      'https://x.com/yororo_ice',
+      'https://space.bilibili.com/411513480',
+    ],
+  },
+]
 
 
 export default function RootLayout({
@@ -82,6 +149,7 @@ export default function RootLayout({
     >
       <head>
         <AppearanceBootstrap />
+        <StructuredData data={siteStructuredData} />
       </head>
       <body className="min-h-screen flex flex-col relative">
         <AppearanceObserver />
