@@ -330,6 +330,12 @@
 .tags { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; span { border: 1px solid var(--line); padding: 5px 12px; font-size: 11px; } }
 .link-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 25px; }
 .link-card { padding: 25px 0; border-top: 1px solid var(--ink); h3 { display: flex; justify-content: space-between; font: 22px/1.4 var(--song); } p { color: var(--muted); font-size: 12px; margin-top: 14px; } }
+.link-card-link { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.link-card-image { display: grid; place-items: center; flex: 0 0 58px; width: 58px; height: 58px; overflow: hidden; border: 1px solid var(--line); background: var(--soft);
+  img { display: block; width: 100%; height: 100%; object-fit: contain; }
+}
+.link-card-copy { flex: 1; min-width: 0; h3, p { overflow-wrap: anywhere; } }
+.link-card > .form-actions { margin-top: 14px; }
 .guestbook {
   margin-top: 70px; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
   gap: 75px; border-top: 1px solid var(--ink); padding-top: 40px;

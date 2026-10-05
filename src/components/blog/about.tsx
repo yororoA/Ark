@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- Link icons are arbitrary external URLs managed by the site owner. */
 
 import { useState } from 'react'
 import { ArrowUpRight, Pencil, Plus } from 'lucide-react'
@@ -9,6 +10,12 @@ import { BlogSelect } from './controls'
 
 const categories = ['friend', 'tool', 'development', 'other'] as const
 type AboutInfo = Partial<typeof PROFILE> & { bio?: string; twitter?: string; website?: string }
+
+function LinkImage({ url }: { url?: string }) {
+  const [failed, setFailed] = useState(false)
+  if (!url || failed) return null
+  return <span className={styles['link-card-image']} aria-hidden="true"><img src={url} alt="" loading="lazy" onError={() => setFailed(true)} /></span>
+}
 
 function LinkEditor({ entry, close, refresh }: { entry: Partial<BlogLink>; close: () => void; refresh: () => Promise<unknown> }) {
   const { t, notify } = useBlog()
@@ -46,7 +53,11 @@ function Links() {
   return <section><div className={styles['section-heading']}><div><div className={styles['eyebrow']}>CONNECTIONS</div><h2>{t('links')}</h2></div>{session?.isAdmin && <button className={styles['secondary-button']} onClick={() => setEditing({})}><Plus size={16} />{t('newLink')}</button>}</div>
     <div className={styles['filters']}>{(['all', ...categories] as const).map(value => <button key={value} aria-pressed={category === value} onClick={() => setCategory(value)}>{t(value)}</button>)}</div>
     <State loading={isLoading} error={error} empty={!!data && !links.length} retry={() => mutate()} />
-    <div className={styles['link-grid']}>{links.map(link => <article className={styles['link-card']} key={link._id}><a href={safeUrl(link.url)} target="_blank" rel="noreferrer"><h3>{link.name}<ArrowUpRight size={20} /></h3><p>{link.description}</p></a>{session?.isAdmin && <div className={styles['form-actions']}><button className={styles['icon-button']} onClick={() => setEditing(link)} aria-label={`${t('edit')} ${link.name}`}><Pencil size={15} /></button><DeleteButton name={link.name} iconOnly onDelete={() => remove(link)} /></div>}</article>)}</div>
+    <div className={styles['link-grid']}>{links.map(link => {
+      const safeImage = safeUrl(link.imgurl)
+      const image = safeImage?.startsWith('http') ? safeImage : undefined
+      return <article className={styles['link-card']} key={link._id}><a className={styles['link-card-link']} href={safeUrl(link.url)} target="_blank" rel="noreferrer"><LinkImage key={image} url={image} /><div className={styles['link-card-copy']}><h3>{link.name}<ArrowUpRight size={20} /></h3><p>{link.description}</p></div></a>{session?.isAdmin && <div className={styles['form-actions']}><button className={styles['icon-button']} onClick={() => setEditing(link)} aria-label={`${t('edit')} ${link.name}`}><Pencil size={15} /></button><DeleteButton name={link.name} iconOnly onDelete={() => remove(link)} /></div>}</article>
+    })}</div>
     {editing && <LinkEditor entry={editing} close={() => setEditing(null)} refresh={mutate} />}
   </section>
 }
