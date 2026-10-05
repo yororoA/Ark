@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
+import type { SWRConfiguration } from 'swr'
 import { Locale, Session, TextKey, translate } from '@/lib/blog'
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -15,7 +16,7 @@ export function send<T>(path: string, body: unknown, method = 'POST') {
   const multipart = body instanceof FormData
   return request<T>(path, { method, headers: multipart ? undefined : { 'Content-Type': 'application/json' }, body: multipart ? body : JSON.stringify(body) })
 }
-export function useBlogData<T>(path: string | null, options?: { refreshInterval?: number; revalidateOnFocus?: boolean; revalidateIfStale?: boolean }) {
+export function useBlogData<T>(path: string | null, options?: SWRConfiguration<T, Error>) {
   return useSWR<T>(path ? `/api/blog/${path}` : null, request, options)
 }
 type BlogContextValue = {

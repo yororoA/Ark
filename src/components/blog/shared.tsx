@@ -5,7 +5,7 @@ import { useCallback, useEffect, useId, useRef, useState, type TextareaHTMLAttri
 import Link from '@/components/appearance/p3r-link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Play, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
 import RainPlanes from '@/components/appearance/rain-planes'
@@ -39,8 +39,14 @@ export function State({ loading, error, empty, retry }: { loading?: boolean; err
   if (!loading && !error && !empty) return null
   return <div className={styles['state-box']} role={error ? 'alert' : 'status'}>{loading ? <><span className={styles['loading-line']} />{t('loading')}</> : error ? <><p>{error.message}</p><button className={styles['secondary-button']} onClick={retry}>{t('retry')}</button></> : <p>{t('noResults')}</p>}</div>
 }
+
+const markdownComponents: Components = {
+  a: ({ children, ...props }) => <a {...props} target="_blank" rel="noreferrer">{children}</a>,
+  h1: ({ children }) => <h2 data-source-heading="h1">{children}</h2>,
+}
+
 export function Markdown({ content }: { content: string }) {
-  return <div className={styles['markdown']}><ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: ({ children, ...props }) => <a {...props} target="_blank" rel="noreferrer">{children}</a> }}>{content}</ReactMarkdown></div>
+  return <div className={styles['markdown']}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown></div>
 }
 export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
   const ref = useRef<HTMLTextAreaElement>(null)

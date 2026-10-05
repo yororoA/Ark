@@ -99,11 +99,23 @@ function OrbitRecords({ articles, moments, locale }: { articles: Entry[]; moment
   </div>
 }
 
-export default function Home() {
+export default function Home({
+  initialArticles,
+  initialMoments,
+}: {
+  initialArticles?: Envelope<Entry[]>
+  initialMoments?: Envelope<Entry[]>
+}) {
   const { t, locale } = useBlog()
   const art = useRef<HTMLDivElement>(null)
-  const articles = useBlogData<Envelope<Entry[]>>('knowledge?limit=4')
-  const moments = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false')
+  const articles = useBlogData<Envelope<Entry[]>>('knowledge?limit=4', {
+    fallbackData: initialArticles,
+    revalidateOnMount: !initialArticles,
+  })
+  const moments = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false', {
+    fallbackData: initialMoments,
+    revalidateOnMount: !initialMoments,
+  })
   const status = useBlogData<Envelope<{ online: boolean }>>('status/bines', { refreshInterval: 60000 })
   const github = useBlogData<Envelope<{ reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }>>('github/summary')
   const featured = articles.data?.data[0]

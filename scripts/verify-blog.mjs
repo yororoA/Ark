@@ -93,8 +93,8 @@ const server = createServer(async (req, res) => {
       }
       return json({ valid: true, uid: user.uid, username: user.username, isGuest: user.isGuest })
     }
-    const isPublic = req.method === 'GET' && /\/(?:knowledge|moments\/(?:get|files)|gallery|archive|about|guestbook|status|github)(?:\/|$)/.test(path)
-    const publicWrite = path === '/api/guestbook' || path === '/api/moments/view'
+    const isPublic = req.method === 'GET' && /\/(?:knowledge|moments\/(?:[a-f0-9]{24}|get|files)|gallery|archive|about|guestbook|status|github)(?:\/|$)/.test(path)
+    const publicWrite = path === '/api/guestbook' || path === '/api/knowledge/view' || path === '/api/moments/view'
     if (!isPublic && !publicWrite && !valid) return json({ message: 'Invalid token', tokenError: true }, 401)
     if (valid && user.isGuest && req.method !== 'GET' && !path.startsWith('/api/chat/') && !publicWrite && path !== '/api/moments/comment/get') return json({ message: 'Guests cannot publish' }, 403)
     if (controls.fail && path === '/api/knowledge') return json({ message: 'Fixture service unavailable' }, 503)
@@ -121,6 +121,7 @@ const server = createServer(async (req, res) => {
       return ok({ likes: likes.size })
     }
     if (path === '/api/knowledge/upload-image') return ok({ url: `${backend}/fixture.png`, filename: 'fixture.png' })
+    if (path === '/api/knowledge/view') return ok({ views: 13 })
     if (path === '/api/knowledge') {
       if (req.method === 'POST') { const item = { ...article, ...body, _id: (++sequence).toString(16).padStart(24, '0'), uid: user.uid }; articles.unshift(item); return ok(item) }
       const filtered = articles.filter(item => (!url.searchParams.get('keyword') || item.title.includes(url.searchParams.get('keyword'))) && (!url.searchParams.get('category') || item.category === url.searchParams.get('category')))
@@ -135,6 +136,10 @@ const server = createServer(async (req, res) => {
       return ok(articles[index])
     }
     if (path === '/api/moments/get') return ok(url.searchParams.get('isEditing') === 'true' ? draft : moments)
+    if (/\/moments\/[a-f0-9]{24}$/.test(path)) {
+      const item = moments.find(entry => entry._id === path.split('/').pop())
+      return item ? ok(item) : json({ message: 'Not found' }, 404)
+    }
     if (path === '/api/moments/post') {
       const item = { ...moment, ...body, uid: user.uid, _id: (++sequence).toString(16).padStart(24, '0'), comments: [] }
       if (body.published === 'false') draft = item
@@ -218,6 +223,19 @@ try {
     assert.equal((await anonymous.request('/api/blog/chat/history')).response.status, 401)
     assert.equal((await anonymous.request('/api/blog/moments/get?isEditing=true')).response.status, 401)
     assert.equal((await anonymous.request('/api/blog/admin/users')).response.status, 404)
+  })
+  await check('server-rendered public detail contracts', async () => {
+    const articleResponse = await fetch(`${origin}/articles/${articleId}`)
+    const articleHtml = await articleResponse.text()
+    assert.equal(articleResponse.status, 200)
+    assert.match(articleHtml, /A small record of time/)
+    assert.match(articleHtml, /BlogPosting/)
+
+    const momentResponse = await fetch(`${origin}/moments/${momentId}`)
+    const momentHtml = await momentResponse.text()
+    assert.equal(momentResponse.status, 200)
+    assert.match(momentHtml, /October, a beginning/)
+    assert.match(momentHtml, /SocialMediaPosting/)
   })
   await check('login: HttpOnly cookies, no token in JSON', async () => {
     const { data, response } = await client.request('/api/auth/login', { username: 'tester', password: 'fixture-password' })

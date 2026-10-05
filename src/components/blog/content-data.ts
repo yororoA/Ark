@@ -11,6 +11,9 @@ async function allArticles() {
   return [...first.data, ...remainder.flatMap(result => result.data)]
 }
 
-export function useAllArticles(enabled = true) {
-  return useSWR(enabled ? '/api/blog/archive/full-articles' : null, allArticles)
+export function useAllArticles(enabled = true, fallbackData?: Entry[]) {
+  return useSWR(enabled ? '/api/blog/archive/full-articles' : null, allArticles, {
+    fallbackData,
+    revalidateOnMount: !fallbackData,
+  })
 }

@@ -9,12 +9,21 @@ import { useAllArticles } from './content-data'
 import { PageHeading, State, styles } from './shared'
 import { BlogSelect } from './controls'
 
-export default function Archive() {
+export default function Archive({
+  initialArticles,
+  initialMoments,
+}: {
+  initialArticles?: Entry[]
+  initialMoments?: Envelope<Entry[]>
+}) {
   const { t } = useBlog()
   const [type, setType] = useState('all')
   const [year, setYear] = useState('all')
-  const articles = useAllArticles()
-  const moments = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false')
+  const articles = useAllArticles(true, initialArticles)
+  const moments = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false', {
+    fallbackData: initialMoments,
+    revalidateOnMount: !initialMoments,
+  })
   const entries = [
     ...(articles.data || []).map(entry => ({ ...entry, kind: 'articles' as const })),
     ...(moments.data?.data || []).map(entry => ({ ...entry, kind: 'moments' as const })),

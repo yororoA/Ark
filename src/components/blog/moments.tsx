@@ -26,7 +26,7 @@ function MomentCard({ entry }: { entry: Entry }) {
   const { files } = useMomentMedia(entry)
   const cover = files[0]
   return <article className={styles['moment-card']}>
-    <div className={styles['entry-meta']}><time>{dateLabel(entry.createdAt, locale)}</time><span>{entry.username || 'YororoIce'}</span></div>
+    <div className={styles['entry-meta']}><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><span>{entry.username || 'YororoIce'}</span></div>
     <Link href={`/moments/${entry._id}`}><h2>{entry.title}</h2>
       {cover && (cover.mime.startsWith('video') ? <video className={styles['moment-media']} src={cover.url} muted preload="metadata" aria-label={entry.title} /> : <img className={styles['moment-media']} src={cover.url} alt={cover.desc || entry.title} loading="lazy" />)}
       <p>{excerpt(entry.content, 160)}</p>
@@ -35,13 +35,16 @@ function MomentCard({ entry }: { entry: Entry }) {
   </article>
 }
 
-export function MomentList() {
+export function MomentList({ initialData }: { initialData?: Envelope<Entry[]> }) {
   const { t, session } = useBlog()
   const router = useRouter()
   const params = useSearchParams()
   const date = params.get('date') || ''
   const page = Math.max(1, Number(params.get('page')) || 1)
-  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false')
+  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false', {
+    fallbackData: initialData,
+    revalidateOnMount: !initialData,
+  })
   const entries = (data?.data || []).filter(entry => !date || entry.createdAt.slice(0, 10) === date)
   function filter(key: string, value: string) {
     const next = new URLSearchParams(params)
@@ -113,16 +116,19 @@ function MomentReader({ entry, refresh }: { entry: Entry; refresh: () => Promise
     await mutate('/api/blog/moments/get?isEditing=false')
     router.push('/moments')
   }
-  return <><header className={styles['reader-header']}><div className={styles['eyebrow']}>02 / FRAGMENTS</div><h1>{entry.title}</h1><div className={styles['entry-meta']}><span>{entry.username || 'YororoIce'}</span><time>{dateLabel(entry.createdAt, locale)}</time><span>↗ {views}</span></div></header>
+  return <><header className={styles['reader-header']}><div className={styles['eyebrow']}>02 / FRAGMENTS</div><h1>{entry.title}</h1><div className={styles['entry-meta']}><span>{entry.username || 'YororoIce'}</span><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><span>↗ {views}</span></div></header>
     <Markdown content={entry.content} /><MediaGrid files={media.files} /><State loading={media.isLoading} error={media.error} retry={() => media.mutate()} />
     <div className={styles['reader-actions']}><LikeButton kind="moment" id={entry._id} count={entry.likes} /><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{canDelete && <DeleteButton name={entry.title} onDelete={remove} />}</div>
     <Comments entry={entry} refresh={refresh} />
   </>
 }
 
-export function MomentDetail({ id }: { id: string }) {
+export function MomentDetail({ id, initialEntry }: { id: string; initialEntry: Entry }) {
   const { t } = useBlog()
-  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false')
+  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false', {
+    fallbackData: { data: [initialEntry] },
+    revalidateOnMount: false,
+  })
   const entry = data?.data.find(item => item._id === id)
   return <div className={styles['page']}><div className={styles['reader']}><Link className={styles['text-link']} href="/moments"><ArrowLeft size={16} />{t('moments')}</Link><State loading={isLoading} error={error} empty={!!data && !entry} retry={() => mutate()} />{entry && <MomentReader key={id} entry={entry} refresh={mutate} />}</div></div>
 }

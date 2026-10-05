@@ -22,7 +22,7 @@ function ArticleListEntry({ entry, locale, read }: { entry: Entry; locale: Param
   </Link>
 }
 
-export function ArticleList() {
+export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }) {
   const { t, locale, session } = useBlog()
   const router = useRouter()
   const params = useSearchParams()
@@ -31,13 +31,28 @@ export function ArticleList() {
   const category = params.get('category') || ''
   const date = params.get('date') || ''
   const page = Math.max(1, Number(params.get('page')) || 1)
-  const list = useBlogData<Envelope<Entry[]>>(date ? null : `knowledge?limit=10&page=${page}&keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`)
-  const full = useAllArticles(!!date)
+  const list = useBlogData<Envelope<Entry[]>>(date ? null : `knowledge?limit=10&page=${page}&keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`, {
+    fallbackData: date ? undefined : initialData,
+    revalidateOnMount: !initialData,
+  })
+  const full = useAllArticles(!!date && !initialData)
   const filtered = (full.data || []).filter(entry => entry.createdAt.startsWith(date) && (!category || entry.category === category) && (!keyword || `${entry.title} ${entry.content}`.toLowerCase().includes(keyword.toLowerCase())))
-  const data = date ? full.data ? { data: filtered.slice((page - 1) * 10, page * 10), pagination: { pages: Math.ceil(filtered.length / 10) } } : undefined : list.data
-  const error = date ? full.error : list.error
-  const isLoading = date ? full.isLoading : list.isLoading
-  const mutate = date ? full.mutate : list.mutate
+  const clientDateData: Envelope<Entry[]> | undefined = full.data ? {
+    data: filtered.slice((page - 1) * 10, page * 10),
+    pagination: { page, limit: 10, total: filtered.length, pages: Math.ceil(filtered.length / 10) },
+  } : undefined
+  const hasInitialDateData = !!initialData
+  const dateData = initialData || clientDateData
+  const dateError = hasInitialDateData ? undefined : full.error
+  const dateIsLoading = !hasInitialDateData && full.isLoading
+  const data = date ? dateData : list.data
+  const error = date ? dateError : list.error
+  const isLoading = date ? dateIsLoading : list.isLoading
+  const retryServerDateData = () => router.refresh()
+  const retryClientDateData = () => { void full.mutate() }
+  const retryDateData = hasInitialDateData ? retryServerDateData : retryClientDateData
+  const retryListData = () => { void list.mutate() }
+  const retry = date ? retryDateData : retryListData
   const categories = useBlogData<Envelope<string[]>>('knowledge/meta/categories')
   function filter(key: string, value: string) {
     const next = new URLSearchParams(params)
@@ -48,20 +63,34 @@ export function ArticleList() {
   return <div className={styles['page']}><PageHeading title="articles" english="Writings" number="01">{session && !session.isGuest && <Link href="/articles/new" className={styles['primary-button']}><Plus size={16} />{t('newArticle')}</Link>}</PageHeading>
     <div className={styles['toolbar']}><DateField value={date} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
     <div className={styles['toolbar']}><div className={styles['filters']}><button aria-pressed={!category} onClick={() => filter('category', '')}>{t('all')}</button>{categories.data?.data.map(item => <button key={item} aria-pressed={category === item} onClick={() => filter('category', item)}>{item}</button>)}</div><form className={styles['search-field']} onSubmit={e => { e.preventDefault(); filter('keyword', query) }}><Search size={16} /><input aria-label={t('search')} placeholder={t('search')} value={query} onChange={e => setQuery(e.target.value)} /><button aria-label={t('search')} className={styles['icon-button']}><ArrowUpRight size={16} /></button></form></div>
-    <State loading={isLoading} error={error} empty={data?.data.length === 0} retry={() => mutate()} />
+    <State loading={isLoading} error={error} empty={data?.data.length === 0} retry={retry} />
     <div className={styles['article-list']}>{data?.data.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} />)}</div>
     <Pagination page={page} pages={data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
   </div>
 }
 
-export function ArticleDetail({ id }: { id: string }) {
+export function ArticleDetail({ id, initialArticle }: { id: string; initialArticle: Entry }) {
   const { t, locale, session, notify } = useBlog()
   const router = useRouter()
   const { mutate: refresh } = useSWRConfig()
-  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry>>(`knowledge/${id}`, { revalidateOnFocus: false, revalidateIfStale: false })
+  const viewed = useRef('')
+  const [views, setViews] = useState(initialArticle.views || 0)
+  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry>>(`knowledge/${id}`, {
+    fallbackData: { data: initialArticle },
+    revalidateOnFocus: false,
+    revalidateIfStale: false,
+    revalidateOnMount: false,
+  })
   const article = data?.data
   const isOwner = !!article && session?.uid === article.uid
   const canDelete = isOwner || session?.isAdmin
+  useEffect(() => {
+    if (viewed.current === id) return
+    viewed.current = id
+    void send<Envelope<{ views: number }>>('knowledge/view', { articleId: id })
+      .then(result => setViews(result.data.views))
+      .catch(() => {})
+  }, [id])
   async function remove() {
     await send(`knowledge/${id}`, {}, 'DELETE')
     await refresh(key => typeof key === 'string' && (key.startsWith('/api/blog/knowledge?') || key === '/api/blog/archive/full-articles'))
@@ -72,7 +101,7 @@ export function ArticleDetail({ id }: { id: string }) {
     const url = URL.createObjectURL(new Blob([`# ${article.title}\n\n${article.content}`], { type: 'text/markdown;charset=utf-8' }))
     const link = document.createElement('a'); link.href = url; link.download = `${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`; link.click(); URL.revokeObjectURL(url)
   }
-  return <div className={styles['page']}><div className={styles['reader']}><Link href="/articles" className={styles['text-link']}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {article.views || 0}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
+  return <div className={styles['page']}><div className={styles['reader']}><Link href="/articles" className={styles['text-link']}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
 }
 
 function Editor({ article }: { article?: Entry }) {
