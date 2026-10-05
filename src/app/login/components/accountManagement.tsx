@@ -2,16 +2,10 @@ import Portal from "@/components/Portal";
 import Link from '@/components/appearance/p3r-link';
 import { cn } from "@/lib/utils";
 import styles from "./components.module.scss";
-import Lenis from "lenis";
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { AuthDetail } from "@/store/auth";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent, DropdownMenuItem
-} from "@/components/ui/dropdown-menu";
-import { X, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react'
+import { X, ChevronLeft, Trash2 } from 'lucide-react'
 import Button from "@/components/arks/button";
 import Input from "@/components/arks/input";
 import Tabs from "@/components/arks/tabs";
@@ -28,24 +22,6 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   const [selectedUid, setSelectedUid] = useState<string | undefined>(details[0]?.uid);
   const selectedDetail = details.find((d) => d.uid === selectedUid) ?? details[0];
   const [detailToDelete, setDetailToDelete] = useState<AuthDetail | undefined>(undefined);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [boundaryEl, setBoundaryEl] = useState<HTMLDivElement | null>(null);
-
-  // 平滑滚动
-  const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null)
-  const wrapperRef = useCallback((node: HTMLDivElement | null) => {
-    setWrapperEl(node)
-  }, []);
-
-  useEffect(() => {
-    if (!wrapperEl) return
-    const lenis = new Lenis({
-      wrapper: wrapperEl,
-      content: wrapperEl.firstElementChild as HTMLElement,
-      autoRaf: true,
-    })
-    return () => lenis.destroy()
-  }, [wrapperEl]);
 
   // 表单
   const [otherVisable, setOtherVisable] = useState(details.length === 0 || props.preferredMode === 'register');
@@ -110,7 +86,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
           detail={detailToDelete}
         />
       )}
-      <div className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }} ref={setBoundaryEl}>
+      <div className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }}>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
           {otherVisable && details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
           <h1>账号管理</h1>
@@ -121,30 +97,16 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
           <>
             <div className={styles['account-body']}>
               {details.length > 0 ?
-                <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                  <DropdownMenuTrigger className="block w-full relative group" aria-label="选择账号">
-                    <div className={cn(styles.account)}>
-                      <span className={cn(styles.avatar, 'row-span-2')}>{selectedDetail?.username?.charAt(0).toUpperCase() || 'G'}</span>
-                      <span className={cn(styles.desc, styles['account-name'])}>{selectedDetail?.username || 'Guest'}</span>
-                      <span className={cn(styles.desc, styles['account-meta'])}>
-                        {`${selectedDetail?.continent_code && selectedDetail?.country_code ? `${selectedDetail?.continent_code}/${selectedDetail?.country_code}` : selectedDetail?.continent_code || selectedDetail?.country_code || 'Unknown'}`}
-                        <span className="inline-block w-[5px] h-[5px] rounded-full bg-gray-400 mx-[.2rem]" />
-                        {selectedDetail?.lastLoginAt ? new Date(selectedDetail.lastLoginAt).toLocaleString() : '未知'}
-                        <span className="inline-block w-[5px] h-[5px] rounded-full bg-gray-400 mx-[.2rem]" />
-                        {selectedDetail?.isAdmin ? '管理员' : selectedDetail?.isGuest ? '访客' : '用户'}
-                      </span>
-                    </div>
-                    <ChevronRight size={24} strokeWidth={1.3} className={cn(styles['account-arrow'], 'transition-transform duration-200 group-data-[state=open]:rotate-90')} />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent ref={wrapperRef} collisionBoundary={boundaryEl} className={styles.accountManagementContent}>
-                    {
-                      details.map((detail, index) => {
-                        const location = detail.continent_code && detail.country_code
-                          ? `${detail.continent_code}/${detail.country_code}`
-                          : detail.continent_code || detail.country_code || 'Unknown';
+                <div className={styles['account-list']} role="list" aria-label="已保存账号">
+                  {details.map((detail, index) => {
+                    const location = detail.continent_code && detail.country_code
+                      ? `${detail.continent_code}/${detail.country_code}`
+                      : detail.continent_code || detail.country_code || 'Unknown';
+                    const isSelected = detail.uid === selectedDetail?.uid;
 
-                        return (
-                          <DropdownMenuItem className={cn(styles.account)} key={detail.uid} onSelect={() => setSelectedUid(detail.uid)}>
+                    return (
+                      <div className={styles['account-record']} data-selected={isSelected ? '' : undefined} role="listitem" key={detail.uid}>
+                        <button type="button" className={cn(styles.account)} aria-pressed={isSelected} onClick={() => setSelectedUid(detail.uid)}>
                             <span className={cn(styles.avatar, 'row-span-2')}>{detail.username?.charAt(0).toUpperCase() || 'G'}</span>
                             <span className={cn(styles.desc, styles['account-name'])}>
                               {detail.username || 'Guest'}
@@ -158,21 +120,14 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                               <span className="inline-block w-[3px] h-[3px] rounded-full bg-gray-400 mx-[.15rem]" />
                               {detail.isAdmin ? '管理员' : detail.isGuest ? '访客' : '用户'}
                             </span>
-                            <button type="button" aria-label={`删除 ${detail.username || 'Guest'} 的登录记录`} title="删除登录记录" className={cn(styles['delete-button'], styles['icon-button'])}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setDetailToDelete(detail);
-                                setDropdownOpen(false);
-                              }}>
-                              <Trash2 size={18} strokeWidth={1.3} />
-                            </button>
-                          </DropdownMenuItem>
-                        )
-                      })
-                    }
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        </button>
+                        <button type="button" aria-label={`删除 ${detail.username || 'Guest'} 的登录记录`} title="删除登录记录" className={cn(styles['delete-button'], styles['icon-button'])} onClick={() => setDetailToDelete(detail)}>
+                          <Trash2 size={18} strokeWidth={1.3} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
                 : <span className={styles['empty-accounts']}>暂无登录记录</span>
               }
             </div>

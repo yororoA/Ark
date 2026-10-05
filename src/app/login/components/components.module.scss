@@ -1,6 +1,6 @@
 @use '@/styles/appearance-tokens' as appearance;
 
-.dialog-overlay, .accountManagementContent {
+.dialog-overlay {
   @include appearance.surface;
 }
 
@@ -90,7 +90,16 @@
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 }
 
-.account-body { flex: 1; padding: 24px 20px; min-height: 110px; }
+.account-body { flex: 1; min-height: 110px; padding: 24px 20px; overflow: hidden; }
+.account-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(330px, calc(100dvh - 360px));
+  padding: 1px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.account-record { position: relative; min-width: 0; }
 .empty-accounts { display: block; padding: 40px 12px; text-align: center; color: var(--muted); }
 
 .accountManagementFooter {
@@ -156,26 +165,13 @@
 
 .code-button { flex: none !important; min-height: 42px !important; padding-inline: 12px !important; }
 
-.accountManagementContent {
-  z-index: 100;
-  width: var(--radix-dropdown-menu-trigger-width);
-  min-width: 0;
-  max-height: min(330px, var(--radix-dropdown-menu-content-available-height));
-  padding: 6px;
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-top: 2px solid var(--accent);
-  border-radius: 0;
-  background: var(--paper);
-  box-shadow: 0 16px 40px #0003;
-}
-
 .account {
   position: relative;
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
   gap: 4px 12px;
+  width: 100%;
   min-width: 0;
   padding: 14px 44px 14px 14px;
   border: 1px solid var(--line);
@@ -184,14 +180,19 @@
   color: var(--ink);
   cursor: pointer;
 
-  &:hover, &[data-highlighted] { background: color-mix(in srgb, var(--accent) 5%, transparent); border-color: var(--accent); }
+  &:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); border-color: var(--accent); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
   .desc { min-width: 0; text-align: left; overflow-wrap: anywhere; }
   .account-name { font: 400 18px/1.4 var(--font-gowun-batang), var(--font-noto-serif), "Songti SC", serif; letter-spacing: 0; }
   .account-meta { color: var(--muted); font: 10px/1.7 var(--font-noto-sans), sans-serif; }
 }
 
-.account-arrow { position: absolute; right: 12px; top: calc(50% - 12px); color: var(--accent); }
-.delete-button { position: absolute; right: 6px; top: calc(50% - 20px); }
+.account-record[data-selected] .account {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.delete-button { position: absolute; z-index: 1; right: 6px; top: calc(50% - 20px); }
 .delete-button:hover { color: var(--accent); }
 .recent-label { display: inline-block; margin-left: 8px; color: var(--accent); font-size: 9px; }
 
@@ -254,7 +255,6 @@
   .inputGroup input { border-radius: 0; border-left: 3px solid var(--ark-rain); font-size: 16px; background: var(--ark-rain-panel); }
   .account { border-radius: 0; background: var(--ark-rain-panel); }
   .avatar { border: 1px solid var(--line); outline: 1px solid color-mix(in srgb, var(--line) 42%, transparent); outline-offset: 2px; border-radius: 0; background: var(--soft); color: var(--accent); font-weight: 400; box-shadow: none; }
-  .accountManagementContent { border-top-width: 1px; outline: 1px solid color-mix(in srgb, var(--line) 50%, transparent); outline-offset: 3px; border-radius: 0; padding: 8px; box-shadow: none; }
 
   @media (max-width: 600px) {
     .accountManagement { padding: 8px 8px 8px 24px; }
@@ -281,7 +281,6 @@
   .account { border: 1px solid var(--line); border-left: 4px solid #0754e4; background: var(--paper); }
   .account .account-name { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; }
   .avatar { font: italic 800 28px/1 var(--ark-p3r-display); color: #fff; background: #0754e4; border-left-color: #58e5ff; transform: skewX(-8deg); }
-  .accountManagementContent { border: 2px solid #0754e4; box-shadow: 5px 5px 0 #032369; background: var(--ark-p3r-panel); }
   .declarationContentWrapper h1 { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; color: var(--accent); }
   .declarationBtn { background: #0754e4; color: #fff; border-color: #58e5ff; }
 }
@@ -300,6 +299,7 @@
   .accountManagementFooter > button { flex-basis: 100%; margin-left: 0; }
   .accountManagement .loginBtn { padding-inline: 10px; }
   .account-body { padding: 16px 12px; }
+  .account-list { max-height: min(280px, calc(100dvh - 330px)); }
   .account { grid-template-columns: 38px minmax(0, 1fr); padding-left: 10px; gap: 4px 8px; }
   .avatar { width: 38px; height: 38px; font-size: 19px; }
   .account .account-name { font-size: 16px; }
