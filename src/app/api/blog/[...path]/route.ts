@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { acceptRefresh, BackendError, credentialHeaders, publicReader, rememberRenewal, sameOrigin, upstream, verifiedSession } from '@/lib/server/blog-session'
 
 const routes: Record<string, RegExp[]> = {
   GET: [
     /^knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories|liked))?$/,
-    /^moments\/(?:get|files|liked|comments\/liked)$/, /^gallery\/get$/,
-    /^archive(?:\/stats)?$/, /^(?:about|links|guestbook)$/, /^status\/bines$/, /^github\/summary$/,
+    /^moments\/(?:[a-f0-9]{24}|get|summary|files|liked|comments\/liked)$/, /^gallery\/get$/,
+    /^archive(?:\/(?:stats|feed|years|sitemap))?$/, /^(?:about|links|guestbook)$/, /^status\/bines$/, /^github\/summary$/,
     /^chat\/(?:conversations|history|hasPrivate)$/, /^sse\/subscribe$/,
   ],
-  POST: [/^knowledge(?:\/(?:like|upload-image))?$/, /^moments\/(?:post|view|like|comment\/(?:get|post|like))$/, /^gallery\/post$/, /^guestbook$/, /^chat\/(?:send|upload)$/, /^admin\/links$/],
+  POST: [/^knowledge(?:\/(?:like|view|upload-image))?$/, /^moments\/(?:post|view|like|comment\/(?:get|post|like))$/, /^gallery\/post$/, /^guestbook$/, /^chat\/(?:send|upload)$/, /^admin\/links$/],
   PUT: [/^knowledge\/[a-f0-9]{24}$/, /^admin\/links\/[a-f0-9]{24}$/],
   DELETE: [/^knowledge\/[a-f0-9]{24}$/, /^moments\/delete$/, /^admin\/links\/[a-f0-9]{24}$/],
 }
-const publicGets = /^(knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories))?|moments\/(?:get|files)|gallery\/get|archive(?:\/stats)?|about|guestbook|status\/bines|github\/summary)$/
+const publicGets = /^(knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories))?|moments\/(?:[a-f0-9]{24}|get|summary|files)|gallery\/get|archive(?:\/(?:stats|feed|years|sitemap))?|about|guestbook|status\/bines|github\/summary)$/
 
 async function handle(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   try {
@@ -22,12 +23,19 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     if (!routes[method]?.some(pattern => pattern.test(path))) return NextResponse.json({ message: '接口不存在' }, { status: 404 })
     if (!isRead && !sameOrigin(request)) return NextResponse.json({ message: '请求来源无效' }, { status: 403 })
     const isDraft = path === 'moments/get' && request.nextUrl.searchParams.get('isEditing')?.toLowerCase() === 'true'
-    const isPublic = (isRead && publicGets.test(path) && !isDraft) || path === 'moments/view' || (method === 'POST' && path === 'guestbook')
+    const isPublic = (isRead && publicGets.test(path) && !isDraft) || path === 'knowledge/view' || path === 'moments/view' || (method === 'POST' && path === 'guestbook')
     const isReader = (isRead && path === 'links') || (method === 'POST' && path === 'moments/comment/get')
     const auth = !isPublic && !isReader ? await verifiedSession() : null
     if (!isPublic && !isReader && !auth) return NextResponse.json({ message: '请先登录', tokenError: true }, { status: 401 })
     const credential = auth?.credential ?? (isReader ? await publicReader() : null)
     const headers = new Headers(credential ? credentialHeaders(credential) : {})
+    if (path === 'knowledge/view' || path === 'moments/view') {
+      const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || request.headers.get('x-real-ip')
+      if (clientIp) headers.set('x-forwarded-for', clientIp)
+      const userAgent = request.headers.get('user-agent')
+      if (userAgent) headers.set('user-agent', userAgent)
+    }
     let body: BodyInit | undefined
     if (!isRead) {
       const multipart = request.headers.get('content-type')?.includes('multipart/form-data')
@@ -81,6 +89,12 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
       return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', 'X-Accel-Buffering': 'no' } })
     }
     const data = await response.json().catch(() => ({ message: '博客服务响应异常' }))
+    const changesPublishedContent = (
+      (method === 'POST' && (path === 'knowledge' || path === 'moments/post'))
+      || (method === 'PUT' && /^knowledge\/[a-f0-9]{24}$/.test(path))
+      || (method === 'DELETE' && (/^knowledge\/[a-f0-9]{24}$/.test(path) || path === 'moments/delete'))
+    )
+    if (response.ok && changesPublishedContent) revalidateTag('public-blog-content', { expire: 0 })
     return NextResponse.json(data, { status: response.status, headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     const status = error instanceof BackendError ? error.status : error instanceof SyntaxError ? 400 : 502

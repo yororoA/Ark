@@ -58,7 +58,7 @@ function Guestbook() {
   const [page, setPage] = useState(1)
   const [busy, setBusy] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const { data, error, isLoading, mutate } = useBlogData<Envelope<Comment[]>>('guestbook')
+  const { data, error, isLoading, mutate } = useBlogData<Envelope<Comment[]>>(`guestbook?page=${page}&limit=8`)
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (busy || !content.trim()) return
@@ -70,7 +70,7 @@ function Guestbook() {
   }
   return <section className={styles['guestbook']} id="guestbook"><div><div className={styles['section-heading']}><div><div className={styles['eyebrow']}>LEAVE AN ECHO</div><h2>{t('guestbook')}</h2></div></div>
     <form className={styles['form']} onSubmit={submit}><p className={styles['form-note']}>{t('guestbookHint')}</p><label className={styles['field']}>{t('nickname')}<input maxLength={50} placeholder={session?.username || 'Guest'} value={name} onChange={e => setName(e.target.value)} /></label><label className={styles['field']}>{t('content')}<textarea required rows={5} maxLength={5000} value={content} onChange={e => setContent(e.target.value)} /></label>{submitError && <p role="alert" className={styles['error']}>{submitError}</p>}<div><button className={styles['primary-button']} disabled={busy || !content.trim()}>{t(busy ? 'sending' : 'send')}<ArrowUpRight size={16} /></button></div></form>
-    </div><div><State loading={isLoading} error={error} empty={data?.data.length === 0} retry={() => mutate()} />{data?.data.slice((page - 1) * 8, page * 8).map(entry => <article key={entry._id} className={styles['comment']}><div className={styles['entry-meta']}><strong>{entry.username}</strong><time>{dateLabel(entry.createdAt, locale)}</time></div><p>{entry.content}</p></article>)}<Pagination page={page} pages={Math.ceil((data?.data.length || 0) / 8)} change={setPage} /></div>
+    </div><div><State loading={isLoading} error={error} empty={data?.data.length === 0} retry={() => mutate()} />{data?.data.map(entry => <article key={entry._id} className={styles['comment']}><div className={styles['entry-meta']}><strong>{entry.username}</strong><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time></div><p>{entry.content}</p></article>)}<Pagination page={page} pages={data?.pagination?.pages || 1} change={setPage} /></div>
   </section>
 }
 

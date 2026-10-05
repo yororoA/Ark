@@ -11,6 +11,14 @@ export type Comment = { _id: string; content: string; username: string; uid: str
 export type Media = { filename: string; url: string; mime: string; username?: string; createdAt?: string; desc?: string }
 export type BlogLink = { _id: string; name: string; url: string; description?: string; category: string; imgurl?: string }
 export type Envelope<T> = { data: T; pagination?: { page: number; pages: number; total: number; limit: number }; hasMore?: boolean }
+export type HomeMomentSummary = { entries: Entry[]; activeDates: string[] }
+export type ArchiveEntry = Pick<Entry, '_id' | 'title' | 'uid' | 'username' | 'createdAt' | 'updatedAt'> & {
+  kind: 'articles' | 'moments'
+}
+export type SitemapContent = {
+  articles: Array<Pick<Entry, '_id' | 'createdAt' | 'updatedAt'> & { coverUrl?: string }>
+  moments: Array<Pick<Entry, '_id' | 'createdAt' | 'updatedAt'> & { images: string[] }>
+}
 export const PROFILE = {
   author: 'yororoIce', description: 'Time mends the wounds, love soothes the scars.',
   email: '3364817735song@gmail.com', github: 'https://github.com/yororoA',

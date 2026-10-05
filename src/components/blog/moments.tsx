@@ -26,7 +26,7 @@ function MomentCard({ entry }: { entry: Entry }) {
   const { files } = useMomentMedia(entry)
   const cover = files[0]
   return <article className={styles['moment-card']}>
-    <div className={styles['entry-meta']}><time>{dateLabel(entry.createdAt, locale)}</time><span>{entry.username || 'YororoIce'}</span></div>
+    <div className={styles['entry-meta']}><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><span>{entry.username || 'YororoIce'}</span></div>
     <Link href={`/moments/${entry._id}`}><h2>{entry.title}</h2>
       {cover && (cover.mime.startsWith('video') ? <video className={styles['moment-media']} src={cover.url} muted preload="metadata" aria-label={entry.title} /> : <img className={styles['moment-media']} src={cover.url} alt={cover.desc || entry.title} loading="lazy" />)}
       <p>{excerpt(entry.content, 160)}</p>
@@ -35,14 +35,17 @@ function MomentCard({ entry }: { entry: Entry }) {
   </article>
 }
 
-export function MomentList() {
+export function MomentList({ initialData }: { initialData?: Envelope<Entry[]> }) {
   const { t, session } = useBlog()
   const router = useRouter()
   const params = useSearchParams()
   const date = params.get('date') || ''
   const page = Math.max(1, Number(params.get('page')) || 1)
-  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false')
-  const entries = (data?.data || []).filter(entry => !date || entry.createdAt.slice(0, 10) === date)
+  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>(`moments/get?isEditing=false&page=${page}&limit=12&date=${encodeURIComponent(date)}`, {
+    fallbackData: initialData,
+    revalidateOnMount: !initialData,
+  })
+  const entries = data?.data || []
   function filter(key: string, value: string) {
     const next = new URLSearchParams(params)
     next.delete('page')
@@ -51,10 +54,10 @@ export function MomentList() {
   }
   return <div className={styles['page']}>
     <PageHeading title="moments" english="Fragments" number="02">{session && !session.isGuest && <Link className={styles['primary-button']} href="/moments/new"><Plus size={16} />{t('newMoment')}</Link>}</PageHeading>
-    <div className={styles['toolbar']}><span className={styles['eyebrow']}>{entries.length} / {t('entries')}</span><div className={styles['form-actions']}><DateField value={date} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div></div>
+    <div className={styles['toolbar']}><span className={styles['eyebrow']}>{data?.pagination?.total ?? entries.length} / {t('entries')}</span><div className={styles['form-actions']}><DateField value={date} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div></div>
     <State loading={isLoading} error={error} empty={!!data && !entries.length} retry={() => mutate()} />
-    <div className={styles['moments-grid']}>{entries.slice((page - 1) * 12, page * 12).map(entry => <MomentCard key={entry._id} entry={entry} />)}</div>
-    <Pagination page={page} pages={Math.ceil(entries.length / 12)} change={value => filter('page', String(value))} />
+    <div className={styles['moments-grid']}>{entries.map(entry => <MomentCard key={entry._id} entry={entry} />)}</div>
+    <Pagination page={page} pages={data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
   </div>
 }
 
@@ -110,20 +113,27 @@ function MomentReader({ entry, refresh }: { entry: Entry; refresh: () => Promise
   }, [entry._id])
   async function remove() {
     await send('moments/delete', { momentId: entry._id, moment_uid: entry.uid }, 'DELETE')
-    await mutate('/api/blog/moments/get?isEditing=false')
+    await mutate(key => typeof key === 'string' && (
+      key.startsWith('/api/blog/moments/get?')
+      || key.startsWith('/api/blog/archive/feed?')
+      || key.startsWith('/api/blog/moments/summary?')
+    ))
     router.push('/moments')
   }
-  return <><header className={styles['reader-header']}><div className={styles['eyebrow']}>02 / FRAGMENTS</div><h1>{entry.title}</h1><div className={styles['entry-meta']}><span>{entry.username || 'YororoIce'}</span><time>{dateLabel(entry.createdAt, locale)}</time><span>↗ {views}</span></div></header>
+  return <><header className={styles['reader-header']}><div className={styles['eyebrow']}>02 / FRAGMENTS</div><h1>{entry.title}</h1><div className={styles['entry-meta']}><span>{entry.username || 'YororoIce'}</span><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><span>↗ {views}</span></div></header>
     <Markdown content={entry.content} /><MediaGrid files={media.files} /><State loading={media.isLoading} error={media.error} retry={() => media.mutate()} />
     <div className={styles['reader-actions']}><LikeButton kind="moment" id={entry._id} count={entry.likes} /><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{canDelete && <DeleteButton name={entry.title} onDelete={remove} />}</div>
     <Comments entry={entry} refresh={refresh} />
   </>
 }
 
-export function MomentDetail({ id }: { id: string }) {
+export function MomentDetail({ id, initialEntry }: { id: string; initialEntry: Entry }) {
   const { t } = useBlog()
-  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>('moments/get?isEditing=false')
-  const entry = data?.data.find(item => item._id === id)
+  const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry>>(`moments/${id}`, {
+    fallbackData: { data: initialEntry },
+    revalidateOnMount: false,
+  })
+  const entry = data?.data
   return <div className={styles['page']}><div className={styles['reader']}><Link className={styles['text-link']} href="/moments"><ArrowLeft size={16} />{t('moments')}</Link><State loading={isLoading} error={error} empty={!!data && !entry} retry={() => mutate()} />{entry && <MomentReader key={id} entry={entry} refresh={mutate} />}</div></div>
 }
 
@@ -155,7 +165,11 @@ function Compose() {
       notify(uploaded < files.length ? t('partialUpload') : t('saved'))
       await draft.mutate()
       if (published) {
-        await mutate('/api/blog/moments/get?isEditing=false')
+        await mutate(key => typeof key === 'string' && (
+          key.startsWith('/api/blog/moments/get?')
+          || key.startsWith('/api/blog/archive/feed?')
+          || key.startsWith('/api/blog/moments/summary?')
+        ))
         router.push(`/moments/${result.data._id}`)
       }
     } catch (error) { setError((error as Error).message) } finally { setBusy(false) }

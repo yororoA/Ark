@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
+import { NO_INDEX } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: "登录 - YororoIce Ark",
-  description: "用于登录",
+  title: "登录",
+  description: "登录 YororoIce Ark。",
+  robots: NO_INDEX,
 };
 
 export default function LoginLayout({

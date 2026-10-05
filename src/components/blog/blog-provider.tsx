@@ -2,7 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
+import type { SWRConfiguration } from 'swr'
 import { Locale, Session, TextKey, translate } from '@/lib/blog'
+import { syncAuthDetails } from '@/store/auth'
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path.startsWith('/api/') ? path : `/api/blog/${path}`, init)
@@ -15,7 +17,7 @@ export function send<T>(path: string, body: unknown, method = 'POST') {
   const multipart = body instanceof FormData
   return request<T>(path, { method, headers: multipart ? undefined : { 'Content-Type': 'application/json' }, body: multipart ? body : JSON.stringify(body) })
 }
-export function useBlogData<T>(path: string | null, options?: { refreshInterval?: number; revalidateOnFocus?: boolean; revalidateIfStale?: boolean }) {
+export function useBlogData<T>(path: string | null, options?: SWRConfiguration<T, Error>) {
   return useSWR<T>(path ? `/api/blog/${path}` : null, request, options)
 }
 type BlogContextValue = {
@@ -54,7 +56,10 @@ function Preferences({ children }: { children: React.ReactNode }) {
   const { data, isLoading, mutate: refreshSession } = useSWR<{ data: Session | null }>('/api/session', request, { refreshInterval: 60_000 })
   const session = data?.data ?? null
   useEffect(() => {
-    const revalidate = () => { void refreshSession() }
+    const revalidate = () => {
+      void refreshSession()
+      void syncAuthDetails().catch(() => {})
+    }
     window.addEventListener('ark:session-invalid', revalidate)
     return () => window.removeEventListener('ark:session-invalid', revalidate)
   }, [refreshSession])
@@ -71,7 +76,7 @@ function Preferences({ children }: { children: React.ReactNode }) {
     source.onopen = () => setConnection('connected')
     source.onerror = () => setConnection('reconnecting')
     const refresh = () => {
-      // Detail article GET increments views. Only invalidate collections here.
+      // Detail views are tracked explicitly; SSE only needs to invalidate changed collections.
       void mutate(key => {
         const path = Array.isArray(key) ? key[0] : key
         return typeof path === 'string' && path.startsWith('/api/blog/') && !/^\/api\/blog\/knowledge\/[a-f0-9]{24}$/.test(path)

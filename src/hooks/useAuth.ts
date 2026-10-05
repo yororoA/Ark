@@ -1,5 +1,11 @@
-import { useAuthStore } from "@/store/auth";
+import { syncAuthDetails, useAuthStore } from "@/store/auth";
 import { useGetLocation } from "@/hooks/useGetLocation";
+
+class AuthRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
 
 /**
  * 调用 /api/auth/[action] Route Handler。
@@ -24,7 +30,7 @@ async function callAuth<T = unknown>(action: string, body?: unknown): Promise<T 
     } catch {
       // 非 JSON 响应，使用默认消息
     }
-    throw new Error(message)
+    throw new AuthRequestError(message, resp.status)
   }
 
   // switch 可能返回 null，其他 action 失败时也可能返回 null
@@ -56,6 +62,7 @@ export function useAuth() {
       continent_code: location?.continentCode,
       country_code: location?.countryCode,
     });
+    void syncAuthDetails().catch(() => {});
   }
 
   // 注册
@@ -71,6 +78,7 @@ export function useAuth() {
       continent_code: location?.continentCode,
       country_code: location?.countryCode,
     });
+    void syncAuthDetails().catch(() => {});
   }
 
   // 游客登录
@@ -87,6 +95,7 @@ export function useAuth() {
       continent_code: location?.continentCode,
       country_code: location?.countryCode,
     });
+    void syncAuthDetails().catch(() => {});
     // Session validity is checked server-side; a login-time timer would discard
     // guests whose tokens have since been renewed by the backend.
     return resp;
@@ -94,8 +103,17 @@ export function useAuth() {
 
   // 切换用户
   async function switchUser(uid: string) {
-    // 设置 cookie + 后端轻量验证（Route Handler 内部手动携带 Cookie 头）
-    const validated = await callAuth<{ uid: string; username: string; isGuest: boolean; isAdmin: boolean } | null>('switch', { uid });
+    let validated: { uid: string; username: string; isGuest: boolean; isAdmin: boolean } | null;
+    try {
+      // 设置 cookie + 后端轻量验证（Route Handler 内部手动携带 Cookie 头）
+      validated = await callAuth<{ uid: string; username: string; isGuest: boolean; isAdmin: boolean } | null>('switch', { uid });
+    } catch (error) {
+      if (error instanceof AuthRequestError && error.status === 401) {
+        authStore.removeDetail(uid);
+        await fetch(`/api/session?uid=${encodeURIComponent(uid)}`, { method: 'DELETE' }).catch(() => null);
+      }
+      throw error;
+    }
 
     if (validated) {
       // 后端验证通过 → 以后端数据为准（确保 token 仍有效）
@@ -108,6 +126,7 @@ export function useAuth() {
         continent_code: location?.continentCode,
         country_code: location?.countryCode,
       });
+      void syncAuthDetails().catch(() => {});
     } else {
       // Local login history is display data, never proof of an active session.
       throw new Error('账号验证失败，请重新登录');

@@ -13,6 +13,7 @@ import ArchiveLogo from '@/components/brand/archive-logo'
 import ThemePicker from '@/components/appearance/theme-picker'
 import { useAppearance } from '@/components/appearance/appearance-store'
 import { P3RMenu } from './p3r-navigation'
+import { syncAuthDetails } from '@/store/auth'
 import styles from './blog.module.scss'
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -35,7 +36,11 @@ function Shell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', close)
   }, [open])
   async function logout() {
-    try { await request('/api/session', { method: 'DELETE' }); refreshSession() } catch (error) { notify((error as Error).message) }
+    try {
+      await request('/api/session', { method: 'DELETE' })
+      await syncAuthDetails().catch(() => {})
+      refreshSession()
+    } catch (error) { notify((error as Error).message) }
   }
   return (
     <div className={styles['blog-root']} data-blog-root>
