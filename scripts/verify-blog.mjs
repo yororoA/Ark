@@ -24,7 +24,14 @@ const draftArticle = { ...article, _id: draftArticleId, title: 'Private draft', 
 const moment = { ...article, _id: momentId, title: 'October, a beginning', comments: [commentId], published: true, filenames: {} }
 const articles = [article, draftArticle]
 const moments = [moment]
-const messages = [
+const historyMessages = Array.from({ length: 42 }, (_, index) => ({
+  _id: `history-${String(index).padStart(2, '0')}`,
+  uid: index % 3 ? 'another-user' : 'test-admin',
+  username: index % 3 ? `Visitor ${index % 7}` : 'Tester',
+  text: `Archived message ${index + 1}`,
+  createdAt: new Date(Date.UTC(2026, 8, 30, 10, index)).toISOString(),
+}))
+const messages = [...historyMessages,
   { _id: 'first-message', uid: 'another-user', username: 'Visitor', text: 'Hello, Ark.', createdAt: '2026-10-01T12:00:00Z' },
   { _id: 'image-message', uid: 'another-user', username: 'A visitor with a deliberately long display name for overflow checks', text: 'Image record', imgurl: [`${origin}/login_light.png`], createdAt: '2026-10-01T12:01:00Z' },
   { _id: 'mixed-message', uid: 'test-admin', username: 'Tester', text: 'Text, video, and image in one message.', imgurl: ['https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', `${origin}/login_dark.png`, `${origin}/logo.png`], createdAt: '2026-10-01T12:02:00Z' },
@@ -62,7 +69,7 @@ const server = createServer(async (req, res) => {
         body.fileCount = [...form.values()].filter(value => typeof value !== 'string').length
       } else body = JSON.parse(buffer)
     }
-    calls.push({ path, method: req.method, body, uid: req.headers.uid, query: url.search })
+    calls.push({ path, method: req.method, body, uid: req.headers.uid, query: url.search, idempotencyKey: req.headers['x-idempotency-key'] })
     const json = (data, status = 200) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(data)) }
     const ok = (data, extra = {}) => json({ success: true, data, ...extra })
     if (path === '/api/v2/login' || path === '/api/v2/register') {
@@ -112,7 +119,7 @@ const server = createServer(async (req, res) => {
     )
     const publicWrite = path === '/api/guestbook' || path === '/api/knowledge/view' || path === '/api/moments/view'
     if (!isPublic && !publicWrite && !valid) return json({ message: 'Invalid token', tokenError: true }, 401)
-    if (valid && user.isGuest && req.method !== 'GET' && !path.startsWith('/api/chat/') && !publicWrite && path !== '/api/moments/comment/get') return json({ message: 'Guests cannot publish' }, 403)
+    if (valid && user.isGuest && req.method !== 'GET' && !path.startsWith('/api/chat/') && path !== '/api/media/upload' && !publicWrite && path !== '/api/moments/comment/get') return json({ message: 'Guests cannot publish' }, 403)
     if (controls.fail && path === '/api/knowledge') return json({ message: 'Fixture service unavailable' }, 503)
     if (path === '/api/sse/subscribe') {
       res.writeHead(200, { 'content-type': 'text/event-stream' })
@@ -130,6 +137,17 @@ const server = createServer(async (req, res) => {
       return
     }
     if (path === '/api/knowledge/meta/categories') return ok(['Development', 'Life'])
+    if (path === '/api/media/limits') return ok({ maxCount: 1000, maxBytes: 2147483648, ratePerHour: 60, scopes: {} })
+    if (path === '/api/media/upload') return ok({
+      id: (++sequence).toString(16).padStart(24, '0'),
+      scope: body.scope,
+      filename: 'fixture.png',
+      mime: 'image/png',
+      url: `${backend}/fixture.png`,
+      bytes: 7,
+      status: 'staged',
+    })
+    if (/\/api\/media\/[a-f0-9]{24}$/.test(path) && req.method === 'DELETE') return ok({ deleted: true })
     if (path.endsWith('/liked')) return ok([...likes])
     if (path.endsWith('/like')) {
       if (body.like) likes.add(body.articleId || body.momentId || body.commentId)
@@ -180,7 +198,7 @@ const server = createServer(async (req, res) => {
       const requested = body.fileCount || 0
       const filenames = Object.fromEntries(Array.from({ length: requested }, (_, index) => [`fixture-${index}.png`, `${origin}/fixture-${index}.png`]))
       const item = { ...moment, ...body, filenames, uid: user.uid, _id: (++sequence).toString(16).padStart(24, '0'), comments: [] }
-      if (body.published === 'false') draft = item
+      if (body.published === 'false' || body.published === false) draft = item
       else { moments.unshift(item); draft = null }
       return ok(item, { upload: { requested, uploaded: requested, failed: 0, failedFiles: [] } })
     }
@@ -195,7 +213,10 @@ const server = createServer(async (req, res) => {
     if (path === '/api/moments/comment/get') return ok(comments.filter(item => body.commentIds?.includes(item._id)))
     if (path === '/api/moments/comment/post') { const comment = { ...comments[0], _id: `${++sequence}`, content: body.comment, belong: body.belong, uid: user.uid }; comments.push(comment); moment.comments.push(comment._id); return ok(comment) }
     if (path === '/api/gallery/get') return ok({ files: [], count: 0, hasMore: false, breakpoint: null })
-    if (path === '/api/gallery/post') return ok({ count: body.fileCount, files: ['fixture.png'] })
+    if (path === '/api/gallery/post') {
+      const count = body.fileCount || body.assetIds?.length || 0
+      return ok({ count, files: Array.from({ length: count }, () => 'fixture.png') })
+    }
     if (path === '/api/archive/feed') {
       const type = url.searchParams.get('type') || 'all'
       const year = url.searchParams.get('year') || 'all'
@@ -233,7 +254,14 @@ const server = createServer(async (req, res) => {
       { id: 'admin', type: 'private' },
       { id: 'long-private-conversation-id', label: 'A very long private conversation name that must never widen the sidebar', type: 'private' },
     ])
-    if (path === '/api/chat/history') return ok(url.searchParams.get('userId') === 'group' ? messages : [], { hasMore: url.searchParams.get('page') === '1' })
+    if (path === '/api/chat/history') {
+      if (url.searchParams.get('userId') !== 'group') return ok([], { hasMore: false })
+      const page = +(url.searchParams.get('page') || 1)
+      const limit = +(url.searchParams.get('limit') || 15)
+      const end = Math.max(0, messages.length - (page - 1) * limit)
+      const start = Math.max(0, end - limit)
+      return ok(messages.slice(start, end).reverse(), { hasMore: start > 0 })
+    }
     if (path === '/api/chat/upload') return ok({ urls: Array(body.fileCount).fill(`${backend}/fixture.png`) })
     if (path === '/api/chat/send') { const message = { ...body, _id: `${++sequence}`, uid: user.uid, createdAt: new Date().toISOString() }; messages.push(message); return ok(message) }
     return json({ message: `Unimplemented fixture: ${path}` }, 404)
@@ -431,6 +459,24 @@ try {
     assert.equal(chat.data.data.identity, 'admin')
   })
   await check('multipart uploads, moment draft/publish/delete, comments/likes, links', async () => {
+    const stagedForm = new FormData()
+    stagedForm.set('scope', 'moment')
+    stagedForm.set('file', new Blob(['fixture'], { type: 'image/png' }), 'fixture.png')
+    const stagedKey = 'media:integration-fixture'
+    const staged = await client.request('/api/blog/media/upload', stagedForm, 'POST', { 'x-idempotency-key': stagedKey })
+    assert.equal(staged.data.data.mime, 'image/png')
+    assert.equal(calls.findLast(call => call.path === '/api/media/upload').idempotencyKey, stagedKey)
+    const draftKey = 'moment-autosave:integration-fixture'
+    const managedDraft = await client.request('/api/blog/moments/post', {
+      title: 'Managed draft',
+      content: 'Autosaved JSON draft',
+      published: false,
+      media: [{ assetId: staged.data.data.id, description: 'Managed media' }],
+    }, 'POST', { 'x-idempotency-key': draftKey })
+    assert.equal(managedDraft.data.data.title, 'Managed draft')
+    assert.equal(calls.findLast(call => call.path === '/api/moments/post').idempotencyKey, draftKey)
+    assert.equal((await client.request(`/api/blog/media/${staged.data.data.id}`, {}, 'DELETE')).response.status, 200)
+
     const form = new FormData()
     form.set('title', 'Contract moment'); form.set('content', 'Moment content'); form.set('published', 'false')
     form.set('files', new Blob(['fixture'], { type: 'image/png' }), 'fixture.png')

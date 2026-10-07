@@ -3,12 +3,13 @@ export type Session = { uid: string; username: string; isGuest: boolean; isAdmin
 export type Entry = {
   _id: string; title: string; content: string; uid: string; username?: string
   createdAt: string; updatedAt?: string; category?: string; tags?: string[]
-  likes?: number; views?: number; comments?: string[]; published?: boolean
+  likes?: number; views?: number; comments?: string[]; published?: boolean; acknowledge?: boolean
   filenames?: Record<string, string>
-  filesDetail?: Record<string, { origin?: string; desc?: string; secure_url?: string }>
+  filesDetail?: Record<string, { origin?: string; desc?: string; secure_url?: string; assetId?: string; mime?: string }>
+  mediaAssets?: string[]
 }
 export type Comment = { _id: string; content: string; username: string; uid: string; createdAt: string; likes?: number; belong?: string }
-export type Media = { filename: string; url: string; mime: string; username?: string; createdAt?: string; desc?: string }
+export type Media = { id?: string; filename: string; url: string; mime: string; username?: string; createdAt?: string; desc?: string }
 export type BlogLink = { _id: string; name: string; url: string; description?: string; category: string; imgurl?: string }
 export type Envelope<T> = { data: T; pagination?: { page: number; pages: number; total: number; limit: number }; hasMore?: boolean }
 export type HomeMomentSummary = { entries: Entry[]; activeDates: string[] }
@@ -89,6 +90,11 @@ const words = {
   zoomIn: ['放大图片', 'Zoom in', '拡大', 'Vergrößern'],
   panZoomImage: ['滚轮缩放，拖拽平移图片', 'Scroll to zoom, drag to pan', 'スクロールで拡大、ドラッグで移動', 'Scrollen zum Zoomen, Ziehen zum Verschieben'],
   upload: ['上传媒体', 'Upload media', 'メディアを追加', 'Medien hochladen'],
+  uploadQueued: ['等待上传', 'Queued', 'アップロード待ち', 'Wartet'],
+  uploadingFile: ['正在上传', 'Uploading', 'アップロード中', 'Wird hochgeladen'],
+  processingFile: ['服务端处理中', 'Processing', 'サーバーで処理中', 'Wird verarbeitet'],
+  uploadDone: ['上传完成', 'Uploaded', 'アップロード完了', 'Hochgeladen'],
+  uploadFailed: ['上传失败', 'Upload failed', 'アップロード失敗', 'Upload fehlgeschlagen'],
   insertMedia: ['插入媒体', 'Insert media', 'メディアを挿入', 'Medien einfügen'],
   dropFiles: ['点击选择或拖入文件', 'Choose or drop files', 'ファイルを選択・ドロップ', 'Dateien wählen oder ablegen'],
   file: ['文件', 'file', 'ファイル', 'Datei'],
@@ -106,6 +112,9 @@ const words = {
   draft: ['保存草稿', 'Save draft', '下書き保存', 'Entwurf speichern'],
   restoreDraft: ['恢复草稿', 'Restore draft', '下書き復元', 'Entwurf laden'],
   draftMedia: ['草稿的附件需重新选择后上传。', 'Reselect draft attachments before uploading.', '下書きの添付を再選択してください。', 'Entwurfsanhänge bitte erneut auswählen.'],
+  draftSaving: ['正在自动保存…', 'Autosaving…', '自動保存中…', 'Automatisches Speichern…'],
+  autoSaved: ['草稿已自动保存', 'Draft autosaved', '下書きを自動保存しました', 'Entwurf automatisch gespeichert'],
+  unsavedChanges: ['仍有未保存内容或上传任务，确定离开？', 'Content or uploads are not saved yet. Leave anyway?', '未保存の内容またはアップロードがあります。移動しますか？', 'Inhalte oder Uploads sind noch nicht gespeichert. Trotzdem verlassen?'],
   saved: ['已保存', 'Saved', '保存しました', 'Gespeichert'],
   like: ['喜欢', 'Like', 'いいね', 'Gefällt mir'],
   liked: ['已喜欢', 'Liked', 'いいね済み', 'Gefällt mir'],
@@ -185,7 +194,7 @@ export function mediaFor(entry: Entry): Media[] {
     const detail = entry.filesDetail?.[name]
     const url = safeUrl(detail?.secure_url || value)
     if (!url) return []
-    const video = /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) || /\.(mp4|webm|mov|mkv|ogg)$/i.test(name)
-    return [{ filename: name, url, mime: video ? 'video/mp4' : 'image/jpeg', desc: detail?.desc || detail?.origin || entry.title }]
+    const video = detail?.mime?.startsWith('video') || /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) || /\.(mp4|webm|mov|mkv|ogg)$/i.test(name)
+    return [{ id: detail?.assetId, filename: name, url, mime: detail?.mime || (video ? 'video/mp4' : 'image/jpeg'), desc: detail?.desc || detail?.origin || entry.title }]
   })
 }
