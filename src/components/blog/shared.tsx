@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
 import RainPlanes from '@/components/appearance/rain-planes'
 import P3RScene from '@/components/appearance/p3r-scene'
+import type { ManagedUploadItem } from './media-upload'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
@@ -251,7 +252,7 @@ export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Medi
   const hasImage = files.some(file => !file.mime.startsWith('video'))
   return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
-export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; descriptions?: Record<string, string> }) {
+export function LocalMediaGrid({ files, descriptions = [] }: { files: File[]; descriptions?: string[] }) {
   const [media, setMedia] = useState<Media[]>([])
   useEffect(() => {
     const next = files.map(file => ({
@@ -265,9 +266,24 @@ export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; de
       next.forEach(file => URL.revokeObjectURL(file.url))
     }
   }, [files])
-  return <MediaGrid files={media.map(file => ({ ...file, desc: descriptions[file.filename] || file.filename }))} />
+  return <MediaGrid files={media.map((file, index) => ({ ...file, desc: descriptions[index] || file.filename }))} />
 }
-export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label, onBeforeSelect }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean; label?: string; onBeforeSelect?: () => void }) {
+const IMAGE_ACCEPT = 'image/jpeg,image/png,image/gif,image/webp,image/bmp'
+const VIDEO_ACCEPT = 'video/mp4,video/webm,video/ogg,video/quicktime,video/x-msvideo,video/x-matroska'
+const ALLOWED_IMAGE_TYPES = new Set(IMAGE_ACCEPT.split(','))
+const ALLOWED_VIDEO_TYPES = new Set(VIDEO_ACCEPT.split(','))
+
+export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label, onBeforeSelect, uploadItems, onRetry, onRemove }: {
+  files: File[]
+  setFiles: (files: File[]) => void
+  max?: number
+  imageOnly?: boolean
+  label?: string
+  onBeforeSelect?: () => void
+  uploadItems?: ManagedUploadItem[]
+  onRetry?: (key: string) => void
+  onRemove?: (key: string) => void
+}) {
   const { t, notify } = useBlog()
   const input = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
@@ -276,21 +292,34 @@ export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label
     const selected = max > 1
       ? [...new Map([...files, ...next].map(file => [`${file.name}:${file.size}:${file.lastModified}:${file.type}`, file])).values()]
       : next
-    const invalidType = selected.some(file => !file.type.startsWith('image/') && (imageOnly || !file.type.startsWith('video/')))
+    const invalidType = selected.some(file => !ALLOWED_IMAGE_TYPES.has(file.type) && (imageOnly || !ALLOWED_VIDEO_TYPES.has(file.type)))
     if (invalidType || selected.length > max || selected.some(file => file.size > limit * 1024 * 1024)) { notify(`${label || t('upload')}: ≤ ${max} · ≤ ${limit} MB · ${imageOnly ? 'image' : 'image / video'}`); return }
     setFiles(selected)
   }
   return <div className={styles['file-drop']} data-dragging={dragging} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }} onDrop={e => { e.preventDefault(); setDragging(false); onBeforeSelect?.(); choose(Array.from(e.dataTransfer.files)) }}>
-    <input ref={input} type="file" hidden multiple={max > 1} accept={imageOnly ? 'image/*' : 'image/*,video/*'} onChange={e => { onBeforeSelect?.(); choose(Array.from(e.target.files || [])); e.target.value = '' }} />
+    <input ref={input} className={styles['sr-only']} tabIndex={-1} type="file" multiple={max > 1} accept={imageOnly ? IMAGE_ACCEPT : `${IMAGE_ACCEPT},${VIDEO_ACCEPT}`} onChange={e => { onBeforeSelect?.(); choose(Array.from(e.target.files || [])); e.target.value = '' }} />
     <button type="button" className={styles['upload-trigger']} disabled={!max} onClick={() => { onBeforeSelect?.(); input.current?.click() }}>
       <span className={styles['upload-symbol']}><Upload size={22} strokeWidth={1} /></span>
       <span><strong>{label || t('upload')}</strong><small>{t('dropFiles')} · {imageOnly ? '10' : '50'} MB / {t('file')}</small></span>
       <span className={styles['upload-count']}>{String(files.length).padStart(2, '0')}<small>/ {max}</small></span>
     </button>
-    {!!files.length && <ul className={styles['upload-files']}>{files.map((file, index) => <li key={`${file.name}-${index}`}>
-      <FileImage size={14} /><span title={file.name}>{file.name}</span><small>{(file.size / 1024 / 1024).toFixed(1)} MB</small>
-      <button type="button" className={styles['icon-button']} aria-label={`${t('removeFile')} ${file.name}`} onClick={() => setFiles(files.filter((_, item) => item !== index))}><X size={14} /></button>
-    </li>)}</ul>}
+    {!!files.length && <ul className={styles['upload-files']}>{files.map((file, index) => {
+      const key = `${file.name}:${file.size}:${file.lastModified}:${file.type}`
+      const uploadItem = uploadItems?.find(item => item.key === key)
+      const uploadActive = uploadItem?.status === 'uploading' || uploadItem?.status === 'processing'
+      const statusKey: TextKey = uploadItem?.status === 'queued' ? 'uploadQueued'
+        : uploadItem?.status === 'uploading' ? 'uploadingFile'
+          : uploadItem?.status === 'processing' ? 'processingFile'
+            : uploadItem?.status === 'done' ? 'uploadDone'
+              : 'uploadFailed'
+      return <li key={key} data-status={uploadItem?.status}>
+        <div className={styles['upload-file-summary']}><FileImage size={14} /><span title={file.name}>{file.name}</span><small>{(file.size / 1024 / 1024).toFixed(1)} MB</small>
+          {uploadItem?.status === 'error' && onRetry && <button type="button" className={styles['icon-button']} aria-label={`${t('retry')} ${file.name}`} title={t('retry')} onClick={() => onRetry(key)}><RotateCcw size={14} /></button>}
+          <button type="button" className={styles['icon-button']} disabled={uploadActive} aria-label={`${t('removeFile')} ${file.name}`} onClick={() => onRemove ? onRemove(key) : setFiles(files.filter((_, item) => item !== index))}><X size={14} /></button>
+        </div>
+        {uploadItem && <div className={styles['upload-file-progress']}><progress max="100" value={uploadItem.progress} /><small>{t(statusKey)}{uploadItem.error ? ` · ${uploadItem.error}` : ''}</small></div>}
+      </li>
+    })}</ul>}
   </div>
 }
 export function Pagination({ page, pages, change }: { page: number; pages: number; change: (page: number) => void }) {

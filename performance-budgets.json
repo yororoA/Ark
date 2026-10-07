@@ -1,0 +1,7 @@
+{
+  "routeJsRawKb": 900,
+  "routeJsGzipKb": 280,
+  "firstLoadAssetRequests": 24,
+  "publicImageMaxKb": 4096,
+  "publicImagesTotalKb": 12288
+}

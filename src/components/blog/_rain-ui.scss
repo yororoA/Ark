@@ -188,9 +188,10 @@
     .chat-status { padding: 14px 24px; border-block: 1px solid var(--line); background: var(--paper); }
     .chat-status strong { font-family: var(--song); font-size: 15px; }
     .messages { padding: 24px 30px; gap: 24px; background: linear-gradient(90deg, var(--paper) 0 14px, var(--line) 14px 15px, transparent 15px), repeating-linear-gradient(92deg, transparent 0 37px, color-mix(in srgb, var(--ark-rain-shadow) 5%, transparent) 37px 38px); }
+    .message-row { padding-bottom: 24px; }
     .message-meta { padding-inline: 4px; margin-bottom: 6px; font-size: 9px; }
-    .message-body p { border: 1px solid var(--line); border-left-color: var(--ark-rain-deep); outline: 1px solid color-mix(in srgb, var(--line) 42%, transparent); outline-offset: 2px; background: var(--paper); border-radius: 0; padding: 12px 16px; box-shadow: none; }
-    .message[data-own="true"] .message-body p { border: 1px solid var(--line); border-right-color: var(--ark-rain-deep); border-radius: 0; background: var(--soft); box-shadow: none; }
+    .message-body p { border: 1px solid var(--sender-border); border-left-color: var(--sender-color); outline: 1px solid color-mix(in srgb, var(--sender-border) 42%, transparent); outline-offset: 2px; background: var(--sender-bubble); border-radius: 0; padding: 12px 16px; box-shadow: none; }
+    .message[data-own="true"] .message-body p { border: 1px solid var(--sender-border); border-right-color: var(--sender-color); border-radius: 0; background: var(--sender-bubble-own); box-shadow: none; }
     .chat-compose { padding: 14px 20px; border-top: 1px solid var(--line); border-radius: 0; background: var(--paper); }
     .chat-compose textarea { min-height: 58px; border: 1px solid var(--line); border-left-color: var(--ark-rain-deep); padding: 8px 12px; }
     .chat-compose .field { gap: 5px; }
@@ -293,6 +294,7 @@
       .conversation-list button { margin: 0; min-height: 44px; max-width: 168px; padding-block: 7px; }
       .conversation-list .conversation-symbol { width: 24px; height: 24px; }
       .messages { padding: 18px 14px; gap: 20px; }
+      .message-row { padding-bottom: 20px; }
       .message-body p { padding: 10px 12px; }
       .chat-compose { padding: 10px; }
       .chat-status { padding: 12px 16px; }

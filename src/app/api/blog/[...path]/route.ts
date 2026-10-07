@@ -2,16 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { acceptRefresh, BackendError, credentialHeaders, publicReader, rememberRenewal, sameOrigin, upstream, verifiedSession } from '@/lib/server/blog-session'
 
+export const maxDuration = 120
+
+const mediaUploads = new Set(['media/upload', 'moments/post', 'gallery/post', 'chat/upload', 'knowledge/upload-image'])
 const routes: Record<string, RegExp[]> = {
   GET: [
     /^knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories|liked))?$/,
-    /^moments\/(?:[a-f0-9]{24}|get|summary|files|liked|comments\/liked)$/, /^gallery\/get$/,
+    /^moments\/(?:[a-f0-9]{24}|get|summary|files|liked|comments\/liked)$/, /^gallery\/get$/, /^media\/limits$/,
     /^archive(?:\/(?:stats|feed|years|sitemap))?$/, /^(?:about|links|guestbook)$/, /^status\/bines$/, /^github\/summary$/,
     /^chat\/(?:conversations|history|hasPrivate)$/, /^sse\/subscribe$/,
   ],
-  POST: [/^knowledge(?:\/(?:like|view|upload-image))?$/, /^moments\/(?:post|view|like|comment\/(?:get|post|like))$/, /^gallery\/post$/, /^guestbook$/, /^chat\/(?:send|upload)$/, /^admin\/links$/],
+  POST: [/^knowledge(?:\/(?:like|view|upload-image))?$/, /^moments\/(?:post|view|like|comment\/(?:get|post|like))$/, /^gallery\/post$/, /^media\/upload$/, /^guestbook$/, /^chat\/(?:send|upload)$/, /^admin\/links$/],
   PUT: [/^knowledge\/[a-f0-9]{24}$/, /^admin\/links\/[a-f0-9]{24}$/],
-  DELETE: [/^knowledge\/[a-f0-9]{24}$/, /^moments\/delete$/, /^admin\/links\/[a-f0-9]{24}$/],
+  DELETE: [/^knowledge\/[a-f0-9]{24}$/, /^moments\/delete$/, /^media\/[a-f0-9]{24}$/, /^admin\/links\/[a-f0-9]{24}$/],
 }
 const publicGets = /^(knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories))?|moments\/(?:[a-f0-9]{24}|get|summary|files)|gallery\/get|archive(?:\/(?:stats|feed|years|sitemap))?|about|guestbook|status\/bines|github\/summary)$/
 
@@ -29,6 +32,8 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     if (!isPublic && !isReader && !auth) return NextResponse.json({ message: '请先登录', tokenError: true }, { status: 401 })
     const credential = auth?.credential ?? (isReader ? await publicReader() : null)
     const headers = new Headers(credential ? credentialHeaders(credential) : {})
+    const idempotencyKey = request.headers.get('x-idempotency-key')
+    if (idempotencyKey) headers.set('x-idempotency-key', idempotencyKey)
     if (path === 'knowledge/view' || path === 'moments/view') {
       const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
         || request.headers.get('x-real-ip')
@@ -52,9 +57,12 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
         body = JSON.stringify(json)
       }
     }
+    const isMediaUpload = method === 'POST' && mediaUploads.has(path)
+    let upstreamSignal: AbortSignal | undefined
+    if (path === 'sse/subscribe') upstreamSignal = request.signal
+    else if (isMediaUpload) upstreamSignal = AbortSignal.timeout(120_000)
     const response = await upstream(`/api/${path}${request.nextUrl.search}`, {
-      method, headers, body,
-      signal: path === 'sse/subscribe' ? request.signal : undefined,
+      method, headers, body, signal: upstreamSignal,
     })
     if (credential && auth) await acceptRefresh(response, credential)
     if (credential && isReader) {

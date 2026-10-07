@@ -17,6 +17,17 @@ export function send<T>(path: string, body: unknown, method = 'POST') {
   const multipart = body instanceof FormData
   return request<T>(path, { method, headers: multipart ? undefined : { 'Content-Type': 'application/json' }, body: multipart ? body : JSON.stringify(body) })
 }
+export function sendIdempotent<T>(path: string, body: unknown, idempotencyKey: string, method = 'POST') {
+  const multipart = body instanceof FormData
+  return request<T>(path, {
+    method,
+    headers: {
+      ...(multipart ? {} : { 'Content-Type': 'application/json' }),
+      'X-Idempotency-Key': idempotencyKey,
+    },
+    body: multipart ? body : JSON.stringify(body),
+  })
+}
 export function useBlogData<T>(path: string | null, options?: SWRConfiguration<T, Error>) {
   return useSWR<T>(path ? `/api/blog/${path}` : null, request, options)
 }

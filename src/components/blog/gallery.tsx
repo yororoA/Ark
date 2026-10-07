@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Upload } from 'lucide-react'
 import { dateLabel, Envelope, Media, safeUrl } from '@/lib/blog'
 import { send, useBlog, useBlogData } from './blog-provider'
+import { useManagedUploads } from './media-upload'
 import { FilePicker, MediaPreview, Modal, PageHeading, State, styles } from './shared'
 
 type GalleryResult = Envelope<{ files: Media[]; count: number; hasMore: boolean; breakpoint: string | null }>
@@ -14,28 +15,26 @@ export default function Gallery() {
   const [filter, setFilter] = useState('all')
   const [preview, setPreview] = useState<number | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [files, setFiles] = useState<File[]>([])
   const [busy, setBusy] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const uploads = useManagedUploads('gallery')
   const { data, error, isLoading, mutate } = useBlogData<GalleryResult>('gallery/get?loadNums=500')
   // V1 has no cursor pagination and explicitly returns hasMore:false. Never
   // append a second fetch of the same folder under a fictitious "load more".
   const media = (data?.data.files || []).filter(file => safeUrl(file.url) && (filter === 'all' || file.mime.startsWith(filter))).toSorted((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
   async function upload(e: React.FormEvent) {
     e.preventDefault()
-    if (!files.length || busy) return
+    if (!uploads.files.length || busy) return
     setBusy(true); setSubmitError('')
     try {
-      const form = new FormData()
-      for (const file of files) form.append('files', file)
-      const result = await send<Envelope<{ count: number }>>('gallery/post', form)
-      if (result.data.count !== files.length) {
-        setFiles([])
+      const assets = await uploads.uploadAll()
+      const result = await send<Envelope<{ count: number }>>('gallery/post', { assetIds: assets.map(asset => asset.id) })
+      if (result.data.count !== assets.length) {
         setSubmitError(t('partialUpload'))
         await mutate()
         return
       }
-      setUploading(false); setFiles([]); notify(t('saved'))
+      setUploading(false); uploads.reset(); notify(t('saved'))
       await mutate()
     } catch (error) { setSubmitError((error as Error).message) } finally { setBusy(false) }
   }
@@ -45,6 +44,6 @@ export default function Gallery() {
     <State loading={isLoading} error={error} empty={!!data && !media.length} retry={() => mutate()} />
     <div className={styles['gallery-grid']}>{media.map((file, index) => <figure key={file.url}><button onClick={() => setPreview(index)} aria-label={`${t('preview')} ${file.desc || file.filename}`}>{file.mime.startsWith('video') ? <video src={file.url} muted preload="metadata" /> : <img src={file.url} alt={file.desc || file.filename} loading="lazy" />}</button><figcaption><span>{file.username || 'YororoIce'}{file.mime.startsWith('video') ? ` / ${t('video')}` : ''}</span>{file.createdAt && <time>{dateLabel(file.createdAt, locale)}</time>}</figcaption></figure>)}</div>
     {preview !== null && media[preview] && <MediaPreview files={media} index={preview} close={() => setPreview(null)} />}
-    {uploading && <Modal title={t('upload')} close={() => { if (!busy) setUploading(false) }}><form className={styles['form']} onSubmit={upload}><FilePicker files={files} setFiles={setFiles} />{submitError && <p role="alert" className={styles['error']}>{submitError}</p>}<div><button className={styles['primary-button']} disabled={busy || !files.length}>{t(busy ? 'saving' : 'upload')}</button></div></form></Modal>}
+    {uploading && <Modal title={t('upload')} close={() => { if (!busy) setUploading(false) }}><form className={styles['form']} onSubmit={upload}><FilePicker files={uploads.files} setFiles={uploads.setFiles} uploadItems={uploads.items} onRetry={key => { void uploads.retry(key).catch(error => setSubmitError((error as Error).message)) }} onRemove={uploads.remove} />{submitError && <p role="alert" className={styles['error']}>{submitError}</p>}<div><button className={styles['primary-button']} disabled={busy || !uploads.files.length}>{t(busy ? 'saving' : 'upload')}</button></div></form></Modal>}
   </div>
 }

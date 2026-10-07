@@ -1,13 +1,14 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Preserve dimensions of existing blog media. */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useSWR, { useSWRConfig } from 'swr'
 import { ArrowLeft, ArrowUpRight, MessageSquare, Plus, Reply, Share2, X } from 'lucide-react'
 import { Comment, dateLabel, Entry, Envelope, excerpt, Media, mediaFor, safeUrl, SitemapContent } from '@/lib/blog'
-import { send, useBlog, useBlogData } from './blog-provider'
+import { send, sendIdempotent, useBlog, useBlogData } from './blog-provider'
+import { useManagedUploads, type UploadedAsset } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
 import { detailPath, listPath, newestFirst, prepareListReturn, rememberListPosition, safeReturnPath, useRestoreListPosition } from './list-navigation'
@@ -145,34 +146,171 @@ export function MomentDetail({ id, initialEntry }: { id: string; initialEntry: E
   return <div className={styles['page']}><div className={styles['reader']}><Link className={styles['text-link']} href={returnTo} scroll={false} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('moments')}</Link><State loading={isLoading} error={error} empty={!!data && !entry} retry={() => mutate()} />{entry && <MomentReader key={id} entry={entry} refresh={mutate} />}</div></div>
 }
 
+function requestKey(prefix: string) {
+  const value = typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  return `${prefix}:${value}`
+}
+
 function Compose() {
   const { t, session, notify } = useBlog()
   const { mutate } = useSWRConfig()
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [files, setFiles] = useState<File[]>([])
   const [descriptions, setDescriptions] = useState<Record<string, string>>({})
   const [acknowledge, setAcknowledge] = useState(false)
   const [preview, setPreview] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [restoredMedia, setRestoredMedia] = useState(false)
+  const [draftId, setDraftId] = useState('')
+  const [autosave, setAutosave] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState('')
+  const [allowLeave, setAllowLeave] = useState(false)
+  const uploads = useManagedUploads('moment')
   const draft = useBlogData<Envelope<Entry | null>>(`moments/get?isEditing=true&account=${session!.uid}`)
+  const localDraftKey = `ark.moment-draft.v1:${session!.uid}`
+  const publishKey = useRef(requestKey('moment-publish'))
+  const currentSnapshotRef = useRef('')
+  const errorRef = useRef<HTMLParagraphElement>(null)
+  const uploadedMedia = useMemo(() => uploads.items.flatMap(item => item.asset ? [{
+    assetId: item.asset.id,
+    description: descriptions[item.key] || '',
+  }] : []), [descriptions, uploads.items])
+  const snapshotFor = (media: typeof uploadedMedia) => JSON.stringify({
+    title,
+    content,
+    acknowledge,
+    media,
+  })
+  const currentSnapshot = snapshotFor(uploadedMedia)
+  const hasDraftContent = !!(title.trim() || content.trim() || uploads.items.length || restoredMedia)
+  const hasPendingUploads = uploads.items.some(item => item.status !== 'done')
+  const hasUnsavedChanges = !allowLeave && (
+    busy
+    || hasPendingUploads
+    || (hasDraftContent && currentSnapshot !== lastSavedSnapshot)
+  )
+
+  useEffect(() => { currentSnapshotRef.current = currentSnapshot }, [currentSnapshot])
+
+  useEffect(() => {
+    let frame = 0
+    try {
+      const saved = JSON.parse(localStorage.getItem(localDraftKey) || 'null') as {
+        title?: string
+        content?: string
+        acknowledge?: boolean
+        descriptions?: Record<string, string>
+        fileNames?: string[]
+      } | null
+      if (!saved) return
+      frame = requestAnimationFrame(() => {
+        setTitle(saved.title || '')
+        setContent(saved.content || '')
+        setAcknowledge(!!saved.acknowledge)
+        setDescriptions(saved.descriptions || {})
+        setRestoredMedia(!!saved.fileNames?.length)
+      })
+    } catch { /* Local autosave is optional. */ }
+    return () => cancelAnimationFrame(frame)
+  }, [localDraftKey])
+
+  useEffect(() => {
+    try {
+      // Do not clear here: this effect also runs once before local hydration.
+      if (!hasDraftContent) return
+      localStorage.setItem(localDraftKey, JSON.stringify({
+        title,
+        content,
+        acknowledge,
+        descriptions,
+        fileNames: uploads.files.map(file => file.name),
+        updatedAt: Date.now(),
+      }))
+    } catch { /* Server autosave remains available. */ }
+  }, [acknowledge, content, descriptions, hasDraftContent, localDraftKey, title, uploads.files])
+
+  useEffect(() => {
+    if (!hasDraftContent || busy || uploads.isUploading || draft.isLoading || currentSnapshot === lastSavedSnapshot) return
+    const timer = window.setTimeout(() => {
+      setAutosave('saving')
+      void sendIdempotent<Envelope<Entry>>('moments/post', {
+        title: title.trim(),
+        content,
+        published: false,
+        acknowledge,
+        draftId,
+        media: uploadedMedia,
+      }, requestKey('moment-autosave')).then(result => {
+        setDraftId(result.data._id)
+        setLastSavedSnapshot(currentSnapshot)
+        setAutosave(currentSnapshotRef.current === currentSnapshot ? 'saved' : 'idle')
+      }).catch(saveError => {
+        setAutosave('error')
+        setError((saveError as Error).message)
+      })
+    }, 1600)
+    return () => window.clearTimeout(timer)
+  }, [acknowledge, busy, content, currentSnapshot, draft.isLoading, draftId, hasDraftContent, lastSavedSnapshot, title, uploadedMedia, uploads.isUploading])
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    const confirmNavigation = (event: MouseEvent) => {
+      const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null
+      if (!anchor || anchor.target === '_blank' || anchor.download || anchor.origin !== location.origin || anchor.href === location.href) return
+      if (window.confirm(t('unsavedChanges'))) {
+        setAllowLeave(true)
+        return
+      }
+      event.preventDefault()
+      event.stopImmediatePropagation()
+    }
+    window.addEventListener('beforeunload', beforeUnload)
+    document.addEventListener('click', confirmNavigation, true)
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnload)
+      document.removeEventListener('click', confirmNavigation, true)
+    }
+  }, [hasUnsavedChanges, t])
+
+  useEffect(() => {
+    if (!error) return
+    errorRef.current?.focus()
+  }, [error])
+
   async function submit(published: boolean) {
     if (busy) return
     setBusy(true); setError('')
     try {
-      const form = new FormData()
-      form.append('title', title.trim()); form.append('content', content)
-      form.append('published', String(published)); form.append('acknowledge', String(acknowledge))
-      form.append('descriptions', JSON.stringify(Object.fromEntries(files.map(file => [file.name, descriptions[file.name] || '']))))
-      for (const file of files) form.append('files', file)
-      const result = await send<Envelope<Entry>>('moments/post', form)
-      const uploaded = Object.keys(result.data.filenames || {}).length
-      notify(uploaded < files.length ? t('partialUpload') : t('saved'))
+      const itemKeys = uploads.items.map(item => item.key)
+      const assets = await uploads.uploadAll()
+      const media = assets.map((asset, index) => ({
+        assetId: asset.id,
+        description: descriptions[itemKeys[index]] || '',
+      }))
+      const result = await sendIdempotent<Envelope<Entry> & { upload?: { requested: number; uploaded: number; failed: number } }>('moments/post', {
+        title: title.trim(),
+        content,
+        published,
+        acknowledge,
+        draftId,
+        media,
+      }, published ? publishKey.current : requestKey('moment-draft'))
+      setDraftId(result.data._id)
+      setLastSavedSnapshot(snapshotFor(media))
+      setAutosave('saved')
+      notify(result.upload?.failed ? t('partialUpload') : t('saved'))
       await draft.mutate()
       if (published) {
+        setAllowLeave(true)
+        try { localStorage.removeItem(localDraftKey) } catch {}
         await mutate(key => typeof key === 'string' && (
           key.startsWith('/api/blog/moments/get?')
           || key.startsWith('/api/blog/archive/feed?')
@@ -186,24 +324,55 @@ function Compose() {
   function restore() {
     const entry = draft.data?.data
     if (!entry) return
-    setTitle(entry.title); setContent(entry.content); setFiles([]); setDescriptions({})
-    setRestoredMedia(!!Object.keys(entry.filenames || {}).length)
+    const managedAssets: UploadedAsset[] = Object.entries(entry.filesDetail || {}).flatMap(([filename, detail]) => (
+      detail.assetId && detail.secure_url
+        ? [{
+            id: detail.assetId,
+            scope: 'moment',
+            filename: detail.origin || filename,
+            mime: detail.mime || 'image/jpeg',
+            url: detail.secure_url,
+            bytes: 0,
+            status: 'referenced',
+          }]
+        : []
+    ))
+    const restoredDescriptions = Object.fromEntries(managedAssets.map(asset => {
+      const detail = Object.values(entry.filesDetail || {}).find(value => value.assetId === asset.id)
+      return [`asset:${asset.id}`, detail?.desc || '']
+    }))
+    const restoredMediaPayload = managedAssets.map(asset => ({
+      assetId: asset.id,
+      description: restoredDescriptions[`asset:${asset.id}`] || '',
+    }))
+    setDraftId(entry._id)
+    setTitle(entry.title)
+    setContent(entry.content)
+    setAcknowledge(!!entry.acknowledge)
+    setDescriptions(restoredDescriptions)
+    uploads.restoreAssets(managedAssets)
+    setRestoredMedia(Object.values(entry.filesDetail || {}).some(detail => !detail.assetId))
+    setLastSavedSnapshot(JSON.stringify({
+      title: entry.title,
+      content: entry.content,
+      acknowledge: !!entry.acknowledge,
+      media: restoredMediaPayload,
+    }))
+    setAutosave('saved')
   }
-  function changeFiles(next: File[]) {
-    setFiles(next)
-    setDescriptions(previous => Object.fromEntries(next.map(file => [file.name, previous[file.name] || ''])))
-  }
+  const localDescriptions = uploads.files.map(file => descriptions[`${file.name}:${file.size}:${file.lastModified}:${file.type}`] || '')
   return <form className={styles['form']} onSubmit={e => { e.preventDefault(); void submit(true) }}>
     <State error={draft.error} retry={() => draft.mutate()} />
     {draft.data?.data && <div><button type="button" disabled={busy} className={styles['secondary-button']} onClick={restore}>{t('restoreDraft')}</button></div>}
     {restoredMedia && <p className={styles['form-note']}>{t('draftMedia')}</p>}
     <label className={styles['field']}>{t('title')}<input required maxLength={200} value={title} onChange={e => setTitle(e.target.value)} /></label>
     <div><button type="button" className={styles['secondary-button']} aria-pressed={preview} onClick={() => setPreview(!preview)}>{t(preview ? 'edit' : 'preview')}</button></div>
-    {preview ? <><Markdown content={content} /><LocalMediaGrid files={files} descriptions={descriptions} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea minRows={10} value={content} onChange={e => setContent(e.target.value)} /></label>}
-    <FilePicker files={files} setFiles={changeFiles} max={50} />
-    {!!files.length && <><div className={styles['media-description-list']}><p className={styles['form-note']}>{t('mediaDescriptionHint')}</p>{files.map((file, index) => <label className={styles['field']} key={`${file.name}-${index}`}><span className={styles['media-description-label']} title={file.name}>{t('mediaDescription')} · {file.name}</span><input value={descriptions[file.name] || ''} onChange={event => setDescriptions(value => ({ ...value, [file.name]: event.target.value }))} /></label>)}</div><label className={styles['checkbox']}><input type="checkbox" checked={acknowledge} onChange={e => setAcknowledge(e.target.checked)} />{t('acknowledge')}</label></>}
-    {error && <p role="alert" className={styles['error']}>{error}</p>}
-    <div className={styles['form-actions']}><button disabled={busy || !title.trim()} className={styles['primary-button']}>{t(busy ? 'saving' : 'publish')}</button><button type="button" disabled={busy} className={styles['secondary-button']} onClick={() => submit(false)}>{t('draft')}</button><Link href="/moments" className={styles['secondary-button']}>{t('cancel')}</Link></div>
+    {preview ? <><Markdown content={content} /><LocalMediaGrid files={uploads.files} descriptions={localDescriptions} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea minRows={10} value={content} onChange={e => setContent(e.target.value)} /></label>}
+    <FilePicker files={uploads.files} setFiles={uploads.setFiles} uploadItems={uploads.items} onRetry={key => { void uploads.retry(key).catch(uploadError => setError((uploadError as Error).message)) }} onRemove={uploads.remove} max={50} />
+    {!!uploads.items.length && <><div className={styles['media-description-list']}><p className={styles['form-note']}>{t('mediaDescriptionHint')}</p>{uploads.items.map(item => <div className={styles['media-description-row']} key={item.key}><label className={styles['field']}><span className={styles['media-description-label']} title={item.file?.name || item.asset?.filename}>{t('mediaDescription')} · {item.file?.name || item.asset?.filename}</span><input maxLength={1000} value={descriptions[item.key] || ''} onChange={event => { const description = event.target.value; setDescriptions(value => ({ ...value, [item.key]: description })) }} /></label>{!item.file && <button type="button" className={styles['icon-button']} aria-label={`${t('removeFile')} ${item.asset?.filename || ''}`} onClick={() => uploads.remove(item.key)}><X size={14} /></button>}</div>)}</div><label className={styles['checkbox']}><input type="checkbox" checked={acknowledge} onChange={e => setAcknowledge(e.target.checked)} />{t('acknowledge')}</label></>}
+    {autosave !== 'idle' && <p className={styles['form-note']} role="status">{t(autosave === 'saving' ? 'draftSaving' : autosave === 'saved' ? 'autoSaved' : 'uploadFailed')}</p>}
+    {error && <p ref={errorRef} tabIndex={-1} role="alert" className={styles['error']}>{error}</p>}
+    <div className={styles['form-actions']}><button disabled={busy || uploads.isUploading || !title.trim()} className={styles['primary-button']}>{t(busy ? 'saving' : 'publish')}</button><button type="button" disabled={busy || uploads.isUploading} className={styles['secondary-button']} onClick={() => submit(false)}>{t('draft')}</button><Link href="/moments" className={styles['secondary-button']}>{t('cancel')}</Link></div>
   </form>
 }
 
