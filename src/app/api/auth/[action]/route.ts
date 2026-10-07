@@ -22,6 +22,7 @@ import { sameOrigin, verifiedSession, saveCredential } from '@/lib/server/blog-s
 
 // ── 类型 ─────────────────────────────────────────────
 type Auth = 'login' | 'register' | 'guest' | 'code'
+type AuthRouteContext = { params: Promise<{ action: string }> }
 
 const AuthUrlMap: Record<Auth, string> = {
   login: '/login',
@@ -68,7 +69,7 @@ async function setAuthCookies(uid: string, token: string, isGuest = false) {
 }
 
 // ── 主入口 ──────────────────────────────────────────
-export async function POST(req: NextRequest, ctx: RouteContext<'/api/auth/[action]'>) {
+export async function POST(req: NextRequest, ctx: AuthRouteContext) {
   const { action } = await ctx.params
   if (!sameOrigin(req)) return NextResponse.json({ message: '请求来源无效' }, { status: 403 })
   if (!['switch', 'guest', 'login', 'register', 'code'].includes(action)) {
