@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { acceptRefresh, BackendError, credentialHeaders, publicReader, rememberRenewal, sameOrigin, upstream, verifiedSession } from '@/lib/server/blog-session'
 
+export const maxDuration = 120
+
+const mediaUploads = new Set(['moments/post', 'gallery/post', 'chat/upload', 'knowledge/upload-image'])
 const routes: Record<string, RegExp[]> = {
   GET: [
     /^knowledge(?:\/(?:[a-f0-9]{24}|meta\/categories|liked))?$/,
@@ -52,9 +55,12 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
         body = JSON.stringify(json)
       }
     }
+    const isMediaUpload = method === 'POST' && mediaUploads.has(path)
+    let upstreamSignal: AbortSignal | undefined
+    if (path === 'sse/subscribe') upstreamSignal = request.signal
+    else if (isMediaUpload) upstreamSignal = AbortSignal.timeout(120_000)
     const response = await upstream(`/api/${path}${request.nextUrl.search}`, {
-      method, headers, body,
-      signal: path === 'sse/subscribe' ? request.signal : undefined,
+      method, headers, body, signal: upstreamSignal,
     })
     if (credential && auth) await acceptRefresh(response, credential)
     if (credential && isReader) {

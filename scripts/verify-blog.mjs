@@ -177,10 +177,12 @@ const server = createServer(async (req, res) => {
       return item ? ok(item) : json({ message: 'Not found' }, 404)
     }
     if (path === '/api/moments/post') {
-      const item = { ...moment, ...body, uid: user.uid, _id: (++sequence).toString(16).padStart(24, '0'), comments: [] }
+      const requested = body.fileCount || 0
+      const filenames = Object.fromEntries(Array.from({ length: requested }, (_, index) => [`fixture-${index}.png`, `${origin}/fixture-${index}.png`]))
+      const item = { ...moment, ...body, filenames, uid: user.uid, _id: (++sequence).toString(16).padStart(24, '0'), comments: [] }
       if (body.published === 'false') draft = item
       else { moments.unshift(item); draft = null }
-      return ok(item)
+      return ok(item, { upload: { requested, uploaded: requested, failed: 0, failedFiles: [] } })
     }
     if (path === '/api/moments/delete') { const index = moments.findIndex(item => item._id === body.momentId); if (index >= 0) moments.splice(index, 1); return ok({ deleted: true }) }
     if (path === '/api/moments/files') return ok({})
@@ -432,10 +434,14 @@ try {
     const form = new FormData()
     form.set('title', 'Contract moment'); form.set('content', 'Moment content'); form.set('published', 'false')
     form.set('files', new Blob(['fixture'], { type: 'image/png' }), 'fixture.png')
+    form.set('descriptionList', JSON.stringify(['Fixture alternative text']))
     await client.request('/api/blog/moments/post', form)
     assert.equal((await client.request('/api/blog/moments/get?isEditing=true')).data.data.title, 'Contract moment')
     form.set('published', 'true')
     const created = await client.request('/api/blog/moments/post', form)
+    assert.deepEqual(JSON.parse(calls.findLast(call => call.path === '/api/moments/post').body.descriptionList), ['Fixture alternative text'])
+    assert.equal(created.data.upload.uploaded, 1)
+    assert.equal(Object.keys(created.data.data.filenames).length, 1)
     assert.equal((await client.request('/api/blog/moments/delete', { momentId: created.data.data._id, moment_uid: 'test-admin' }, 'DELETE')).response.status, 200)
     assert.equal((await client.request('/api/blog/gallery/post', form)).data.data.count, 1)
     assert.equal((await client.request('/api/blog/chat/upload', form)).data.data.urls.length, 1)

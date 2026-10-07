@@ -152,7 +152,7 @@ function Compose() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [files, setFiles] = useState<File[]>([])
-  const [descriptions, setDescriptions] = useState<Record<string, string>>({})
+  const [descriptions, setDescriptions] = useState<string[]>([])
   const [acknowledge, setAcknowledge] = useState(false)
   const [preview, setPreview] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -166,11 +166,11 @@ function Compose() {
       const form = new FormData()
       form.append('title', title.trim()); form.append('content', content)
       form.append('published', String(published)); form.append('acknowledge', String(acknowledge))
-      form.append('descriptions', JSON.stringify(Object.fromEntries(files.map(file => [file.name, descriptions[file.name] || '']))))
+      form.append('descriptionList', JSON.stringify(files.map((_, index) => descriptions[index] || '')))
+      form.append('descriptions', JSON.stringify(Object.fromEntries(files.map((file, index) => [file.name, descriptions[index] || '']))))
       for (const file of files) form.append('files', file)
-      const result = await send<Envelope<Entry>>('moments/post', form)
-      const uploaded = Object.keys(result.data.filenames || {}).length
-      notify(uploaded < files.length ? t('partialUpload') : t('saved'))
+      const result = await send<Envelope<Entry> & { upload?: { requested: number; uploaded: number; failed: number } }>('moments/post', form)
+      notify(result.upload?.failed ? t('partialUpload') : t('saved'))
       await draft.mutate()
       if (published) {
         await mutate(key => typeof key === 'string' && (
@@ -186,12 +186,15 @@ function Compose() {
   function restore() {
     const entry = draft.data?.data
     if (!entry) return
-    setTitle(entry.title); setContent(entry.content); setFiles([]); setDescriptions({})
+    setTitle(entry.title); setContent(entry.content); setFiles([]); setDescriptions([])
     setRestoredMedia(!!Object.keys(entry.filenames || {}).length)
   }
   function changeFiles(next: File[]) {
+    setDescriptions(previous => next.map(file => {
+      const previousIndex = files.indexOf(file)
+      return previousIndex >= 0 ? previous[previousIndex] || '' : ''
+    }))
     setFiles(next)
-    setDescriptions(previous => Object.fromEntries(next.map(file => [file.name, previous[file.name] || ''])))
   }
   return <form className={styles['form']} onSubmit={e => { e.preventDefault(); void submit(true) }}>
     <State error={draft.error} retry={() => draft.mutate()} />
@@ -201,7 +204,7 @@ function Compose() {
     <div><button type="button" className={styles['secondary-button']} aria-pressed={preview} onClick={() => setPreview(!preview)}>{t(preview ? 'edit' : 'preview')}</button></div>
     {preview ? <><Markdown content={content} /><LocalMediaGrid files={files} descriptions={descriptions} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea minRows={10} value={content} onChange={e => setContent(e.target.value)} /></label>}
     <FilePicker files={files} setFiles={changeFiles} max={50} />
-    {!!files.length && <><div className={styles['media-description-list']}><p className={styles['form-note']}>{t('mediaDescriptionHint')}</p>{files.map((file, index) => <label className={styles['field']} key={`${file.name}-${index}`}><span className={styles['media-description-label']} title={file.name}>{t('mediaDescription')} · {file.name}</span><input value={descriptions[file.name] || ''} onChange={event => setDescriptions(value => ({ ...value, [file.name]: event.target.value }))} /></label>)}</div><label className={styles['checkbox']}><input type="checkbox" checked={acknowledge} onChange={e => setAcknowledge(e.target.checked)} />{t('acknowledge')}</label></>}
+    {!!files.length && <><div className={styles['media-description-list']}><p className={styles['form-note']}>{t('mediaDescriptionHint')}</p>{files.map((file, index) => <label className={styles['field']} key={`${file.name}-${file.size}-${file.lastModified}`}><span className={styles['media-description-label']} title={file.name}>{t('mediaDescription')} · {file.name}</span><input maxLength={1000} value={descriptions[index] || ''} onChange={event => { const description = event.target.value; setDescriptions(value => value.map((current, item) => item === index ? description : current)) }} /></label>)}</div><label className={styles['checkbox']}><input type="checkbox" checked={acknowledge} onChange={e => setAcknowledge(e.target.checked)} />{t('acknowledge')}</label></>}
     {error && <p role="alert" className={styles['error']}>{error}</p>}
     <div className={styles['form-actions']}><button disabled={busy || !title.trim()} className={styles['primary-button']}>{t(busy ? 'saving' : 'publish')}</button><button type="button" disabled={busy} className={styles['secondary-button']} onClick={() => submit(false)}>{t('draft')}</button><Link href="/moments" className={styles['secondary-button']}>{t('cancel')}</Link></div>
   </form>

@@ -251,7 +251,7 @@ export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Medi
   const hasImage = files.some(file => !file.mime.startsWith('video'))
   return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
-export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; descriptions?: Record<string, string> }) {
+export function LocalMediaGrid({ files, descriptions = [] }: { files: File[]; descriptions?: string[] }) {
   const [media, setMedia] = useState<Media[]>([])
   useEffect(() => {
     const next = files.map(file => ({
@@ -265,7 +265,7 @@ export function LocalMediaGrid({ files, descriptions = {} }: { files: File[]; de
       next.forEach(file => URL.revokeObjectURL(file.url))
     }
   }, [files])
-  return <MediaGrid files={media.map(file => ({ ...file, desc: descriptions[file.filename] || file.filename }))} />
+  return <MediaGrid files={media.map((file, index) => ({ ...file, desc: descriptions[index] || file.filename }))} />
 }
 export function FilePicker({ files, setFiles, max = 16, imageOnly = false, label, onBeforeSelect }: { files: File[]; setFiles: (files: File[]) => void; max?: number; imageOnly?: boolean; label?: string; onBeforeSelect?: () => void }) {
   const { t, notify } = useBlog()
