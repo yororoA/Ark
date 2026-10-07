@@ -178,8 +178,8 @@
     .chat-status strong { font-weight: 700; }
     .messages { padding: 26px 32px; background: linear-gradient(120deg, transparent 70%, color-mix(in srgb, var(--ark-p3r-blue) 5%, transparent) 70%); gap: 26px; }
     .message-meta { font-size: 10px; margin-bottom: 7px; }
-    .message-body p { position: relative; background: #032369; color: #fff; border: 0; border-left: 4px solid #58e5ff; border-radius: 0; box-shadow: 5px 5px 0 #1675ee; padding: 14px 18px; line-height: 1.8; }
-    .message[data-own="true"] .message-body p { background: #0754e4; color: #fff; border: 0; border-right: 4px solid #58e5ff; box-shadow: -4px 4px 0 #032369; }
+    .message-body p { position: relative; background: color-mix(in srgb, var(--sender-color) 22%, #032369); color: #fff; border: 0; border-left: 4px solid color-mix(in srgb, var(--sender-color) 72%, #58e5ff); border-radius: 0; box-shadow: 5px 5px 0 color-mix(in srgb, var(--sender-color) 35%, #1675ee); padding: 14px 18px; line-height: 1.8; }
+    .message[data-own="true"] .message-body p { background: color-mix(in srgb, var(--sender-color) 28%, #0754e4); color: #fff; border: 0; border-right: 4px solid color-mix(in srgb, var(--sender-color) 72%, #58e5ff); box-shadow: -4px 4px 0 color-mix(in srgb, var(--sender-color) 28%, #032369); }
     .chat-compose { background: var(--soft); border-top: 3px solid #0754e4; padding: 16px 20px; }
     .chat-compose textarea { border-bottom: 3px solid var(--accent); background: var(--ark-p3r-panel); }
     .chat-compose .primary-button { padding: 12px 22px; }

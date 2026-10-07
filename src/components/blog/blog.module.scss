@@ -374,19 +374,25 @@
 .chat-expand { width: 32px; height: 32px; margin: -8px -8px -8px auto; flex: none; }
 .messages { flex: 1; min-height: 0; height: auto; padding: 20px 25px; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 18px; }
 .older-messages { display: flex; justify-content: center; width: 100%; flex: none; }
-.message { display: flex; flex-direction: column; align-items: flex-start; width: fit-content; min-width: 0; max-width: min(78%, 666px); align-self: flex-start;
+.message {
+  --sender-color: hsl(var(--sender-hue) 62% 46%);
+  --sender-border: color-mix(in srgb, var(--sender-color) 68%, var(--line));
+  --sender-bubble: color-mix(in srgb, var(--sender-color) 14%, var(--paper));
+  --sender-bubble-own: color-mix(in srgb, var(--sender-color) 22%, var(--paper));
+  --sender-text: color-mix(in srgb, var(--sender-color) 18%, var(--ink));
+  display: flex; flex-direction: column; align-items: flex-start; width: fit-content; min-width: 0; max-width: min(78%, 666px); align-self: flex-start;
   &[data-own="true"] { align-items: flex-end; align-self: flex-end; }
 }
-.message-meta { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: var(--muted); }
-.message-quote { max-width: 100%; overflow-wrap: anywhere; font-size: 12px; color: var(--muted); border-left: 1px solid var(--line); padding-left: 10px; margin: 8px 0 6px; }
-.message[data-own="true"] .message-quote { border-right: 1px solid var(--line); border-left: 0; padding-right: 10px; padding-left: 0; text-align: right; }
+.message-meta { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; color: color-mix(in srgb, var(--sender-color) 65%, var(--muted)); }
+.message-quote { max-width: 100%; overflow-wrap: anywhere; font-size: 12px; color: var(--muted); border-left: 1px solid var(--sender-border); padding-left: 10px; margin: 8px 0 6px; }
+.message[data-own="true"] .message-quote { border-right: 1px solid var(--sender-border); border-left: 0; padding-right: 10px; padding-left: 0; text-align: right; }
 .message-line { display: flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; }
 .message[data-own="true"] .message-line { flex-direction: row-reverse; }
 .message-body { display: flex; flex-direction: column; align-items: flex-start; width: fit-content; min-width: 0; max-width: 620px;
-  p { width: fit-content; max-width: 100%; padding: 12px 16px; background: var(--soft); white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+  p { width: fit-content; max-width: 100%; padding: 12px 16px; color: var(--sender-text); background: var(--sender-bubble); border: 1px solid var(--sender-border); box-shadow: inset 3px 0 0 var(--sender-color); white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
 }
 .message[data-own="true"] .message-meta { text-align: right; }
-.message[data-own="true"] .message-body { align-items: flex-end; p { border: 1px solid var(--line); background: none; } }
+.message[data-own="true"] .message-body { align-items: flex-end; p { background: var(--sender-bubble-own); box-shadow: inset -3px 0 0 var(--sender-color); } }
 .message-reply {
   flex: 0 0 auto; opacity: 0; pointer-events: none; transform: translateX(-4px);
   border-color: var(--line); background: var(--paper); transition: opacity .18s ease-in-out, color .18s, border-color .18s, transform .18s ease-in-out;
@@ -397,7 +403,7 @@
 .message[data-own="true"] .message-body .media-grid[data-compact="true"] { align-self: flex-end; }
 .message[data-own="true"] .media-grid[data-compact="true"][data-count="3"] .media-item:last-child { grid-column: 2; }
 .message .media-grid[data-compact="true"][data-count="1"] { width: min(100%, 124px); grid-template-columns: minmax(0, 124px); }
-.message .media-grid[data-compact="true"] .media-item { height: 92.8px; border: 1px solid var(--line); }
+.message .media-grid[data-compact="true"] .media-item { height: 92.8px; border: 1px solid var(--sender-border); }
 .message .media-grid[data-compact="true"] img,
 .message .media-grid[data-compact="true"] video { width: 100%; height: 100%; max-height: none; object-fit: cover; }
 .message .media-grid[data-compact="true"] .media-play { width: 30px; height: 30px; }

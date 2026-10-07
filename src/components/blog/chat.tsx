@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import useSWRInfinite from 'swr/infinite'
 import { Maximize2, MessageCircle, Minimize2, Reply, Send, UsersRound, X } from 'lucide-react'
@@ -11,6 +11,21 @@ import { FilePicker, MediaGrid, PageHeading, RequireLogin, State, styles } from 
 type Conversation = { id: string; label?: string; type: 'group' | 'private' }
 type Message = { _id: string; uid: string; username: string; text: string; imgurl?: string[] | string; replyto?: string; createdAt: string }
 type ChatEvent = { chatType: 'group' | 'private'; convKey?: string; data: Message }
+type SenderStyle = CSSProperties & { '--sender-hue': number }
+
+function senderStyle(username: string): SenderStyle {
+  let hash = 2166136261
+  for (const character of username.trim().toLowerCase()) {
+    hash ^= character.codePointAt(0) || 0
+    hash = Math.imul(hash, 16777619)
+  }
+  hash ^= hash >>> 16
+  hash = Math.imul(hash, 0x85ebca6b)
+  hash ^= hash >>> 13
+  hash = Math.imul(hash, 0xc2b2ae35)
+  hash ^= hash >>> 16
+  return { '--sender-hue': (hash >>> 0) % 360 }
+}
 
 function ConversationView({ conversation, expanded, toggleExpanded }: {
   conversation: Conversation
@@ -102,7 +117,7 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
       {messages.map(message => {
         const urls = Array.isArray(message.imgurl) ? message.imgurl : message.imgurl ? [message.imgurl] : []
         const media: Media[] = urls.filter(url => /^https?:\/\//.test(url)).map(url => ({ url, filename: url.split('/').pop() || '', mime: /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg' }))
-        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid}>
+        return <article key={message._id} className={styles['message']} data-own={message.uid === session!.uid} style={senderStyle(message.username)}>
           <small className={styles['message-meta']} title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>
           {message.replyto && <blockquote className={styles['message-quote']}>{message.replyto}</blockquote>}
           <div className={styles['message-line']}>
