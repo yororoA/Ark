@@ -177,6 +177,7 @@
     .chat-status { border-bottom: 3px solid #0754e4; background: var(--soft); }
     .chat-status strong { font-weight: 700; }
     .messages { padding: 26px 32px; background: linear-gradient(120deg, transparent 70%, color-mix(in srgb, var(--ark-p3r-blue) 5%, transparent) 70%); gap: 26px; }
+    .message-row { padding-bottom: 26px; }
     .message-meta { font-size: 10px; margin-bottom: 7px; }
     .message-body p { position: relative; background: color-mix(in srgb, var(--sender-color) 22%, #032369); color: #fff; border: 0; border-left: 4px solid color-mix(in srgb, var(--sender-color) 72%, #58e5ff); border-radius: 0; box-shadow: 5px 5px 0 color-mix(in srgb, var(--sender-color) 35%, #1675ee); padding: 14px 18px; line-height: 1.8; }
     .message[data-own="true"] .message-body p { background: color-mix(in srgb, var(--sender-color) 28%, #0754e4); color: #fff; border: 0; border-right: 4px solid color-mix(in srgb, var(--sender-color) 72%, #58e5ff); box-shadow: -4px 4px 0 color-mix(in srgb, var(--sender-color) 28%, #032369); }
@@ -258,6 +259,7 @@
       .conversation-list { display: flex; max-height: 66px; overflow-x: auto; overflow-y: hidden; padding: 8px; gap: 9px; }
       .conversation-list button { min-height: 44px; padding: 8px 12px; margin: 0 0 4px; width: auto; max-width: 190px; }
       .messages { padding: 20px 16px; gap: 24px; }
+      .message-row { padding-bottom: 24px; }
       .message-body p { padding: 10px 12px; font-size: 14px; }
       .chat-compose { padding: 12px; }
       .chat-page[data-expanded="true"] { inset-block-start: 70px; }
