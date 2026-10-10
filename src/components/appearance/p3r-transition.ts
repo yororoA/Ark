@@ -5,6 +5,8 @@ export interface P3RWipeRequest {
   y: number
   // Return false when the caller cancels navigation.
   navigate?: () => boolean
+  // Fall back to native navigation if the client router never commits.
+  fallback?: () => void
 }
 
 // No persisted state or router interception: only a mounted, capable renderer

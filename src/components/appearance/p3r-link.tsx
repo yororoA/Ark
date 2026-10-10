@@ -36,6 +36,9 @@ export default function P3RLink({ onClick, onNavigate, replace, scroll, transiti
         const destination = `${url.pathname}${url.search}${url.hash}`
         router[replace ? 'replace' : 'push'](destination, { scroll, transitionTypes })
         return true
+      }, fallback: () => {
+        const destination = `${url.pathname}${url.search}${url.hash}`
+        location.assign(destination)
       } })
       if (accepted) event.preventDefault()
       else onNavigate?.(event)
