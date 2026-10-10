@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import useSWR, { useSWRConfig } from 'swr'
 import { ArrowLeft, ArrowUpRight, MessageSquare, Plus, Reply, Share2, X } from 'lucide-react'
 import { Comment, dateLabel, Entry, Envelope, excerpt, Media, mediaFor, safeUrl, SitemapContent } from '@/lib/blog'
-import { send, sendIdempotent, useBlog, useBlogData } from './blog-provider'
+import { send, sendIdempotent, useBlog, useBlogData, useBlogReferenceData } from './blog-provider'
 import { useManagedUploads, type UploadedAsset } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
@@ -48,7 +48,7 @@ export function MomentList({ initialData }: { initialData?: Envelope<Entry[]> })
     fallbackData: initialData,
     revalidateOnMount: !initialData,
   })
-  const sitemap = useBlogData<Envelope<SitemapContent>>('archive/sitemap')
+  const sitemap = useBlogReferenceData<Envelope<SitemapContent>>('archive/sitemap')
   const entries = newestFirst(data?.data || [])
   const availableDates = sitemap.data ? new Set(sitemap.data.data.moments.map(entry => entry.createdAt.slice(0, 10))) : undefined
   useRestoreListPosition(returnTo, !!data)
