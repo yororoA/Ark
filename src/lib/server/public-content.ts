@@ -12,12 +12,9 @@ class PublicContentError extends Error {
   }
 }
 
-async function publicEnvelope<T>(path: string, fresh = false): Promise<Envelope<T>> {
-  const cacheOptions = fresh
-    ? { cache: 'no-store' as const }
-    : { next: { revalidate: CONTENT_REVALIDATE_SECONDS, tags: ['public-blog-content'] } }
+async function publicEnvelope<T>(path: string): Promise<Envelope<T>> {
   const response = await fetch(backendUrl(`/api/${path}`), {
-    ...cacheOptions,
+    next: { revalidate: CONTENT_REVALIDATE_SECONDS, tags: ['public-blog-content'] },
     signal: AbortSignal.timeout(30_000),
   })
   const payload = await response.json().catch(() => null) as (Envelope<T> & { message?: string; success?: boolean }) | null
@@ -48,7 +45,7 @@ export const getArticlesPage = cache(async (
 
 export const getArticle = cache(async (id: string) => {
   try {
-    const result = await publicEnvelope<Entry>(`knowledge/${id}`, true)
+    const result = await publicEnvelope<Entry>(`knowledge/${id}`)
     return result.data
   } catch (error) {
     if (error instanceof PublicContentError && error.status === 404) return null
@@ -86,7 +83,7 @@ export const getSitemapContent = cache(async () => publicEnvelope<SitemapContent
 
 export const getMoment = cache(async (id: string) => {
   try {
-    const result = await publicEnvelope<Entry>(`moments/${id}`, true)
+    const result = await publicEnvelope<Entry>(`moments/${id}`)
     return result.data
   } catch (error) {
     if (error instanceof PublicContentError && error.status === 404) return null

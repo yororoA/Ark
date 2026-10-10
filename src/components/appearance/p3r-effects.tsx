@@ -8,6 +8,7 @@ import { P3R_WIPE_EVENT, type P3RWipeRequest } from './p3r-transition'
 import styles from './p3r-effects.module.scss'
 
 const ease = (t: number) => t * t * (3 - 2 * t)
+const ROUTE_FALLBACK_MS = 8000
 
 export default function P3REffects() {
   const { design } = useAppearance()
@@ -27,7 +28,6 @@ export default function P3REffects() {
     const context = ctx
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
     let frame = 0, timeout = 0, width = 0, height = 0
-    let pending: P3RWipeRequest['navigate']
     let active = false
     const resize = () => {
       width = innerWidth
@@ -41,27 +41,30 @@ export default function P3REffects() {
       cancelAnimationFrame(frame)
       clearTimeout(timeout)
       committed.current = null
-      pending = undefined
       active = false
       layer.dataset.phase = 'idle'
       context.clearRect(0, 0, width, height)
       if (typeof layer.hidePopover === 'function' && layer.matches(':popover-open')) layer.hidePopover()
     }
-    const skip = () => {
-      const navigate = pending
-      clear()
-      navigate?.()
-    }
-    const start = ({ x, y, navigate }: P3RWipeRequest) => {
+    const skip = () => clear()
+    const start = ({ x, y, navigate, fallback }: P3RWipeRequest) => {
       clear()
       resize()
+      let ready = !navigate
+      committed.current = navigate ? () => { ready = true } : null
+      try {
+        if (navigate && !navigate()) { clear(); return }
+      } catch {
+        clear()
+        fallback?.()
+        return
+      }
       active = true
-      pending = navigate
       layer.dataset.phase = 'expanding'
       // A non-focusable manual popover stays above native menu dialogs.
       if (typeof layer.showPopover === 'function') layer.showPopover()
       const started = performance.now()
-      let revealAt = 0, covered = false, ready = !navigate
+      let revealAt = 0, covered = false
       const circle = (radius: number, fill: string) => {
         context.beginPath()
         context.arc(x, y, Math.max(0, radius), 0, Math.PI * 2)
@@ -83,12 +86,12 @@ export default function P3REffects() {
           if (!covered) {
             covered = true
             layer.dataset.phase = 'covered'
-            committed.current = () => { ready = true }
-            const handoff = pending
-            pending = undefined
-            if (handoff && !handoff()) ready = true
-            // A failed route must never leave an undismissable visual layer.
-            timeout = window.setTimeout(clear, 12000)
+            // A stalled client route must still reach its destination.
+            timeout = window.setTimeout(() => {
+              committed.current = null
+              if (!fallback) { clear(); return }
+              try { fallback() } catch { clear() }
+            }, ROUTE_FALLBACK_MS)
           }
           if (ready && now - started >= 440) {
             if (!revealAt) { revealAt = now; layer.dataset.phase = 'revealing' }
@@ -108,6 +111,7 @@ export default function P3REffects() {
     const request = (event: Event) => {
       if (motion.matches || document.hidden || useRainConnection.getState().connection) return
       event.preventDefault()
+      if (active) return
       start((event as CustomEvent<P3RWipeRequest>).detail)
     }
     const key = (event: KeyboardEvent) => { if (active && event.key === 'Escape') skip() }
