@@ -26,12 +26,14 @@ const barlowCondensed = Barlow_Condensed({
   preload: false,
 });
 
-// Batang - 登录页黑条 tag
+// Demand-load Unicode subsets. Preloading this family expands into dozens of
+// unused Korean font files in the production manifest.
 const gowunBatang = Gowun_Batang({
   weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-gowun-batang-loaded',
   display: 'swap',
+  preload: false,
 });
 // ibm - 登录下方免责声明
 const ibmPlexSans = IBM_Plex_Sans({
@@ -42,25 +44,26 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 // 宋体 - 登录按钮
 const notoSerifSC = Noto_Serif_SC({
-  weight: ['400', '700'],       // 导入常规体和粗体
-  subsets: ['latin'],            // 声明子集（Next.js 会自动对中文进行按需分包优化）
+  // One variable face per Unicode subset covers regular and bold.
+  subsets: ['latin'],
   variable: '--font-noto-serif-loaded', // 定义 CSS 变量名
   display: 'swap',
+  preload: false,
 });
 // 等线 - 免责声明
 const notoSansSC = Noto_Sans_SC({
-  weight: ['400', '700'],
   subsets: ['latin'],
   variable: '--font-noto-sans-loaded',
   display: 'swap',
+  preload: false,
 })
 
 // 登录进度条数字
 const orbitron = Orbitron({
-  weight: ['400', '700', '900'],   // Orbitron 支持的字重
   subsets: ['latin'],
   variable: '--font-orbitron-loaded',
   display: 'swap',
+  preload: false,
 });
 
 // -------------------------------------------------------------------------------

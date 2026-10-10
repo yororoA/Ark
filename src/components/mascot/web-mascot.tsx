@@ -13,6 +13,12 @@ const MASCOT_PACKS = ['Neuron', 'Eviling'] as const
 
 type MascotStatus = 'idle' | 'ready' | 'error'
 
+function connection() {
+  return (navigator as Navigator & {
+    connection?: EventTarget & { saveData?: boolean; effectiveType?: string }
+  }).connection
+}
+
 function readPreference(): boolean | null {
   try {
     const value = localStorage.getItem(STORAGE_KEY)
@@ -36,22 +42,27 @@ function savePreference(enabled: boolean) {
 function readEnabled() {
   const preference = readPreference()
   if (preference !== null) return preference
+  const network = connection()
+  if (network?.saveData || /^(slow-)?2g$/.test(network?.effectiveType || '')) return false
   return !matchMedia(MOBILE_QUERY).matches && !matchMedia(REDUCED_MOTION_QUERY).matches
 }
 
 function subscribe(listener: () => void) {
   const mobile = matchMedia(MOBILE_QUERY)
   const reducedMotion = matchMedia(REDUCED_MOTION_QUERY)
+  const network = connection()
   const storage = (event: StorageEvent) => {
     if (event.key === STORAGE_KEY || event.key === null) listener()
   }
   mobile.addEventListener('change', listener)
   reducedMotion.addEventListener('change', listener)
+  network?.addEventListener('change', listener)
   window.addEventListener('storage', storage)
   window.addEventListener(PREFERENCE_EVENT, listener)
   return () => {
     mobile.removeEventListener('change', listener)
     reducedMotion.removeEventListener('change', listener)
+    network?.removeEventListener('change', listener)
     window.removeEventListener('storage', storage)
     window.removeEventListener(PREFERENCE_EVENT, listener)
   }
@@ -60,6 +71,7 @@ function subscribe(listener: () => void) {
 export default function WebMascot() {
   const pathname = usePathname()
   const hostRef = useRef<HTMLDivElement>(null)
+  const manualStart = useRef(false)
   const enabled = useSyncExternalStore(subscribe, readEnabled, () => false)
   const [status, setStatus] = useState<MascotStatus>('idle')
   const isLogin = pathname === '/login' || pathname.startsWith('/login/')
@@ -71,10 +83,14 @@ export default function WebMascot() {
     const host = hostRef.current
     if (!host) return
     let active = true
+    let idle = 0
+    let timer = 0
     let destroy: (() => void) | undefined
 
-    void import('web-mascot')
-      .then(async ({ configure, createMascot }) => {
+    const start = async () => {
+      if (!active) return
+      try {
+        const { configure, createMascot } = await import('web-mascot')
         if (!active) return
         configure({
           assets: '/mascot_pack',
@@ -96,13 +112,28 @@ export default function WebMascot() {
         destroy = () => mascots.forEach(mascot => mascot.destroy())
         Array.from(host.children).forEach(child => child.setAttribute('data-ark-mascot', ''))
         setStatus('ready')
-      })
-      .catch(() => {
+      } catch {
         if (active) setStatus('error')
-      })
+      }
+    }
+    // The engine preloads every sprite in both packs. Let the page's fonts,
+    // images and scripts finish before starting this optional download.
+    const schedule = () => {
+      if (typeof window.requestIdleCallback === 'function') {
+        idle = window.requestIdleCallback(start, { timeout: 2000 })
+      } else {
+        timer = window.setTimeout(start, 0)
+      }
+    }
+    if (manualStart.current) void start()
+    else if (document.readyState === 'complete') schedule()
+    else window.addEventListener('load', schedule, { once: true })
 
     return () => {
       active = false
+      window.removeEventListener('load', schedule)
+      if (idle) window.cancelIdleCallback(idle)
+      window.clearTimeout(timer)
       destroy?.()
       host.replaceChildren()
     }
@@ -116,6 +147,7 @@ export default function WebMascot() {
 
   const toggle = () => {
     const nextEnabled = !enabled
+    manualStart.current = nextEnabled
     setStatus('idle')
     savePreference(nextEnabled)
   }

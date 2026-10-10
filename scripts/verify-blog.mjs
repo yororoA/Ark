@@ -2,7 +2,7 @@
 // Node >= 24: node scripts/verify-blog.mjs [--serve]
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
-import { cp, mkdir, symlink, writeFile } from 'node:fs/promises'
+import { cp, mkdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { resolve } from 'node:path'
@@ -269,6 +269,9 @@ const server = createServer(async (req, res) => {
 })
 
 await mkdir(work, { recursive: true })
+// cp merges directories; remove the old source tree so moved/deleted routes
+// cannot survive from an earlier run (for example /home -> /(blog)/home).
+await rm(resolve(work, 'src'), { recursive: true, force: true })
 await cp(resolve(root, 'src'), resolve(work, 'src'), { recursive: true })
 for (const file of ['package.json', 'tsconfig.json', 'next.config.ts', 'next-env.d.ts', 'postcss.config.mjs']) await cp(resolve(root, file), resolve(work, file))
 for (const dir of ['node_modules', 'public']) await symlink(resolve(root, dir), resolve(work, dir)).catch(error => { if (error.code !== 'EEXIST') throw error })

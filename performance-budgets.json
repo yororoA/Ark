@@ -2,6 +2,8 @@
   "routeJsRawKb": 900,
   "routeJsGzipKb": 280,
   "firstLoadAssetRequests": 24,
+  "routeFontPreloadRequests": 4,
+  "routeFontPreloadKb": 80,
   "publicImageMaxKb": 4096,
   "publicImagesTotalKb": 12288
 }

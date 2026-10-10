@@ -68,6 +68,21 @@ for (const file of publicFiles) {
 }
 
 const failures = []
+// JS/CSS manifests omit fonts. A single CJK family can otherwise introduce
+// dozens of high-priority downloads while passing the asset request budget.
+const fontManifest = JSON.parse(await readFile(path.join(nextDirectory, 'server', 'next-font-manifest.json'), 'utf8'))
+let maxFontRequests = 0
+let maxFontBytes = 0
+for (const [entry, paths] of Object.entries(fontManifest.app)) {
+  const files = [...new Set(paths)]
+  let bytes = 0
+  for (const file of files) bytes += (await stat(path.join(nextDirectory, file))).size
+  maxFontRequests = Math.max(maxFontRequests, files.length)
+  maxFontBytes = Math.max(maxFontBytes, bytes)
+  const route = entry.replace(/^.*\/src\/app/, '').replace(/\/\([^/]+\)/g, '').replace(/\/page$/, '') || '/'
+  if (files.length > budgets.routeFontPreloadRequests) failures.push(`${route}: ${files.length} font preloads`)
+  if (bytes > budgets.routeFontPreloadKb * 1024) failures.push(`${route}: ${Math.ceil(bytes / 1024)} KB preloaded fonts`)
+}
 for (const route of routes) {
   if (route.rawBytes > budgets.routeJsRawKb * 1024) failures.push(`${route.route}: JS raw ${Math.ceil(route.rawBytes / 1024)} KB`)
   if (route.gzipBytes > budgets.routeJsGzipKb * 1024) failures.push(`${route.route}: JS gzip ${Math.ceil(route.gzipBytes / 1024)} KB`)
@@ -86,6 +101,7 @@ const mostRequests = [...routes].sort((a, b) => b.requestCount - a.requestCount)
 const largestImage = [...images].sort((a, b) => b.bytes - a.bytes)[0]
 console.log(`budget  JS ${Math.ceil(largestRoute.gzipBytes / 1024)}/${budgets.routeJsGzipKb} KB gzip (${largestRoute.route})`)
 console.log(`budget  requests ${mostRequests.requestCount}/${budgets.firstLoadAssetRequests} (${mostRequests.route})`)
+console.log(`budget  font preloads ${maxFontRequests}/${budgets.routeFontPreloadRequests}; ${Math.ceil(maxFontBytes / 1024)}/${budgets.routeFontPreloadKb} KB`)
 console.log(`budget  images ${Math.ceil(imageBytes / 1024)}/${budgets.publicImagesTotalKb} KB; max ${Math.ceil(largestImage.bytes / 1024)}/${budgets.publicImageMaxKb} KB`)
 
 if (failures.length) {
