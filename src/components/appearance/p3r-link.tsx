@@ -2,14 +2,24 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useRef, type ComponentProps } from 'react'
+import { useRef, useState, type ComponentProps } from 'react'
 import { requestP3RWipe } from './p3r-transition'
 
-export default function P3RLink({ onClick, onNavigate, replace, scroll, transitionTypes, ...props }: ComponentProps<typeof Link>) {
+export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, prefetch, replace, scroll, transitionTypes, ...props }: ComponentProps<typeof Link>) {
   const router = useRouter()
   const origin = useRef({ x: 0, y: 0, href: '' })
+  const [prefetchOnIntent, setPrefetchOnIntent] = useState(false)
+  const linkPrefetch = prefetch === undefined ? (prefetchOnIntent ? null : false) : prefetch
 
-  return <Link {...props} replace={replace} scroll={scroll} transitionTypes={transitionTypes} data-p3r-link
+  return <Link {...props} prefetch={linkPrefetch} replace={replace} scroll={scroll} transitionTypes={transitionTypes} data-p3r-link
+    onMouseEnter={event => {
+      if (prefetch === undefined) setPrefetchOnIntent(true)
+      onMouseEnter?.(event)
+    }}
+    onFocus={event => {
+      if (prefetch === undefined) setPrefetchOnIntent(true)
+      onFocus?.(event)
+    }}
     onClick={event => {
       const anchor = event.currentTarget
       const rect = anchor.getBoundingClientRect()

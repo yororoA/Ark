@@ -7,7 +7,7 @@ import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowUpRight, Download, Pencil, Plus, Search, Share2 } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt, SitemapContent } from '@/lib/blog'
-import { send, useBlog, useBlogData } from './blog-provider'
+import { send, useBlog, useBlogData, useBlogReferenceData } from './blog-provider'
 import { useManagedUploads } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
@@ -37,8 +37,8 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
     fallbackData: initialData,
     revalidateOnMount: !initialData,
   })
-  const categories = useBlogData<Envelope<string[]>>('knowledge/meta/categories')
-  const sitemap = useBlogData<Envelope<SitemapContent>>('archive/sitemap')
+  const categories = useBlogReferenceData<Envelope<string[]>>('knowledge/meta/categories')
+  const sitemap = useBlogReferenceData<Envelope<SitemapContent>>('archive/sitemap')
   const entries = newestFirst(list.data?.data || [])
   const availableDates = sitemap.data ? new Set(sitemap.data.data.articles.map(entry => entry.createdAt.slice(0, 10))) : undefined
   useRestoreListPosition(returnTo, !!list.data)

@@ -31,6 +31,13 @@ export function sendIdempotent<T>(path: string, body: unknown, idempotencyKey: s
 export function useBlogData<T>(path: string | null, options?: SWRConfiguration<T, Error>) {
   return useSWR<T>(path ? `/api/blog/${path}` : null, request, options)
 }
+export function useBlogReferenceData<T>(path: string) {
+  return useSWR<T>(`/api/blog/${path}`, request, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
+}
 type BlogContextValue = {
   locale: Locale; setLocale: (value: Locale) => void; t: (key: TextKey) => string
   session: Session | null; sessionLoading: boolean; refreshSession: () => void
