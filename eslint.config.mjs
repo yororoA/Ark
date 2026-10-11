@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // Local integration checkouts have their own languages and validation.
+    ".workbuddy/**",
     "next-env.d.ts",
   ]),
 ]);

@@ -5,6 +5,7 @@ import { createServer } from 'node:http'
 import { cp, mkdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
+import { createHmac, randomUUID } from 'node:crypto'
 import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
@@ -41,6 +42,10 @@ const comments = [{ _id: commentId, uid: 'another-user', username: 'Visitor', co
 const likes = new Set()
 const viewed = new Set()
 let draft = null
+let binesProfile = null
+const binesCredentials = []
+const binesScopes = ['content.read', 'moments.write', 'interactions.write', 'media.write', 'chat.read', 'chat.write', 'presence.write']
+const webhookSecret = 'isolated-fixture-secret-not-for-deployment'
 
 function rotate(user) { user.token = `fixture-token-${++sequence}`; return user.token }
 function addUser(uid, username, isGuest = false) {
@@ -96,6 +101,32 @@ const server = createServer(async (req, res) => {
     const cookies = cookieValues(req.headers.cookie)
     let user = users.get(req.headers.uid)
     const valid = user && req.headers.authorization === `Bearer ${user.token}`
+    if (path === '/api/bines/profile') return ok({ profile: binesProfile, presence: { online: true, expiresAt: null } })
+    if (path.startsWith('/api/bines/admin')) {
+      if (!valid || user.uid !== 'test-admin' || user.isGuest) return json({ success: false, message: 'Admin required' }, 403)
+      if (path === '/api/bines/admin') return ok({
+        profile: binesProfile, credentials: binesCredentials, scopes: binesScopes,
+        mcpUrl: `${backend}/mcp/bines`, cacheNotificationsConfigured: true,
+        activity: [{ id: 'fixture-activity', tool: 'ark_get_profile', outcome: 'ok', createdAt: article.createdAt, credentialId: 'fixture' }],
+      })
+      if (path.endsWith('/accounts')) return ok([{ uid: 'test-bines', username: 'Bines' }])
+      if (path.endsWith('/profile') && req.method === 'PUT') {
+        if (binesProfile && (body.createAccount || body.uid !== binesProfile.uid)) return json({ success: false }, 409)
+        binesProfile = { uid: body.uid || 'test-bines', displayName: body.displayName, bio: body.bio, kind: 'agent', slug: 'bines' }
+        return ok(binesProfile)
+      }
+      if (path.endsWith('/credentials') && req.method === 'POST') {
+        const credential = { id: randomUUID(), prefix: 'ark_bines_fixture', label: body.label, scopes: body.scopes, createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + body.expiresInDays * 86400000).toISOString(), revokedAt: null, lastUsedAt: null }
+        binesCredentials.unshift(credential)
+        return ok({ credential, token: `ark_bines_fixture_${randomUUID()}` })
+      }
+      if (req.method === 'DELETE') {
+        const credential = binesCredentials.find(item => item.id === path.split('/').at(-1))
+        if (credential) credential.revokedAt = new Date().toISOString()
+        return ok({ revoked: !!credential })
+      }
+      return json({ success: false }, 404)
+    }
     if (path === '/api/chat/hasPrivate') {
       if (!valid || url.searchParams.get('userId') !== user.uid) return json({ tokenError: true }, 401)
       if (controls.rotateV1) { controls.rotateV1 = false; res.setHeader('X-Refreshed-Token', rotate(user)) }
@@ -279,7 +310,7 @@ server.listen(10001, '127.0.0.1')
 await once(server, 'listening')
 let log = ''
 const app = spawn(process.execPath, [resolve(root, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '-H', '127.0.0.1', '-p', '10000'], {
-  cwd: work, env: { ...process.env, BACKEND_URL: backend, ADMIN_UIDS: 'test-admin' }, stdio: ['ignore', 'pipe', 'pipe'],
+  cwd: work, env: { ...process.env, BACKEND_URL: backend, ADMIN_UIDS: 'test-admin', ARK_REVALIDATE_SECRET: webhookSecret }, stdio: ['ignore', 'pipe', 'pipe'],
 })
 const ready = new Promise((resolveReady, reject) => {
   const timeout = setTimeout(() => reject(new Error('Next fixture did not start')), 60000)
@@ -376,6 +407,54 @@ try {
     assert.equal(data.token, undefined)
     assert.ok(response.headers.getSetCookie().some(value => value.startsWith('blog_tokens=') && value.includes('HttpOnly')))
     assert.equal((await client.request('/api/session')).data.data.isAdmin, true)
+  })
+  await check('Bines public profile, administrator isolation and credential lifecycle', async () => {
+    const publicResult = await anonymous.request('/api/bines/profile')
+    assert.equal(publicResult.data.data.profile, null)
+    assert.match(publicResult.response.headers.get('cache-control'), /no-store/)
+    assert.equal((await anonymous.request('/api/bines/admin')).response.status, 401)
+    const ordinary = new Client()
+    await ordinary.request('/api/auth/login', { username: 'ordinary', password: 'fixture-password' })
+    assert.equal((await ordinary.request('/api/bines/admin')).response.status, 403)
+    const forged = new Client()
+    forged.jar.set('blog_active_uid', 'test-admin')
+    forged.jar.set('blog_tokens', encodeURIComponent('test-admin:forged'))
+    assert.equal((await forged.request('/api/bines/admin')).response.status, 401)
+    assert.equal((await client.request('/api/bines/unlisted')).response.status, 404)
+    const before = calls.length
+    assert.equal((await client.request('/api/bines/admin/credentials', {}, 'POST', { origin: 'https://untrusted.test' })).response.status, 403)
+    assert.equal(calls.length, before)
+    assert.equal((await client.request('/api/bines/admin/accounts?q=Bines')).data.data[0].uid, 'test-bines')
+    const profile = { uid: 'test-bines', displayName: 'Bines', bio: 'A voice of her own.\n自己的片刻与日常。' }
+    assert.equal((await client.request('/api/bines/admin/profile', profile, 'PUT')).data.data.uid, 'test-bines')
+    const issued = await client.request('/api/bines/admin/credentials', { label: 'Local fixture', scopes: ['content.read', 'presence.write'], expiresInDays: 90 })
+    assert.match(issued.data.data.token, /^ark_bines_/)
+    assert.match(issued.response.headers.get('cache-control'), /no-store/)
+    const listed = await client.request('/api/bines/admin')
+    assert.equal(JSON.stringify(listed.data).includes(issued.data.data.token), false)
+    const id = issued.data.data.credential.id
+    assert.equal((await client.request(`/api/bines/admin/credentials/${id}`, undefined, 'DELETE')).data.data.revoked, true)
+    assert.equal((await anonymous.request('/api/bines/profile')).data.data.profile.uid, 'test-bines')
+  })
+  await check('Bines signed webhook rejects forgery and refreshes cached detail', async () => {
+    const payload = JSON.stringify({ event_id: 'fixture-update', kind: 'moments' })
+    const timestamp = String(Math.floor(Date.now() / 1000))
+    const sign = (time, body = payload) => createHmac('sha256', webhookSecret).update(`${time}.${body}`).digest('hex')
+    const post = (time, signature, body = payload) => fetch(`${origin}/api/bines/revalidate`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Ark-Timestamp': time, 'X-Ark-Signature': signature }, body,
+    })
+    assert.equal((await post(timestamp, '0'.repeat(64))).status, 401)
+    const old = String(Number(timestamp) - 600)
+    assert.equal((await post(old, sign(old))).status, 401)
+    assert.equal((await post(timestamp, sign(timestamp), payload + ' ')).status, 401)
+    const invalid = JSON.stringify({ event_id: 'fixture-update', kind: 'arbitrary-tag' })
+    assert.equal((await post(timestamp, sign(timestamp, invalid), invalid)).status, 400)
+    moment.title = 'Updated by signed Bines webhook'
+    assert.equal((await post(timestamp, sign(timestamp))).status, 200)
+    assert.equal((await post(timestamp, sign(timestamp))).status, 200)
+    assert.match(await (await fetch(`${origin}/moments/${momentId}`)).text(), /Updated by signed Bines webhook/)
+    moment.title = 'October, a beginning'
+    await post(timestamp, sign(timestamp))
   })
   await check('stored account credentials are capped at five', async () => {
     const limited = new Client()

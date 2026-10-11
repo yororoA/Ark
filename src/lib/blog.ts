@@ -41,6 +41,7 @@ const words = {
   about: ['关于', 'About', 'この場所について', 'Über mich'],
   lab: ['实验室', 'Laboratory', '実験室', 'Labor'],
   chat: ['通信', 'Chat', 'チャット', 'Chat'],
+  bines: ['Bines', 'Bines', 'Bines', 'Bines'],
   login: ['登录 / 接入', 'Sign in', 'ログイン', 'Anmelden'],
   logout: ['退出登录', 'Sign out', 'ログアウト', 'Abmelden'],
   account: ['切换账号', 'Switch account', 'アカウント切替', 'Konto wechseln'],
