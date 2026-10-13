@@ -148,9 +148,9 @@ export default function Home({
         <div className={styles['hero-actions']}><Link href="/articles" className={styles['primary-button']}>{t('read')}<ArrowUpRight size={18} /></Link><Link href="/moments" className={styles['text-link']}>{t('explore')}<ArrowRight size={17} /></Link></div>
       </div>
       <div className={styles['hero-bottom']}>
-        <span className={styles['status']} data-online={isOnline}>
+        <Link href="/bines" className={styles['status']} data-online={isOnline}>
           <i />BINES · {t(statusLabel)}
-        </span>
+        </Link>
         {/* The former Latin ornament looked like an advertising label. */}
         <a className={styles['scroll-link']} href="#recent">
           {t('latest')}<ArrowDown size={12} />

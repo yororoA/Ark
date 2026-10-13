@@ -11,6 +11,7 @@ const staticRoutes: MetadataRoute.Sitemap = [
   { url: absoluteUrl('/gallery'), changeFrequency: 'weekly', priority: 0.7 },
   { url: absoluteUrl('/archive'), changeFrequency: 'daily', priority: 0.7 },
   { url: absoluteUrl('/about'), changeFrequency: 'monthly', priority: 0.6 },
+  { url: absoluteUrl('/bines'), changeFrequency: 'monthly', priority: 0.4 },
   { url: absoluteUrl('/lab'), changeFrequency: 'monthly', priority: 0.5 },
   { url: absoluteUrl('/notice'), changeFrequency: 'monthly', priority: 0.4 },
   { url: absoluteUrl('/terms'), changeFrequency: 'yearly', priority: 0.3 },

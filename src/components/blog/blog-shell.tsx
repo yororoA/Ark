@@ -70,7 +70,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <i aria-hidden="true" />
           <Image src="/sign_white.png" width={130} height={40} alt="山眠包" />
         </div>
-        <div className={styles['footer-links']}><Link href="/terms">{t('terms')}</Link><Link href="/notice">{t('notice')}</Link><a href="https://github.com/yororoA" target="_blank" rel="noreferrer">GitHub ↗</a><Link href="/about#guestbook">{t('guestbook')}</Link></div>
+        <div className={styles['footer-links']}><Link href="/terms">{t('terms')}</Link><Link href="/notice">{t('notice')}</Link><Link href="/bines">Bines ↗</Link><a href="https://github.com/yororoA" target="_blank" rel="noreferrer">GitHub ↗</a><Link href="/about#guestbook">{t('guestbook')}</Link></div>
         <div className={styles['account-links']}>{session ? <><span>{session.username}</span><Link href="/login">{t('account')}</Link><button onClick={logout}>{t('logout')}</button></> : <Link href="/login">{t('login')} ↗</Link>}<small>© {new Date().getFullYear()} YOROROICE</small></div>
         <button className={styles['icon-button']} aria-label={t('toTop')} onClick={() => window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}><ArrowUp size={20} /></button>
       </footer>

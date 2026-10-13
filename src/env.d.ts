@@ -3,5 +3,6 @@ declare namespace NodeJS {
     IPINFO_API_KEY: string;
     BACKEND_URL: string;
     ADMIN_UIDS: string;
+    ARK_REVALIDATE_SECRET?: string;
   }
 }
