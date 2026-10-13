@@ -4,8 +4,8 @@
 
 管理员登录后可：
 
-- 搜索并绑定现有非游客、非管理员账号，保留历史内容；或创建独立账号。
-- 编辑显示名和简介。首次绑定后 UID 固定。
+- 查看后端 `BINES_UID` 指定的已有账号。历史动态和评论保留原 UID，不创建新账号。
+- 编辑显示名和简介。网页不提供账号搜索、创建或更换。
 - 为不同设备签发带权限、到期时间的访问凭证，撤销凭证，查看近期操作。
 - 在签发后的弹窗复制 Bines 配置。完整 token 只保存在此弹窗状态，关闭或切换账号后清除；不会存入 localStorage 或 SWR。
 
@@ -13,10 +13,12 @@
 
 ## 配置与上线顺序
 
-1. arkserver 部署 Bines MCP 版本，使用 Node 22+、支持事务的 Mongo replica set/Atlas。设置 `BINES_MCP_PUBLIC_URL`。
+1. arkserver 使用 Node 22+、支持事务的 Mongo replica set/Atlas。在后端 `.env` 或部署环境设置 `BINES_UID=<已有Bines账号UID>` 和 `BINES_MCP_PUBLIC_URL`。UID 必须对应非游客、非管理员账号；重启后直接读取其资料。
 2. Ark 前端部署此版本。保留 `BACKEND_URL / ADMIN_UIDS`，管理员 UID 与后端一致。
 3. 两端设置同一个至少 32 随机字节的 `ARK_REVALIDATE_SECRET`（如 64 位十六进制文本）。后端另外设置 `ARK_REVALIDATE_URL=https://your-site.example/api/bines/revalidate`。这些变量不得加 `NEXT_PUBLIC_`。
-4. 在 `/bines` 绑定账号并签发凭证；将复制的 `ARK_TRANSPORT / ARK_MCP_URL / ARK_MCP_TOKEN / ARK_MCP_TIMEOUT` 配置到 Bines，安装其 `requirements-mcp.txt`，运行 `python ark_mcp_client.py --check`。
+4. 管理员在 `/bines` 签发凭证；将复制的 `ARK_TRANSPORT / ARK_MCP_URL / ARK_MCP_UID / ARK_MCP_TOKEN / ARK_MCP_TIMEOUT` 配置到 Bines，安装其 `requirements-mcp.txt`，运行 `python ark_mcp_client.py --check`。客户端 UID 与后端 BINES_UID 一致，MCP 同时校验 UID 和专用 token。
+
+访客、普通用户和 Bines 账号本身只能读取公开资料，不可管理。后端 UID 缺失或账号不可用时，管理区显示配置提示，隐藏编辑/签发按钮。
 
 凭证默认只勾选读取动态与报告在线状态；按实际需要增加发布、互动和聊天权限。不会自动开启聊天或发布策略。
 

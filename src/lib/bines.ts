@@ -10,6 +10,7 @@ export type BinesAdmin = {
   profile: BinesProfile | null; credentials: BinesCredential[]
   activity: { id: string; tool: string; outcome: 'ok' | 'error' | 'replayed'; code?: string; target?: string; createdAt: string; credentialId: string }[]
   scopes: string[]; mcpUrl: string | null; cacheNotificationsConfigured: boolean
+  identity: { uid: string | null; ready: boolean; error: string | null }
 }
 
 const copy = {
@@ -18,19 +19,12 @@ const copy = {
   agent: ['智能体账号', 'Agent account', 'エージェントアカウント', 'Agentenkonto'],
   unconfigured: ['Bines 的站内资料尚未设置。', 'Bines has no profile here yet.', 'Bines のプロフィールは未設定です。', 'Bines hat hier noch kein Profil.'],
   manage: ['接入管理', 'Manage access', 'アクセス管理', 'Zugang verwalten'],
-  manageHint: ['绑定 Bines 的账号，再为运行设备签发凭证。', 'Bind an account, then issue credentials for each device.', 'アカウントを紐付け、端末ごとに認証情報を発行します。', 'Konto verknüpfen und Zugangsdaten je Gerät ausstellen.'],
+  missingIdentity: ['请在后端环境文件中设置 BINES_UID，使用 Bines 已有账号的 UID。', 'Set BINES_UID in the backend environment to Bines’s existing account UID.', 'バックエンドの環境設定に既存 Bines アカウントの BINES_UID を設定してください。', 'BINES_UID in der Backend-Umgebung auf die UID des bestehenden Bines-Kontos setzen.'],
+  invalidIdentity: ['BINES_UID 对应的账号不存在或不可用，请检查后端配置。', 'The BINES_UID account is missing or unavailable. Check the backend configuration.', 'BINES_UID のアカウントが存在しないか利用できません。設定を確認してください。', 'Das BINES_UID-Konto fehlt oder ist nicht verfügbar. Backend-Konfiguration prüfen.'],
   profile: ['账号与资料', 'Account & profile', 'アカウントとプロフィール', 'Konto & Profil'],
-  setup: ['设置身份', 'Set up identity', 'アカウントを設定', 'Identität einrichten'],
   displayName: ['显示名称', 'Display name', '表示名', 'Anzeigename'],
   bio: ['简介', 'About Bines', '紹介', 'Über Bines'],
-  existing: ['绑定已有账号', 'Use an existing account', '既存アカウントを使う', 'Vorhandenes Konto nutzen'],
-  create: ['创建专用账号', 'Create an agent account', '専用アカウントを作成', 'Agentenkonto erstellen'],
-  accountMode: ['账号来源', 'Account source', 'アカウントの選択', 'Kontoauswahl'],
-  accountSearch: ['搜索用户名或 UID', 'Search username or UID', 'ユーザー名・UID を検索', 'Benutzername oder UID suchen'],
-  search: ['查找', 'Find account', '検索', 'Konto suchen'],
-  selectAccount: ['选择账号', 'Select account', 'アカウントを選択', 'Konto auswählen'],
-  bindingHint: ['首次绑定后身份固定，已有内容继续归属原账号。', 'Binding is permanent. Existing content stays with this account.', '初回の紐付けは固定です。既存の投稿は元のアカウントに残ります。', 'Die Verknüpfung ist dauerhaft. Bisherige Inhalte bleiben diesem Konto zugeordnet.'],
-  createHint: ['专用账号使用服务凭证接入，无需网页登录密码。', 'The agent uses service credentials; no web login password is needed.', '専用アカウントは認証情報で接続し、ログインパスワードは不要です。', 'Das Agentenkonto nutzt Zugangsdaten ohne Web-Passwort.'],
+  bindingHint: ['Bines 使用固定的已有账号，UID 由后端配置。历史动态和评论继续归属该账号。', 'Bines uses one existing account, configured by the backend. Its past fragments and comments keep the same author.', 'Bines はバックエンドで指定した既存アカウントを使用します。過去の投稿とコメントの作者は変わりません。', 'Bines nutzt ein bestehendes, im Backend festgelegtes Konto. Frühere Momente und Kommentare behalten ihren Autor.'],
   credentials: ['访问凭证', 'Access credentials', '認証情報', 'Zugangsdaten'],
   issue: ['签发凭证', 'Issue credential', '認証情報を発行', 'Zugang ausstellen'],
   label: ['设备或用途', 'Device or purpose', '端末・用途', 'Gerät oder Zweck'],

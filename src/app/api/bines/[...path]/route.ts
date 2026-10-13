@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { acceptRefresh, BackendError, credentialHeaders, sameOrigin, upstream, verifiedSession } from '@/lib/server/blog-session'
 
 const routes: Record<string, RegExp> = {
-  GET: /^(?:profile|admin|admin\/accounts)$/,
+  GET: /^(?:profile|admin)$/,
   PUT: /^admin\/profile$/,
   POST: /^admin\/credentials$/,
   DELETE: /^admin\/credentials\/[a-f0-9-]{36}$/,
@@ -29,9 +29,7 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     }
     // Query and endpoint are explicitly allowlisted; incoming credentials and
     // client-supplied administrator/sender headers are never forwarded.
-    const query = path === 'admin/accounts'
-      ? `?${new URLSearchParams({ q: request.nextUrl.searchParams.get('q') || '' })}` : ''
-    const response = await upstream(`/api/bines/${path}${query}`, { method: request.method, headers, body })
+    const response = await upstream(`/api/bines/${path}`, { method: request.method, headers, body })
     if (auth) await acceptRefresh(response, auth.credential)
     const data = await response.json().catch(() => ({ success: false, message: '服务响应异常' }))
     return NextResponse.json(data, { status: response.status, headers: noStore })

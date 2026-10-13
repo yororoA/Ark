@@ -2,45 +2,32 @@
 
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
-import { Copy, KeyRound, Pencil, Plus, Search, ShieldOff } from 'lucide-react'
+import { Copy, KeyRound, Pencil, Plus, ShieldOff } from 'lucide-react'
 import Link from '@/components/appearance/p3r-link'
 import { binesText, scopeLabels, type BinesAdmin, type BinesCredential, type BinesProfile } from '@/lib/bines'
 import { dateLabel, type Envelope } from '@/lib/blog'
 import { request, send, useBlog } from './blog-provider'
-import { BlogSelect } from './controls'
 import { Modal, State, styles } from './shared'
 import local from './bines.module.scss'
 
 type Refresh = () => Promise<unknown>
 
-function ProfileEditor({ profile, close, refresh }: { profile: BinesProfile | null; close: () => void; refresh: Refresh }) {
+function ProfileEditor({ profile, close, refresh }: { profile: BinesProfile; close: () => void; refresh: Refresh }) {
   const { locale, t, notify } = useBlog()
   const text = binesText(locale)
-  const [mode, setMode] = useState('existing')
-  const [name, setName] = useState(profile?.displayName || 'Bines')
-  const [bio, setBio] = useState(profile?.bio || '')
-  const [uid, setUid] = useState(profile?.uid || '')
-  const [query, setQuery] = useState('')
-  const [accounts, setAccounts] = useState<{ uid: string; username: string }[] | null>(null)
+  const [name, setName] = useState(profile.displayName)
+  const [bio, setBio] = useState(profile.bio)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  async function search() {
-    if (busy || !query.trim()) return
-    setBusy(true); setError(''); setUid(''); setAccounts(null)
-    try {
-      const result = await request<Envelope<{ uid: string; username: string }[]>>(`/api/bines/admin/accounts?q=${encodeURIComponent(query.trim())}`)
-      setAccounts(result.data)
-    } catch { setError(text('requestFailed')) } finally { setBusy(false) }
-  }
-  const createsAccount = !profile && mode === 'create'
-  const canSave = !busy && name.trim() && (createsAccount || uid)
+  // The former account picker is preserved in commit 3c3ae91. Identity now
+  // comes exclusively from arkserver's environment; this form edits metadata.
+  const canSave = !busy && Boolean(name.trim())
   async function save(event: React.FormEvent) {
     event.preventDefault()
     if (!canSave) return
     setBusy(true); setError('')
     try {
       await send('/api/bines/admin/profile', {
-        ...(createsAccount ? { createAccount: true } : { uid }),
         displayName: name.trim(), bio: bio.trim(),
       }, 'PUT')
       await refresh(); notify(t('saved')); close()
@@ -49,20 +36,7 @@ function ProfileEditor({ profile, close, refresh }: { profile: BinesProfile | nu
   return <Modal title={text('profile')} close={() => { if (!busy) close() }}>
     <form className={styles['form']} onSubmit={save}>
       <p className={styles['form-note']}>{text('bindingHint')}</p>
-      {!profile && <BlogSelect label={text('accountMode')} value={mode} onChange={setMode} options={[
-        { value: 'existing', label: text('existing') }, { value: 'create', label: text('create') },
-      ]} />}
-      {!profile && mode === 'existing' && <>
-        <div className={local['search-row']}>
-          <label className={styles['field']}>{text('accountSearch')}<input maxLength={60} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void search() } }} /></label>
-          <button type="button" className={styles['secondary-button']} disabled={busy || !query.trim()} onClick={search}><Search size={15} />{text('search')}</button>
-        </div>
-        {accounts?.length ? <BlogSelect label={text('selectAccount')} value={uid} onChange={setUid} options={[
-          { value: '', label: text('selectAccount') }, ...accounts.map(account => ({ value: account.uid, label: `${account.username} · ${account.uid}` })),
-        ]} /> : <State empty={accounts?.length === 0} />}
-      </>}
-      {createsAccount && <p className={styles['form-note']}>{text('createHint')}</p>}
-      {profile && <p className={local['account-id']}>UID · {profile.uid}</p>}
+      <p className={local['account-id']}>UID · {profile.uid}</p>
       <label className={styles['field']}>{text('displayName')}<input required maxLength={60} value={name} onChange={event => setName(event.target.value)} /></label>
       <label className={styles['field']}>{text('bio')}<textarea rows={4} maxLength={500} value={bio} onChange={event => setBio(event.target.value)} /></label>
       {error && <p className={styles['error']} role="alert">{error}</p>}
@@ -71,7 +45,7 @@ function ProfileEditor({ profile, close, refresh }: { profile: BinesProfile | nu
   </Modal>
 }
 
-function IssueCredential({ scopes, mcpUrl, close, refresh }: { scopes: string[]; mcpUrl: string | null; close: () => void; refresh: Refresh }) {
+function IssueCredential({ uid, scopes, mcpUrl, close, refresh }: { uid: string; scopes: string[]; mcpUrl: string | null; close: () => void; refresh: Refresh }) {
   const { locale, t } = useBlog()
   const text = binesText(locale)
   const [label, setLabel] = useState('')
@@ -81,7 +55,7 @@ function IssueCredential({ scopes, mcpUrl, close, refresh }: { scopes: string[];
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
-  const config = issued ? `ARK_TRANSPORT=mcp\nARK_MCP_URL=${mcpUrl || ''}\nARK_MCP_TOKEN=${issued.token}\nARK_MCP_TIMEOUT=20` : ''
+  const config = issued ? `ARK_TRANSPORT=mcp\nARK_MCP_URL=${mcpUrl || ''}\nARK_MCP_UID=${uid}\nARK_MCP_TOKEN=${issued.token}\nARK_MCP_TIMEOUT=20` : ''
   async function issue(event: React.FormEvent) {
     event.preventDefault()
     if (busy || !selected.length) return
@@ -155,7 +129,7 @@ export default function BinesAccess({ uid, refreshProfile }: { uid: string; refr
     <div className={styles['section-heading']}><div><div className={styles['eyebrow']}>BINES / ACCESS</div><h2>{text('manage')}</h2></div></div>
     <State loading={isLoading} error={error ? new Error(text('requestFailed')) : undefined} retry={() => mutate()} />
     {admin && <>
-      <div className={local['account-row']}><div><h3>{text('profile')}</h3><p>{admin.profile ? `${admin.profile.displayName} · ${admin.profile.uid}` : text('manageHint')}</p></div><button className={styles['secondary-button']} onClick={() => setEditing(true)}><Pencil size={15} />{admin.profile ? t('edit') : text('setup')}</button></div>
+      <div className={local['account-row']}><div><h3>{text('profile')}</h3><p>{admin.profile ? `${admin.profile.displayName} · ${admin.profile.uid}` : text(admin.identity?.error === 'INVALID_BINES_ACCOUNT' ? 'invalidIdentity' : 'missingIdentity')}</p></div>{admin.profile && <button className={styles['secondary-button']} onClick={() => setEditing(true)}><Pencil size={15} />{t('edit')}</button>}</div>
       {admin.profile && <>
         <div className={local['list-heading']}><h3>{text('credentials')}</h3><button className={styles['secondary-button']} onClick={() => setIssuing(true)}><Plus size={15} />{text('issue')}</button></div>
         {!admin.mcpUrl && <p className={local['notice']}>{text('missingUrl')}</p>}
@@ -178,8 +152,8 @@ export default function BinesAccess({ uid, refreshProfile }: { uid: string; refr
         <div><code>{entry.tool}</code>{entry.code && <small>{entry.code}</small>}{entry.target && /^\/(?:moments\/[a-f0-9]{24}|chat)$/.test(entry.target) && <Link className={styles['text-link']} href={entry.target}>{t('preview')} ↗</Link>}</div>
         <span data-error={entry.outcome === 'error'}>{text(entry.outcome)}</span>
       </li>)}</ol>
-      {editing && <ProfileEditor profile={admin.profile} close={() => setEditing(false)} refresh={refresh} />}
-      {issuing && <IssueCredential scopes={admin.scopes} mcpUrl={admin.mcpUrl} close={() => setIssuing(false)} refresh={refresh} />}
+      {editing && admin.profile && <ProfileEditor profile={admin.profile} close={() => setEditing(false)} refresh={refresh} />}
+      {issuing && admin.profile && <IssueCredential uid={admin.profile.uid} scopes={admin.scopes} mcpUrl={admin.mcpUrl} close={() => setIssuing(false)} refresh={refresh} />}
       {revoking && <RevokeCredential credential={revoking} close={() => setRevoking(null)} refresh={refresh} />}
     </>}
   </section>
