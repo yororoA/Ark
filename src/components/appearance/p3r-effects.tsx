@@ -11,9 +11,9 @@ import styles from './p3r-effects.module.scss'
 const easeOut = (t: number) => 1 - (1 - t) ** 3
 const easeInOut = (t: number) => t < .5 ? 4 * t ** 3 : 1 - (2 - 2 * t) ** 3 / 2
 // Navigation starts only under the full cover, so the cover stays short.
-const COVER_MS = 220
+const COVER_MS = 300
 const HOLD_MS = 60
-const REVEAL_MS = 340
+const REVEAL_MS = 380
 // A streaming loading boundary or a page still waiting for its client chunk
 // stays covered briefly instead of opening onto a blank page.
 const LOADING_GRACE_MS = 300
