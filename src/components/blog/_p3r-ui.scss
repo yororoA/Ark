@@ -1,5 +1,7 @@
 // P3R has its own composition. The existing content tree stays mounted when
 // themes change, preserving editor, chat, filter and upload state.
+@use '@/styles/p3r-motion';
+
 @mixin personality {
   .p3r-heading-word { display: none; }
   :global(html[data-design="p3r"]) {
@@ -84,6 +86,15 @@
     .page-heading .english-title { display: block; margin: 10px 0 0; font: italic 800 30px/1 var(--serif); letter-spacing: -.01em; text-transform: uppercase; color: #58e5ff; }
     .heading-actions .primary-button { background: #f4fbff; color: #032369 !important; box-shadow: 4px 4px 0 #eb2676; }
     .heading-actions .primary-button:hover:not(:disabled) { color: #fff !important; }
+    // Heading entrance: the giant word drifts in behind, then title and actions.
+    .p3r-heading-word { animation: p3r-stage-sweep .56s ease-out backwards; }
+    .heading-index { animation: p3r-stage-rise .5s ease-out .1s backwards; }
+    .heading-title .eyebrow { animation: p3r-stage-slab .34s ease-out .06s backwards; }
+    .heading-title h1 { animation: p3r-stage-sweep .44s ease-out .12s backwards; }
+    .page-heading .english-title { animation: p3r-stage-slab .38s ease-out .22s backwards; }
+    .heading-actions { animation: p3r-stage-rise .4s ease-out .28s backwards; }
+    // Entrances mounted beneath the page wipe wait for its hole to open.
+    &[data-p3r-wipe="covered"] .page-heading * { animation-play-state: paused; }
     .toolbar { gap: 18px; }
     .filters { gap: 8px; }
     .filters button { background: var(--soft); border: 0; padding-inline: 17px; font-weight: 700; transform: skewX(-8deg); }
@@ -185,7 +196,8 @@
     .chat-compose textarea { border-bottom: 3px solid var(--accent); background: var(--ark-p3r-panel); }
     .chat-compose .primary-button { padding: 12px 22px; }
     .chat-page[data-expanded="true"] { inset-block-start: 76px; inset-inline: 0; width: auto; max-width: none; height: auto; padding: 0; }
-    .dialog { background: var(--ark-p3r-panel); border: 3px solid #0754e4; box-shadow: 9px 9px 0 #032369; animation: p3r-panel-in .32s ease-in-out; }
+    // Previous slide-in panel entry: commit 65630bf.
+    .dialog { background: var(--ark-p3r-panel); border: 3px solid #0754e4; box-shadow: 9px 9px 0 #032369; @include p3r-motion.mail-slab; }
     .dialog::backdrop { background: #02163bc9; backdrop-filter: blur(4px); }
     .dialog-header { border-bottom: 3px solid #0754e4; }
     .dialog-header h2 { font-weight: 700; }
@@ -269,8 +281,11 @@
     }
     @media (prefers-reduced-motion: reduce) {
       // Portaled controls are outside .blog-root's motion boundary.
-      .dialog, .select-popup, .calendar-popup { animation: none; }
+      .select-popup, .calendar-popup { animation: none; }
+      .dialog { @include p3r-motion.mail-slab-reduced; }
     }
   }
   @keyframes p3r-panel-in { from { opacity: 0; transform: translate(28px, -10px); } to { opacity: 1; transform: none; } }
+  @include p3r-motion.mail-slab-keyframes;
+  @include p3r-motion.stage-keyframes;
 }

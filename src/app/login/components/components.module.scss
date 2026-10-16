@@ -1,4 +1,5 @@
 @use '@/styles/appearance-tokens' as appearance;
+@use '@/styles/p3r-motion';
 
 .dialog-overlay {
   @include appearance.surface;
@@ -268,7 +269,8 @@
 
 :global(html[data-design="p3r"]) {
   .dialog-overlay { background: #031e55ba; backdrop-filter: blur(4px); }
-  .accountManagement, .declaration { border: 3px solid #0754e4; border-left: 7px solid #58e5ff; background: var(--ark-p3r-panel); box-shadow: 8px 8px 0 #032369; animation: p3r-dialog-in .32s ease-in-out; }
+  // Previous slide-in panel entry (p3r-dialog-in): commit 65630bf.
+  .accountManagement, .declaration { border: 3px solid #0754e4; border-left: 7px solid #58e5ff; background: var(--ark-p3r-panel); box-shadow: 8px 8px 0 #032369; @include p3r-motion.mail-slab; }
   .accountManagementTitle { padding: 20px 24px; background: #0754e4; color: #fff; border: 0; }
   .accountManagementTitle h1 { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; }
   .accountManagementTitle h1::after { color: #58e5ff; font: italic 800 26px/1 var(--ark-p3r-display); }
@@ -284,9 +286,10 @@
   .declarationContentWrapper h1 { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; color: var(--accent); }
   .declarationBtn { background: #0754e4; color: #fff; border-color: #58e5ff; }
 }
-@keyframes p3r-dialog-in { from { opacity: 0; transform: translate(35px, -10px); } to { opacity: 1; transform: none; } }
+// @keyframes p3r-dialog-in { from { opacity: 0; transform: translate(35px, -10px); } to { opacity: 1; transform: none; } }
+@include p3r-motion.mail-slab-keyframes;
 @media (prefers-reduced-motion: reduce) {
-  :global(html[data-design="p3r"]) { .accountManagement, .declaration { animation: none; } }
+  :global(html[data-design="p3r"]) { .accountManagement, .declaration { @include p3r-motion.mail-slab-reduced; } }
 }
 
 @media (max-width: 600px) {

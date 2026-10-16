@@ -1,3 +1,5 @@
+@use '@/styles/p3r-motion';
+
 .home-stage, .menu-dialog {
   --display: var(--ark-p3r-display);
   color: #f4fbff; font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
@@ -56,29 +58,54 @@
 .stage-bottom > span, .stage-bottom a { display: flex; align-items: center; gap: 10px; }
 .stage-bottom i { width: 6px; height: 6px; border: 1px solid #58e5ff; border-radius: 50%; }
 .stage-bottom i[data-online="true"] { background: #58e5ff; }
+// Layered entrance: date and kicker, title lines, copy slabs, then the menu.
+// Backwards fill releases each clip once done, so italic overhangs stay intact.
+.stage-top > span { animation: p3r-stage-rise .4s ease-out backwards; }
+.stage-top .date { animation: p3r-stage-slab .42s ease-out .08s backwards; }
+.identity-kicker { animation: p3r-stage-slab .36s ease-out .12s backwards; }
+.home-identity h1 { animation: p3r-stage-sweep .5s ease-out .16s backwards; }
+.home-identity h1 span { animation: p3r-stage-sweep .5s ease-out .26s backwards; }
+.home-identity h2 { animation: p3r-stage-slab .4s ease-out .32s backwards; }
+.home-identity > p { animation: p3r-stage-slab .4s ease-out .38s backwards; }
+.continue-link { animation: p3r-stage-sweep .42s ease-out .46s backwards; }
+.home-menu > p { animation: p3r-stage-slab .36s ease-out .2s backwards; }
+.home-menu .destination-list a { animation-delay: calc(.26s + var(--item) * 35ms); }
+.stage-bottom { animation: p3r-stage-rise .4s ease-out .5s backwards; }
+// Entrances mounted beneath the page wipe wait for its hole to open.
+:global(html[data-p3r-wipe="covered"]) .home-stage * { animation-play-state: paused; }
 .menu-dialog {
   position: fixed; inset: 0; margin: 0; width: 100%; max-width: none; height: 100%; max-height: none; padding: 24px 5%;
   border: 0; background: #0754e4; overflow: auto; overscroll-behavior: contain;
   &[open] { display: flex; flex-direction: column; }
-  &::backdrop { background: #032369; }
-  &::after { content: ''; position: fixed; inset: -50%; border: 20vw solid #58e5ff; border-radius: 50%; pointer-events: none; animation: menu-circle .48s ease-in-out both; }
+  // The page stays visible around the flooding outline, like the reference.
+  // Previous opaque backdrop and centred ::after ring: commit 65630bf.
+  &::backdrop { background: transparent; }
+  &[data-closing] .menu-body, &[data-closing] .menu-top, &[data-closing] .menu-bottom { opacity: 0; translate: 18px -6px; transition: opacity .2s ease-in-out, translate .2s ease-in-out; }
 }
+// Thin cyan band that rides the liquid edge while the menu floods or drains.
+.menu-rim { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: #58e5ff; clip-path: inset(50%); }
 .menu-top, .menu-bottom { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 24px; z-index: 2; flex-shrink: 0; }
+.menu-top { animation: menu-chrome-in .32s ease-out .1s backwards; }
+.menu-bottom { animation: menu-chrome-in .32s ease-out .22s backwards; }
 .menu-top > a { font-size: 11px; letter-spacing: 2px; }
 .menu-top button { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 6px 12px; color: #fff; background: #032369; border: 1px solid #58e5ff; cursor: pointer; }
 .menu-top button span { font-size: 10px; }
 .menu-body { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1fr; gap: 8%; width: min(1180px, 100%); margin: auto; padding-block: 38px; align-items: center; flex: 1; }
-.menu-body .destination-list a { min-height: 58px; }
+.menu-body .destination-list a { min-height: 58px; animation-delay: calc(.1s + var(--item) * 35ms); }
 .menu-body .destination-name { font-size: clamp(32px, 4.9vw, 72px); }
 .menu-identity { min-width: 0; }
-.menu-identity .date { margin-bottom: 50px; }
-.menu-word { display: block; font: italic 800 clamp(110px, 19vw, 295px)/.8 var(--display); letter-spacing: -.07em; color: transparent; -webkit-text-stroke: 2px #8befff; transform: rotate(-8deg) translateX(-15%); }
-.menu-identity > p { margin-top: 40px; color: #c9f8ff; font-size: 13px; }
+.menu-identity .date { margin-bottom: 50px; animation: p3r-stage-slab .36s ease-out .12s backwards; }
+.menu-word { display: block; font: italic 800 clamp(110px, 19vw, 295px)/.8 var(--display); letter-spacing: -.07em; color: transparent; -webkit-text-stroke: 2px #8befff; transform: rotate(-8deg) translateX(-15%); animation: menu-word-in .5s ease-out .08s backwards; }
+.menu-identity > p { margin-top: 40px; color: #c9f8ff; font-size: 13px; animation: p3r-stage-rise .36s ease-out .24s backwards; }
 .menu-bottom { padding-block: 18px 5px; border-top: 1px solid #58e5ff70; font-size: 11px; }
 .menu-bottom a { display: flex; align-items: center; gap: 18px; min-height: 44px; }
 .menu-bottom > span { color: #8feeff; font: italic 800 21px/1 var(--display); }
 @keyframes menu-row-in { from { opacity: 0; translate: -26px 7px; } to { opacity: 1; translate: 0; } }
-@keyframes menu-circle { from { transform: scale(.05); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
+// Retired with the centred ring; kept for reference with commit 65630bf.
+// @keyframes menu-circle { from { transform: scale(.05); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
+@keyframes menu-chrome-in { from { opacity: 0; translate: 0 -10px; } }
+@keyframes menu-word-in { from { opacity: 0; translate: -60px 0; } }
+@include p3r-motion.stage-keyframes;
 @media (max-width: 1050px) {
   .destination-label { display: none; }
   .destination-name { font-size: clamp(30px, 4.5vw, 50px); }
@@ -114,6 +141,7 @@
 }
 @media (max-width: 360px) { .home-menu, .menu-body { padding-inline: 1%; } .destination-label { font-size: 7px; } .destination-list a { gap: 7px; } }
 @media (prefers-reduced-motion: reduce) {
-  .menu-dialog::after { display: none; }
-  .destination-list a, .destination-list a::before, .continue-link { animation: none; transition: none; }
+  .home-stage *, .menu-dialog * { animation: none !important; }
+  .destination-list a, .destination-list a::before, .continue-link { transition: none; }
+  .menu-dialog[data-closing] :is(.menu-body, .menu-top, .menu-bottom) { transition: none; }
 }

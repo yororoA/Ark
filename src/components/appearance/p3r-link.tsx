@@ -39,19 +39,21 @@ export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, pr
       // filters keep their immediate behavior; modified clicks, downloads and
       // external links do not reach onNavigate.
       if (!changesPage) { onNavigate?.(event); return }
+      const destination = `${url.pathname}${url.search}${url.hash}`
+      // The caller's handler and the route change wait until the page is
+      // covered, so loading boundaries never flash beside the expanding edge.
       const accepted = requestP3RWipe({ x, y, navigate: () => {
         let cancelled = false
         onNavigate?.({ preventDefault: () => { cancelled = true } })
         if (cancelled) return false
-        const destination = `${url.pathname}${url.search}${url.hash}`
         router[replace ? 'replace' : 'push'](destination, { scroll, transitionTypes })
         return true
-      }, fallback: () => {
-        const destination = `${url.pathname}${url.search}${url.hash}`
-        location.assign(destination)
-      } })
-      if (accepted) event.preventDefault()
-      else onNavigate?.(event)
+      }, fallback: () => location.assign(destination) })
+      if (!accepted) { onNavigate?.(event); return }
+      event.preventDefault()
+      // The route changes under the cover; warm it now, including touch taps
+      // without intent prefetch. Opted-out links keep their single request.
+      if (prefetch !== false) router.prefetch(destination)
     }}
   />
 }

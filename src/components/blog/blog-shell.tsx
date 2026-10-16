@@ -30,11 +30,12 @@ function Shell({ children }: { children: React.ReactNode }) {
     if (destination) router.replace(destination)
   }, [pathname, router])
   useEffect(() => {
-    if (!open) return
+    // The P3R menu animates its own dismissal from the dialog's cancel event.
+    if (!open || design === 'p3r') return
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
     window.addEventListener('keydown', close)
     return () => window.removeEventListener('keydown', close)
-  }, [open])
+  }, [open, design])
   async function logout() {
     try {
       await request('/api/session', { method: 'DELETE' })
