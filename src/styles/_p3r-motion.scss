@@ -1,0 +1,50 @@
+// P3R panel motion shared by blog dialogs and the login panels.
+
+// Upper-left triangle (TL, TR, BL), a zero-width bridge, then the lower-right
+// triangle (BL, TR, BR): one polygon that can split along the anti-diagonal
+// and still interpolate. Split, each half lies beyond its own panel corner.
+$-slab-whole: polygon(0 0, 100% 0, 0 100%, 0 100%, 100% 0, 100% 100%, 0 100%, 0 100%);
+$-slab-split: polygon(-50% -50%, 50% -50%, -50% 50%, 50% 150%, 150% 50%, 150% 150%, 50% 150%, -50% 50%);
+
+// Mail-style entry from the P3R phone reference: a tilted cobalt slab slides
+// in, then splits along its diagonal to reveal the panel. The slab is a
+// clipped pseudo-element, so it adds no scrollable overflow; its rest state is
+// fully split, invisible and never intercepts pointer events.
+@mixin mail-slab($duration: .42s) {
+  animation: p3r-mail-panel $duration backwards;
+  &::before {
+    content: ''; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+    background: #0754e4; box-shadow: inset 0 0 0 3px #58e5ff;
+    clip-path: $-slab-split; animation: p3r-mail-slab $duration backwards;
+  }
+}
+@mixin mail-slab-reduced { animation: none; &::before { animation: none; } }
+
+// Stage entrances (home, menu, page headings). They animate the independent
+// translate property, because their elements keep a rotated transform, and
+// none of them scale. From-only keyframes end on each element's own opacity,
+// such as the faint heading word. Emit once per CSS module that uses them.
+@mixin stage-keyframes {
+  @keyframes p3r-stage-rise { from { opacity: 0; translate: 0 18px; } }
+  @keyframes p3r-stage-sweep { from { opacity: 0; translate: -48px 10px; } }
+  // Panels wipe in behind a slanted leading edge along their own, possibly
+  // rotated, axis. The final polygon leaves room for text-stroke overhang.
+  @keyframes p3r-stage-slab {
+    from { clip-path: polygon(-10% -20%, -10% -20%, -20% 120%, -20% 120%); }
+    to { clip-path: polygon(-10% -20%, 130% -20%, 120% 120%, -20% 120%); }
+  }
+}
+
+// Emit once at the stylesheet root of each CSS module using mail-slab.
+// The panel only tilts while the slab hides its content; text rests level.
+@mixin mail-slab-keyframes {
+  @keyframes p3r-mail-panel {
+    0% { opacity: 0; translate: -40px -8px; rotate: -3deg; animation-timing-function: ease-out; }
+    12% { opacity: 1; }
+    45%, 100% { translate: 0; rotate: 0deg; }
+  }
+  @keyframes p3r-mail-slab {
+    0%, 45% { clip-path: $-slab-whole; animation-timing-function: ease-in-out; }
+    100% { clip-path: $-slab-split; }
+  }
+}

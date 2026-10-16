@@ -1,14 +1,20 @@
 .scene {
   display: none; position: absolute; inset: 0; overflow: hidden; pointer-events: none;
   isolation: isolate; background: var(--ark-p3r-blue); contain: paint;
+  // Pointer offsets in -1…1, eased by p3r-scene.tsx. Nearer layers travel further.
+  --parallax-x: 0; --parallax-y: 0;
   *, *::before, *::after { box-sizing: border-box; }
 }
 :global(html[data-design="p3r"]) .scene { display: block; }
+// The independent translate property keeps the rotations and drift animations
+// on transform untouched.
+@mixin depth($x, $y) { translate: calc(var(--parallax-x) * #{$x}) calc(var(--parallax-y) * #{$y}); }
 .light-field { position: absolute; inset: 0; background: linear-gradient(127deg, transparent 25%, #58e5ff40 25% 31%, transparent 31% 53%, #58e5ff20 53% 62%, transparent 62%), linear-gradient(170deg, #002563 0%, transparent 70%); }
 .moon {
   position: absolute; top: 8%; left: 37%; width: min(42vw, 580px); aspect-ratio: 1;
   border-radius: 50%; background: #b6f2ff;
   box-shadow: inset -25px -15px 0 #6ac5e4, 0 0 0 20px #58e5ff0d, 0 0 0 21px #58e5ff40;
+  @include depth(-8px, -6px);
   i { position: absolute; border-radius: 50%; background: #5dbedb3b; transform: rotate(-30deg); }
   i:nth-child(1) { inset: 12% 37% 41% 15%; }
   i:nth-child(2) { inset: 57% 30% 14% 28%; }
@@ -16,6 +22,7 @@
 }
 .window-plane {
   position: absolute; inset: -25% -10% -20% 55%; transform: rotate(19deg); border-left: 30px solid #021d59; background: #001c4d20;
+  @include depth(-16px, -8px);
   i { position: absolute; top: 0; bottom: 0; width: 8px; background: #02225f; }
   i:nth-child(1) { left: 20%; }
   i:nth-child(2) { left: 58%; width: 20px; }
@@ -24,6 +31,7 @@
 }
 .current {
   position: absolute; inset: 38% -10% -9%; animation: current-drift 16s ease-in-out infinite alternate;
+  @include depth(-22px, -6px);
   svg { width: 100%; height: 100%; }
   path:nth-child(1) { fill: #258fdde0; }
   path:nth-child(2) { fill: #1171db; }
@@ -32,12 +40,14 @@
 }
 .ripples {
   position: absolute; width: 76%; height: 40%; bottom: -17%; left: 20%; transform: rotate(-14deg);
+  @include depth(-30px, -8px);
   i { position: absolute; inset: 0; border-radius: 50%; border: 2px solid #67ebff9c; }
   i:nth-child(2) { inset: -16%; border-width: 12px; opacity: .3; }
   i:nth-child(3) { inset: -34%; opacity: .2; }
 }
 .shards {
   position: absolute; inset: 0; animation: shard-drift 10s ease-in-out infinite alternate;
+  @include depth(-42px, -24px);
   i { position: absolute; width: 8px; height: 50px; background: #b3f9ff; transform: rotate(27deg); opacity: .6; }
   i:nth-child(1) { left: 17%; top: 62%; height: 24px; }
   i:nth-child(2) { left: 44%; top: 17%; width: 4px; }
@@ -58,4 +68,7 @@
   .scene[data-variant="menu"] .moon { left: -27%; width: 100vw; }
   .scene[data-variant="login"] .moon { left: -15%; width: 110vw; top: -5%; }
 }
-@media (prefers-reduced-motion: reduce) { .current, .shards { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .current, .shards { animation: none; }
+  .moon, .window-plane, .current, .ripples, .shards { translate: none; }
+}

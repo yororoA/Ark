@@ -7,9 +7,15 @@ import { ArrowDown, ArrowUpRight, X } from 'lucide-react'
 import { sections, translate, type Entry, type Locale } from '@/lib/blog'
 import { P3R_COPY } from '@/lib/p3r-copy'
 import P3RScene from '@/components/appearance/p3r-scene'
+import { fluidCoverRadius, fluidPoints, fluidSeed } from '@/components/appearance/p3r-fluid'
+import { isP3RWipeCovering } from '@/components/appearance/p3r-transition'
 import styles from './p3r-navigation.module.scss'
 
 const destinations = [...sections, ['chat', '07', 'Chat']] as const
+const MENU_OPEN_MS = 420
+const MENU_CLOSE_MS = 300
+const easeOut = 'cubic-bezier(.22, 1, .36, 1)'
+const easeInOut = 'cubic-bezier(.65, 0, .35, 1)'
 
 const readDate = () => new Date().toISOString().slice(0, 10)
 const serverDate = () => ''
@@ -76,28 +82,103 @@ export function P3RHome({ locale, featured, status }: { locale: Locale; featured
   </section>
 }
 
+// Liquid outline as CSS shapes. Every keyframe keeps one vertex count so the
+// browser interpolates the vertices.
+type Point = { x: number; y: number }
+const outlinePath = (points: [number, number][]) => `M${points.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}Z`
+const RIM_WIDTH = 7
+// Evenly spaced radii; the effect easing alone shapes the speed.
+const STEPS = [0, .25, .5, .75, 1]
+
+// The menu floods out of its opener like the page wipe and drains back into
+// it on dismissal. The rim is the band between two outlines of one edge.
+// `reach` lets a drain start from an interrupted flood instead of a full cover.
+function floodMenu(dialog: HTMLDialogElement, rim: HTMLElement, { x, y }: Point, opening: boolean, reach = 1) {
+  const radius = fluidCoverRadius(x, y, innerWidth, innerHeight)
+  const seed = fluidSeed()
+  const duration = opening ? MENU_OPEN_MS : MENU_CLOSE_MS * Math.max(.4, reach)
+  const steps = opening ? STEPS : STEPS.map(step => step * reach).reverse()
+  const outline = (progress: number, inset = 0) => fluidPoints(x, y, Math.max(0, radius * progress - inset), progress * duration, seed)
+  const timing: KeyframeAnimationOptions = { duration, easing: opening ? easeOut : easeInOut, fill: opening ? 'none' : 'forwards' }
+  return [
+    dialog.animate(steps.map(progress => ({ clipPath: `path("${outlinePath(outline(progress))}")` })), timing),
+    rim.animate(steps.map(progress => ({ clipPath: `path(evenodd, "${outlinePath(outline(progress))}${outlinePath(outline(progress, RIM_WIDTH))}")` })), timing),
+  ]
+}
+
+const canFlood = (dialog: HTMLDialogElement) => typeof dialog.animate === 'function' && !matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// Safari does not focus clicked buttons; fall back to the expanded toggle.
+function menuOrigin(opener: Element | null): Point {
+  const anchor = opener instanceof HTMLElement && opener !== document.body ? opener : document.querySelector<HTMLElement>('button[aria-expanded="true"]')
+  const box = anchor?.getBoundingClientRect()
+  return box && box.width ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : { x: innerWidth - 40, y: 38 }
+}
+
 export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const rim = useRef<HTMLSpanElement>(null)
+  const origin = useRef<Point>({ x: 0, y: 0 })
+  const flooding = useRef<Animation[]>([])
+  const closing = useRef<{ animations: Animation[]; timer: number } | null>(null)
   useEffect(() => {
     const dialog = ref.current
     const opener = document.activeElement
     const previous = document.body.style.overflow
+    origin.current = menuOrigin(opener)
     dialog?.showModal()
     dialog?.querySelector<HTMLAnchorElement>('[aria-current="page"]')?.focus()
     document.body.style.overflow = 'hidden'
+    flooding.current = dialog && rim.current && canFlood(dialog) ? floodMenu(dialog, rim.current, origin.current, true) : []
     return () => {
+      flooding.current.forEach(animation => animation.cancel())
+      if (closing.current) {
+        clearTimeout(closing.current.timer)
+        closing.current.animations.forEach(animation => animation.cancel())
+      }
+      closing.current = null
       dialog?.close()
       document.body.style.overflow = previous
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
     }
   }, [])
-  return <dialog ref={ref} className={styles['menu-dialog']} aria-label={P3R_COPY[locale].menu} onCancel={event => { event.preventDefault(); close() }}>
+  // Esc, the close button and same-page links drain the menu. Under the page
+  // wipe it is already hidden, so it leaves at once.
+  function dismiss() {
+    const dialog = ref.current, edge = rim.current
+    if (closing.current) return
+    const drains = !!dialog && !!edge && canFlood(dialog) && !isP3RWipeCovering()
+    if (!drains) { close(); return }
+    dialog.dataset.closing = 'true'
+    dialog.inert = true
+    // Radii are evenly spaced keyframes, so the eased progress approximates
+    // the flood's current reach and the drain starts from that outline.
+    const [flood] = flooding.current
+    const reach = flood?.playState === 'running' ? flood.effect?.getComputedTiming().progress ?? 1 : 1
+    flooding.current.forEach(animation => animation.cancel())
+    flooding.current = []
+    const done = () => {
+      if (!closing.current) return
+      clearTimeout(closing.current.timer)
+      closing.current = null
+      close()
+    }
+    const animations = floodMenu(dialog, edge, origin.current, false, reach)
+    // A throttled tab may never finish the animation; close anyway.
+    closing.current = { animations, timer: window.setTimeout(done, MENU_CLOSE_MS + 200) }
+    animations[0].finished.then(done, done)
+  }
+  return <dialog ref={ref} className={styles['menu-dialog']} aria-label={P3R_COPY[locale].menu}
+    onCancel={event => { event.preventDefault(); dismiss() }}
+    // Chrome force-closes after repeated Esc without activation; keep state in sync.
+    onClose={() => { if (ref.current && !ref.current.open) close() }}>
     <P3RScene variant="menu" />
-    <div className={styles['menu-top']}><Link href="/home" onNavigate={close}>YOROROICE / ARK</Link><button type="button" onClick={close} aria-label={translate(locale, 'close')}><span>ESC</span><X size={24} /></button></div>
+    <span ref={rim} className={styles['menu-rim']} aria-hidden="true" />
+    <div className={styles['menu-top']}><Link href="/home" onNavigate={dismiss}>YOROROICE / ARK</Link><button type="button" onClick={dismiss} aria-label={translate(locale, 'close')}><span>ESC</span><X size={24} /></button></div>
     <div className={styles['menu-body']}>
       <div className={styles['menu-identity']}><P3RDate locale={locale} /><span className={styles['menu-word']} aria-hidden="true">MENU</span><p>{P3R_COPY[locale].note}</p></div>
-      <DestinationList locale={locale} close={close} />
+      <DestinationList locale={locale} close={dismiss} />
     </div>
-    <div className={styles['menu-bottom']}><Link href="/login" onNavigate={close}>{translate(locale, 'login')}<ArrowUpRight size={18} /></Link><span>YOROROICE / P3R</span></div>
+    <div className={styles['menu-bottom']}><Link href="/login" onNavigate={dismiss}>{translate(locale, 'login')}<ArrowUpRight size={18} /></Link><span>YOROROICE / P3R</span></div>
   </dialog>
 }

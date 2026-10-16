@@ -12,20 +12,56 @@ export default function P3RScene({ variant = 'hero' }: { variant?: 'hero' | 'men
   useEffect(() => {
     const node = ref.current
     if (!node || design !== 'p3r') return
-    let visible = false
+    let visible = false, frame = 0
     const media = matchMedia('(prefers-reduced-motion: reduce)')
-    const update = () => { node.dataset.moving = String(visible && !document.hidden && !media.matches) }
+    const finePointer = matchMedia('(pointer: fine)')
+    // Large scenes lean toward the pointer in depth; heading bands stay still.
+    const followsPointer = variant !== 'heading'
+    const target = { x: 0, y: 0 }, current = { x: 0, y: 0 }
+    const apply = () => {
+      node.style.setProperty('--parallax-x', current.x.toFixed(4))
+      node.style.setProperty('--parallax-y', current.y.toFixed(4))
+    }
+    const settle = () => {
+      current.x += (target.x - current.x) * .09
+      current.y += (target.y - current.y) * .09
+      apply()
+      const resting = Math.abs(target.x - current.x) + Math.abs(target.y - current.y) < .002
+      frame = resting ? 0 : requestAnimationFrame(settle)
+    }
+    const update = () => {
+      const moving = visible && !document.hidden && !media.matches
+      node.dataset.moving = String(moving)
+      if (!media.matches) return
+      cancelAnimationFrame(frame)
+      frame = 0
+      target.x = target.y = current.x = current.y = 0
+      apply()
+    }
+    // A scene beneath a modal layer, such as the menu or the blurred login
+    // overlay, cannot be seen moving; leave it still instead of repainting.
+    const beneathModal = () => !!node.closest('[inert]') || (!!document.querySelector('dialog:modal') && !node.closest('dialog:modal'))
+    const pointer = (event: PointerEvent) => {
+      const tracksPointer = node.dataset.moving === 'true' && finePointer.matches && event.pointerType !== 'touch' && !beneathModal()
+      if (!tracksPointer) return
+      target.x = event.clientX / innerWidth * 2 - 1
+      target.y = event.clientY / innerHeight * 2 - 1
+      if (!frame) frame = requestAnimationFrame(settle)
+    }
     const observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; update() })
     observer.observe(node)
     document.addEventListener('visibilitychange', update)
     media.addEventListener('change', update)
+    if (followsPointer) window.addEventListener('pointermove', pointer, { passive: true })
     return () => {
       observer.disconnect()
+      cancelAnimationFrame(frame)
       document.removeEventListener('visibilitychange', update)
       media.removeEventListener('change', update)
+      window.removeEventListener('pointermove', pointer)
       node.dataset.moving = 'false'
     }
-  }, [design])
+  }, [design, variant])
   return <div ref={ref} className={styles.scene} data-variant={variant} aria-hidden="true">
     <div className={styles['light-field']} />
     <div className={styles.moon}><i /><i /><i /></div>
