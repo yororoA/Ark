@@ -1,0 +1,72 @@
+@use 'sass:list';
+@use 'sass:math';
+
+// Qingjian motion shared by blog dialogs, popups, the mobile menu and the
+// login panels. A panel arrives as five paper slats of uneven widths whose
+// lower edges land at staggered times, after the MV's 00:42 curtain and like
+// the page wipe. Only the panel's own clip-path moves: its text never slides.
+
+// Inner slat boundaries, each slat's start as a fraction of the duration, and
+// the share of the duration each slat travels.
+$-columns: 14%, 37%, 52%, 79%;
+$-starts: .18, .04, .3, 0, .12;
+$-travel: .7;
+// Room for parallel outlines (up to 7px) and the moment-card octagon.
+$-pad: 12px;
+$-steps: 16;
+
+@function -ease($t) {
+  @if $t < .5 { @return 4 * $t * $t * $t; }
+  @return 1 - math.div(math.pow(2 - 2 * $t, 3), 2);
+}
+
+// A slat's lower edge travels from just above the panel to just below it.
+@function -edge($at, $start) {
+  $progress: -ease(math.clamp(0, math.div($at - $start, $-travel), 1));
+  $percent: math.div(math.round($progress * 1000), 10) * 1%;
+  $offset: math.div(math.round($-pad * (2 * $progress - 1) * 10), 10);
+  @return calc($percent + $offset);
+}
+
+// One polygon with a constant point count, so every step interpolates:
+// the top edge, then each slat's lower edge from right to left.
+@function -slats($at) {
+  $bounds: list.join((calc(0% - $-pad),), list.join($-columns, (calc(100% + $-pad),)));
+  $top: $-pad * -1;
+  $points: (list.nth($bounds, 1) $top, list.nth($bounds, 6) $top);
+  @for $index from 5 through 1 {
+    $edge: -edge($at, list.nth($-starts, $index));
+    $points: list.append($points, list.nth($bounds, $index + 1) $edge, $separator: comma);
+    $points: list.append($points, list.nth($bounds, $index) $edge, $separator: comma);
+  }
+  @return polygon($points);
+}
+
+// The eased stagger is sampled into the keyframes, so they run linearly.
+@mixin slats-in($duration: .44s, $delay: 0s) {
+  animation: rain-slats-in $duration linear $delay backwards;
+}
+@mixin slats-in-reduced { animation: none; }
+
+// Emit once at the stylesheet root of each CSS module using slats-in.
+@mixin slats-keyframes {
+  @keyframes rain-slats-in {
+    @for $step from 0 through $-steps {
+      #{math.percentage(math.div($step, $-steps))} { clip-path: -slats(math.div($step, $-steps)); }
+    }
+  }
+}
+
+// Titles and entries stay in place and are uncovered once (pixel audit:
+// occlusion rather than motion). Their end state includes outline overhang.
+@mixin uncover-keyframes {
+  $outside: $-pad * -1;
+  @keyframes rain-uncover-down {
+    from { clip-path: inset($outside $outside calc(100% + $-pad) $outside); }
+    to { clip-path: inset($outside); }
+  }
+  @keyframes rain-uncover-right {
+    from { clip-path: inset($outside calc(100% + $-pad) $outside $outside); }
+    to { clip-path: inset($outside); }
+  }
+}

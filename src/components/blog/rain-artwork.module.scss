@@ -18,16 +18,26 @@
   }
 }
 .rain-space { position: absolute; width: 100%; height: 100%; opacity: .48; }
+// Depth parallax: home.tsx moves the whole plane with the mouse; each layer
+// adds its own share through the independent translate property, so the
+// umbrella-rise transform is untouched. The caption stays on the plane.
+.rain-space, .rain-column, .rain-ripples, .rain-fragments {
+  translate: calc(var(--art-x, 0px) * var(--depth)) calc(var(--art-y, 0px) * var(--depth));
+  transition: translate 1.6s ease-in-out;
+}
+.rain-space { --depth: -.55; }
 .rain-columns { position: absolute; inset: 0; }
 .rain-column {
+  --depth: .5;
   position: absolute; top: 10%; left: 12%; width: 19%; height: 66%; opacity: .48;
   animation: umbrella-rise 1.15s cubic-bezier(.65, 0, .35, 1) both;
   svg { width: 100%; height: 100%; overflow: visible; }
   &:nth-child(1) { --rain-rise: 140%; animation-delay: 120ms; }
-  &:nth-child(2) { --rain-rise: 125%; top: 12%; left: 35%; width: 35%; height: 77%; opacity: 1; animation-delay: 240ms; }
-  &:nth-child(3) { --rain-rise: 135%; top: 37%; left: 73%; width: 22%; height: 49%; opacity: .7; animation-delay: 360ms; }
+  &:nth-child(2) { --rain-rise: 125%; --depth: 1.1; top: 12%; left: 35%; width: 35%; height: 77%; opacity: 1; animation-delay: 240ms; }
+  &:nth-child(3) { --rain-rise: 135%; --depth: .8; top: 37%; left: 73%; width: 22%; height: 49%; opacity: .7; animation-delay: 360ms; }
 }
 .rain-ripples {
+  --depth: .35;
   position: absolute; inset: 0;
   i { position: absolute; left: 23%; top: 81%; width: 62%; height: 7%; border: 1px solid var(--ark-rain-sheet); border-radius: 50%; opacity: .18; animation: ripple-breathe 7s ease-in-out infinite; }
   i:nth-child(2) { inset: 83% auto auto 32%; width: 45%; height: 4%; animation-delay: -3s; }
@@ -35,6 +45,7 @@
   i:nth-child(4) { inset: 72% auto auto 9%; width: 22%; height: 2.5%; animation-delay: -1s; }
 }
 .rain-fragments {
+  --depth: 1.8;
   position: absolute; inset: 0;
   i {
     position: absolute; width: 9px; height: 12px; background: var(--ark-rain-sheet);
@@ -78,6 +89,8 @@
 }
 @keyframes paper-drift { from { transform: translate(-3px, -9px) rotate(-5deg); } to { transform: translate(5px, 11px) rotate(10deg); } }
 @keyframes ripple-breathe { 0%, 100% { opacity: .08; } 50% { opacity: .28; } }
+// The umbrellas rise only once the page wipe's slats fall.
+:global(html[data-rain-wipe="covered"]) .rain-art, :global(html[data-rain-wipe="covered"]) .rain-art * { animation-play-state: paused; }
 @media (max-width: 820px) {
   .rain-caption { gap: 12px; span { font-size: 42px; } small { font-size: 11px; margin-top: 52px; } }
   .rain-caption[data-script="latin"] small { max-height: calc(100% - 52px); }
@@ -88,5 +101,5 @@
   .rain-footnote { right: 6%; font-size: 6px; letter-spacing: 1px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  :global(html[data-design="rain"]) .rain-art, .rain-art * { animation: none; }
+  :global(html[data-design="rain"]) .rain-art, .rain-art * { animation: none; translate: none; }
 }
