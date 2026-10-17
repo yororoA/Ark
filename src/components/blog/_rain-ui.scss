@@ -1,6 +1,10 @@
 // Second-pass frame references: docs/rain-theme-second-pass.md.
 // 00:23 white rails; 00:38 calendar; 00:42 curtains; 02:27 frames;
 // 02:56 fine metadata rules; 03:20 paired planes.
+@use '@/styles/rain-motion';
+
+$-entries: '.article-card, .moment-card, .archive-year, .gallery-grid figure, .link-card, .featured-entry, .entry-row';
+
 @mixin personality {
   :global(html[data-design="rain"]) {
     .archive-only { display: none; }
@@ -177,7 +181,7 @@
     .chat-page .heading-index { display: none; }
     .chat-page .heading-title { gap: 10px; }
     .chat-page .heading-title h1 { font-size: 32px; gap: 16px; margin: 0; align-items: center; }
-    .chat-page .page-heading[data-vertical="true"] .localized-title { writing-mode: horizontal-tb; font-size: 32px; padding: 0 8px; }
+    .chat-page .page-heading[data-vertical="true"] .localized-title { writing-mode: horizontal-tb; font-size: 32px; padding: 0 8px; animation-name: rain-uncover-right; }
     .chat-page .page-heading .english-title { font-size: 10px; margin: 0; padding: 5px 12px; }
     .chat-layout { grid-template-columns: minmax(170px, 210px) minmax(0, 1fr); border-radius: 0; background: var(--ark-rain-panel); }
     .conversation-list { padding: 14px 10px; background: var(--soft); border-right: 1px solid var(--line); }
@@ -206,6 +210,32 @@
     .mobile-nav { padding-inline: 6%; border-radius: 0; border-color: var(--line); background: var(--ark-rain-panel); }
     .mobile-nav a { padding-inline: 12px; border-left: 1px solid var(--line); }
     .mobile-nav a[aria-current] { background: var(--soft); border-left: 3px solid var(--ark-rain); }
+
+    // Motion (docs/rain-theme.md, fourth round). Content is uncovered once in
+    // reading order and never slides (pixel audit: occlusion, not motion):
+    // vertical CJK titles open top to bottom, Latin strips left to right.
+    // Previous static entrances: commit ad586fe.
+    .heading-index { animation: rain-uncover-down .42s ease-in-out backwards; }
+    .heading-title .eyebrow { animation: rain-uncover-right .36s ease-in-out 60ms backwards; }
+    .localized-title { animation: rain-uncover-right .5s ease-in-out .12s backwards; }
+    .page-heading[data-vertical="true"] .localized-title { animation-name: rain-uncover-down; }
+    .page-heading .english-title { animation: rain-uncover-right .36s ease-in-out .3s backwards; }
+    .heading-actions { animation: rain-uncover-down .36s ease-in-out .36s backwards; }
+    // The first five entries of each list stagger; later ones, usually below
+    // the fold, share the last delay.
+    #{$-entries} { animation: rain-uncover-down .46s ease-in-out .3s backwards; }
+    @for $index from 1 through 5 {
+      :is(#{$-entries}):nth-of-type(#{$index}) { animation-delay: ($index - 1) * 60ms; }
+    }
+    // Panels drop in as paper slats. Parallel outlines replace the soft drop
+    // shadow, so nothing pops in once the clip ends.
+    .dialog { box-shadow: none; outline: 1px solid color-mix(in srgb, var(--line) 58%, transparent); outline-offset: 6px; @include rain-motion.slats-in(.44s); }
+    .select-popup, .calendar-popup { @include rain-motion.slats-in(.3s); }
+    .mobile-nav { box-shadow: none; @include rain-motion.slats-in(.42s); }
+    // Entrances mounted beneath the page wipe wait for its slats to fall.
+    &[data-rain-wipe="covered"] {
+      .page-heading *, .hero-content > *, #{$-entries} { animation-play-state: paused; }
+    }
 
     @media (max-width: 1150px) {
       .desktop-nav a { padding-inline: 10px; }
@@ -300,5 +330,11 @@
       .chat-status { padding: 12px 16px; }
       .site-footer { margin-top: 64px; }
     }
+    @media (prefers-reduced-motion: reduce) {
+      // Portaled controls are outside .blog-root's motion boundary.
+      .select-popup, .calendar-popup, .dialog { @include rain-motion.slats-in-reduced; }
+    }
   }
+  @include rain-motion.uncover-keyframes;
+  @include rain-motion.slats-keyframes;
 }

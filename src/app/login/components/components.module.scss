@@ -1,5 +1,6 @@
 @use '@/styles/appearance-tokens' as appearance;
 @use '@/styles/p3r-motion';
+@use '@/styles/rain-motion';
 
 .dialog-overlay {
   @include appearance.surface;
@@ -256,6 +257,10 @@
   .inputGroup input { border-radius: 0; border-left: 3px solid var(--ark-rain); font-size: 16px; background: var(--ark-rain-panel); }
   .account { border-radius: 0; background: var(--ark-rain-panel); }
   .avatar { border: 1px solid var(--line); outline: 1px solid color-mix(in srgb, var(--line) 42%, transparent); outline-offset: 2px; border-radius: 0; background: var(--soft); color: var(--accent); font-weight: 400; box-shadow: none; }
+  // Panels drop in as paper slats (styles/_rain-motion.scss); a parallel
+  // outline replaces the declaration's drop shadow, which would pop in late.
+  .accountManagement, .declaration { @include rain-motion.slats-in(.46s); }
+  .declaration { box-shadow: none; outline: 1px solid color-mix(in srgb, var(--line) 58%, transparent); outline-offset: 6px; }
 
   @media (max-width: 600px) {
     .accountManagement { padding: 8px 8px 8px 24px; }
@@ -288,8 +293,10 @@
 }
 // @keyframes p3r-dialog-in { from { opacity: 0; transform: translate(35px, -10px); } to { opacity: 1; transform: none; } }
 @include p3r-motion.mail-slab-keyframes;
+@include rain-motion.slats-keyframes;
 @media (prefers-reduced-motion: reduce) {
   :global(html[data-design="p3r"]) { .accountManagement, .declaration { @include p3r-motion.mail-slab-reduced; } }
+  :global(html[data-design="rain"]) { .accountManagement, .declaration { @include rain-motion.slats-in-reduced; } }
 }
 
 @media (max-width: 600px) {
