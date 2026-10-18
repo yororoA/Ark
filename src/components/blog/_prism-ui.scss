@@ -127,6 +127,7 @@
     .chat-page .heading-title h1 { font-size: 30px; margin-top: 8px; }
     .chat-page .english-title { display: inline; font-size: 9px; margin-left: 18px; letter-spacing: 1px; }
     .chat-page .heading-actions { padding: 0; }
+    .chat-page[data-expanded="true"] { width: auto; max-width: none; margin: 0; padding: 0; }
     .chat-layout { grid-template-columns: minmax(165px, 220px) minmax(0, 1fr); background: var(--ark-prism-panel); }
     .conversation-list { background: var(--paper); padding: 12px; }
     .conversation-list button { border-block: 1px solid var(--line); margin-bottom: 10px; padding: 16px 10px; background: transparent; }
