@@ -7,7 +7,9 @@ import { COLOR_MODES, DESIGNS } from '@/lib/appearance'
 import type { Locale } from '@/lib/blog'
 import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { P3R_COPY } from '@/lib/p3r-copy'
+import { PRISM_COPY } from '@/lib/prism-copy'
 import { useAppearance } from './appearance-store'
+import { PrismOptics } from './prism-scene'
 import styles from './theme-picker.module.scss'
 
 const COPY = {
@@ -18,11 +20,21 @@ const COPY = {
 }
 const MODE_ICONS = { light: Sun, dark: Moon, system: Monitor }
 
+function PrismThemePreview() {
+  return <>
+    <PrismOptics className={styles['prism-preview-optics']} animated={false} />
+    <span className={styles['prism-preview-title']}>THE DARK SIDE<span>OF THE EVERYDAY.</span></span>
+    <span className={styles['prism-preview-signature']}>月之暗面<small>by YororoIce</small></span>
+    <span className={styles['prism-preview-stars']}><i /><i /><i /><i /><i /></span>
+  </>
+}
+
 export default function ThemePicker({ locale = 'zh' }: { locale?: Locale }) {
   const { design, colorMode, setDesign, setColorMode } = useAppearance()
   const copy = COPY[locale]
   const qingjian = QINGJIAN_COPY[locale]
   const p3r = P3R_COPY[locale]
+  const prism = PRISM_COPY[locale]
   const id = useId()
   const [container, setContainer] = useState<HTMLElement | null>(null)
   const triggerRef = useCallback((node: HTMLButtonElement | null) => {
@@ -46,14 +58,16 @@ export default function ThemePicker({ locale = 'zh' }: { locale?: Locale }) {
               {DESIGNS.map(option => <label key={option} className={styles['design-option']}>
                 <input type="radio" name={`${id}-design`} value={option} checked={design === option} onChange={() => setDesign(option)} />
                 <span className={styles['design-preview']} data-preview={option} aria-hidden="true">
-                  <span className={styles['preview-caption']}>{option === 'archive' ? '01 / PERSONAL ARCHIVE' : option === 'p3r' ? 'YOUR DAYS. YOUR STORY.' : 'A QUIET JOURNAL'}</span>
-                  <span className={styles['preview-type']}>{option === 'archive' ? 'Ark.' : option === 'p3r' ? 'P3R' : '笺'}<span>{option === 'archive' ? 'INDEX / 01' : option === 'p3r' ? 'RELOAD' : QINGJIAN_COPY.en.name}</span></span>
-                  <span className={styles['preview-art']}><i /><i /><i /></span>
-                  <span className={styles['preview-layout']}><i /><i /><i /></span>
-                  <span className={styles['preview-line']} />
+                  {option === 'prism' ? <PrismThemePreview /> : <>
+                    <span className={styles['preview-caption']}>{option === 'archive' ? '01 / PERSONAL ARCHIVE' : option === 'p3r' ? 'YOUR DAYS. YOUR STORY.' : 'A QUIET JOURNAL'}</span>
+                    <span className={styles['preview-type']}>{option === 'archive' ? 'Ark.' : option === 'p3r' ? 'P3R' : '笺'}<span>{option === 'archive' ? 'INDEX / 01' : option === 'p3r' ? 'RELOAD' : QINGJIAN_COPY.en.name}</span></span>
+                    <span className={styles['preview-art']}><i /><i /><i /></span>
+                    <span className={styles['preview-layout']}><i /><i /><i /></span>
+                    <span className={styles['preview-line']} />
+                  </>}
                 </span>
-                <span className={styles['option-label']}>{option === 'archive' ? copy.archive : option === 'p3r' ? p3r.name : qingjian.name}<Check size={13} aria-hidden="true" /></span>
-                <span className={styles['option-note']}>{option === 'archive' ? copy.archiveNote : option === 'p3r' ? p3r.description : qingjian.description}</span>
+                <span className={styles['option-label']}>{option === 'prism' ? prism.name : option === 'archive' ? copy.archive : option === 'p3r' ? p3r.name : qingjian.name}<Check size={13} aria-hidden="true" /></span>
+                <span className={styles['option-note']}>{option === 'prism' ? prism.description : option === 'archive' ? copy.archiveNote : option === 'p3r' ? p3r.description : qingjian.description}</span>
               </label>)}
             </div>
           </fieldset>

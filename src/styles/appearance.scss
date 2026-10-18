@@ -77,6 +77,36 @@
   --ark-p3r-deep: #020f3c;
 }
 
+// Liner-paper day / vinyl-black night. Spectrum pigments are decoration;
+// readable text and focus use the independent high-contrast accent.
+@mixin prism-day {
+  --ark-paper: #e7eae8;
+  --ark-ink: #202727;
+  --ark-muted: #596461;
+  --ark-line: #bac3bf;
+  --ark-accent: #355f65;
+  --ark-soft: #dce2de;
+  --ark-prism-panel: #f1f4f1;
+  --ark-prism-ray: #354c50;
+  --ark-prism-edge: #526761;
+  --ark-prism-black: #0b0d0e;
+  --ark-prism-white: #f0eee7;
+  --ark-spectrum: linear-gradient(90deg, #e66054 0% 16.66%, #e9994d 16.66% 33.33%, #e8cd65 33.33% 50%, #77b787 50% 66.66%, #669ed1 66.66% 83.33%, #aa88bc 83.33% 100%);
+  --ark-prism-ease: cubic-bezier(.65, 0, .35, 1);
+}
+
+@mixin prism-night {
+  --ark-paper: #0b0d0e;
+  --ark-ink: #f0eee7;
+  --ark-muted: #a7a8a3;
+  --ark-line: #3e4243;
+  --ark-accent: #e8cd89;
+  --ark-soft: #191c1d;
+  --ark-prism-panel: #121516;
+  --ark-prism-ray: #f0eee7;
+  --ark-prism-edge: #b7c3c4;
+}
+
 @mixin night {
   --ark-color-scheme: dark;
   --ark-white-logo-filter: none;
@@ -84,6 +114,7 @@
   @include archive-night;
   &[data-design="rain"] { @include rain-night; }
   &[data-design="p3r"] { @include p3r-night; }
+  &[data-design="prism"] { @include prism-night; }
 }
 
 :root {
@@ -108,6 +139,7 @@
 
   &[data-design="rain"] { @include rain-day; }
   &[data-design="p3r"] { @include p3r-day; }
+  &[data-design="prism"] { @include prism-day; }
   &[data-theme="dark"] { @include night; }
   @media (prefers-color-scheme: dark) {
     &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }

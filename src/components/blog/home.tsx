@@ -10,6 +10,7 @@ import { useBlog, useBlogData } from './blog-provider'
 import { State, styles } from './shared'
 import RainArtwork from './rain-artwork'
 import { P3RHome } from './p3r-navigation'
+import { PrismHome } from './prism-navigation'
 
 const ORBIT_SLOTS = [
   { track: 'outer', start: '8%', duration: '72s', delay: '-5.76s' },
@@ -129,6 +130,10 @@ export default function Home({
   calendarStart.setUTCDate(calendarStart.getUTCDate() - 83)
   return <>
     <P3RHome locale={locale} featured={featured} status={statusLabel} />
+    <PrismHome locale={locale} featured={featured} status={statusLabel} articles={orbitArticles} moments={orbitMoments} dates={moments.data?.data.activeDates || []}
+      articleState={<State loading={articles.isLoading} error={articles.error} empty={articles.data?.data.length === 0} retry={() => articles.mutate()} />}
+      momentState={<State loading={moments.isLoading} error={moments.error} empty={moments.data?.data.entries.length === 0} retry={() => moments.mutate()} />}
+      activity={github.data ? <><span><strong>{github.data.data.reposCount}</strong>{t('repositories')}</span><span><strong>{github.data.data.monthCommits}</strong>{t('commits')}</span></> : <State loading={github.isLoading} error={github.error} retry={() => github.mutate()} />} />
     <section className={styles['hero']} onPointerMove={event => {
       if (event.pointerType !== 'mouse' || !art.current || matchMedia('(prefers-reduced-motion: reduce)').matches) return
       const rect = event.currentTarget.getBoundingClientRect()

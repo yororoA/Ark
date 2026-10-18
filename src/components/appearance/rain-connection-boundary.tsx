@@ -21,6 +21,10 @@ const P3RSequence = dynamic(() => import('./p3r-connection-sequence'), {
   ssr: false,
   loading: () => <LoadingCurtain label="P3R · 正在接入" />,
 })
+const PrismSequence = dynamic(() => import('./prism-connection-sequence'), {
+  ssr: false,
+  loading: () => <LoadingCurtain label="月之暗面 · 正在接入" />,
+})
 
 function Transition({ connection }: { connection: RainConnection }) {
   const router = useRouter()
@@ -82,7 +86,7 @@ function Transition({ connection }: { connection: RainConnection }) {
     return () => window.clearTimeout(timer)
   }, [navigating, pageReady])
 
-  const Sequence = connection.design === 'p3r' ? P3RSequence : RainSequence
+  const Sequence = connection.design === 'prism' ? PrismSequence : connection.design === 'p3r' ? P3RSequence : RainSequence
   return <Sequence
     {...connection}
     pageReady={pageReady}

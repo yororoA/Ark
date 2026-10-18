@@ -1,6 +1,7 @@
 @use '@/styles/appearance-tokens' as appearance;
 @use '@/styles/p3r-motion';
 @use '@/styles/rain-motion';
+@use '@/styles/prism-motion';
 
 .dialog-overlay {
   @include appearance.surface;
@@ -294,9 +295,35 @@
 // @keyframes p3r-dialog-in { from { opacity: 0; transform: translate(35px, -10px); } to { opacity: 1; transform: none; } }
 @include p3r-motion.mail-slab-keyframes;
 @include rain-motion.slats-keyframes;
+@include prism-motion.keyframes;
+:global(html[data-design="prism"]) {
+  .dialog-overlay { background: #050708b8; backdrop-filter: blur(3px); }
+  .accountManagement, .declaration { width: min(620px, 100%); background: var(--ark-prism-panel); border: 1px solid var(--line); border-top: 2px solid var(--ink); box-shadow: 0 28px 90px #0005; @include prism-motion.aperture(.46s); }
+  .accountManagement::after, .declaration::after { inset: 0 0 auto; width: auto; height: 2px; border: 0; background: var(--ark-spectrum); }
+  .accountManagementTitle { min-height: 92px; padding: 22px 28px; border-color: var(--line); }
+  .accountManagementTitle h1 { font: 400 26px/1.4 var(--font-noto-sans); letter-spacing: .08em; }
+  .accountManagementTitle h1::after { display: block; content: 'IDENTITY / THE OTHER SIDE'; margin-top: 9px; font: 8px/1.5 var(--font-ibm-plex); letter-spacing: 1.5px; color: var(--muted); }
+  .accountManagement .form, .account-body { padding: 26px 28px; }
+  .accountManagement .form { gap: 26px; }
+  .inputGroup input { border: 1px solid var(--line); border-radius: 0; background: var(--paper); font-size: 16px; }
+  .inputGroup input:focus { border-color: var(--ink); box-shadow: inset 2px 0 var(--accent); }
+  .accountManagementFooter { padding-inline: 28px; }
+  .accountManagement .loginBtn, .accountManagementFooter > button, .code-button { font-family: var(--font-noto-sans); }
+  .avatar { border-radius: 50%; border: 1px solid var(--line); color: var(--ink); background: var(--soft); font-family: var(--font-ibm-plex); font-weight: 400; }
+  .account { border: 1px solid var(--line); background: var(--paper); }
+  .account .account-name { font-family: var(--font-ibm-plex), var(--font-noto-sans); }
+  .declarationBtn { border-top-width: 1px; }
+  @media (max-width: 600px) {
+    .accountManagementTitle { min-height: 78px; padding: 16px 20px; }
+    .accountManagementTitle h1 { font-size: 25px; }
+    .accountManagement .form, .account-body { padding: 20px; }
+    .accountManagementFooter { padding-inline: 20px; }
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   :global(html[data-design="p3r"]) { .accountManagement, .declaration { @include p3r-motion.mail-slab-reduced; } }
   :global(html[data-design="rain"]) { .accountManagement, .declaration { @include rain-motion.slats-in-reduced; } }
+  :global(html[data-design="prism"]) { .accountManagement, .declaration { animation: none; *, *::before, *::after { transition: none !important; } } }
 }
 
 @media (max-width: 600px) {

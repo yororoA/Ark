@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
 import RainPlanes from '@/components/appearance/rain-planes'
 import P3RScene from '@/components/appearance/p3r-scene'
+import PrismScene from '@/components/appearance/prism-scene'
 import type { ManagedUploadItem } from './media-upload'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
@@ -26,6 +27,7 @@ export function PageHeading({ title, english, number, children }: { title: TextK
   return <header className={styles['page-heading']} data-vertical={verticalTitle}>
     <RainPlanes variant={scene} />
     <P3RScene variant="heading" />
+    <PrismScene variant="heading" />
     <span className={styles['p3r-heading-word']} aria-hidden="true">{english}</span>
     <span className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>

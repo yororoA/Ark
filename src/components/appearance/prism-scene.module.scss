@@ -1,0 +1,44 @@
+.scene {
+  display: none; position: absolute; inset: 0; pointer-events: none; overflow: hidden; contain: paint;
+}
+:global(html[data-design="prism"]) .scene { display: block; }
+.optics {
+  width: 100%; height: 100%; overflow: visible;
+}
+.prism-body { animation: materialise 1.1s ease-in-out both; }
+.incident-beam { animation: beam-arrive .9s .16s ease-in-out both; }
+.spectrum {
+  transform-origin: 732px 304px;
+  rotate: var(--prism-tilt, 0deg);
+  transition: rotate 1.2s ease-in-out;
+  path { animation: spectrum-arrive 1s ease-in-out both; animation-delay: calc(.54s + var(--band) * 38ms); }
+}
+.glint { stroke-dasharray: .07 .93; stroke-dashoffset: 1; opacity: .65; animation: edge-trace 2.1s ease-in-out both; }
+[data-animated="false"] {
+  .prism-body, .incident-beam, .spectrum path, .glint { animation: none; }
+  .spectrum { rotate: 0deg; transition: none; }
+  .glint { display: none; }
+}
+.scene[data-prism-scene="heading"] {
+  inset: -20px 0 -20px 50%; opacity: .8;
+}
+.chapter-optics { width: 100%; height: 100%; }
+.scene[data-prism-scene="login"] { inset: 2% 29% 16% -15%; opacity: .7; }
+.scene[data-prism-scene="menu"] { inset: 10% 44% 20% -35%; opacity: .5; }
+.scene[data-prism-scene="connection"] { inset: 4% 0 16%; }
+:global(html[data-prism-wipe="covered"]) .scene * { animation-play-state: paused; }
+@keyframes materialise { from { opacity: 0; } }
+@keyframes beam-arrive { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes spectrum-arrive { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes edge-trace { 0% { stroke-dashoffset: 1; opacity: 0; } 25% { opacity: .8; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@media (max-width: 640px) {
+  .scene[data-prism-scene="hero"] .optics { width: 165%; max-width: none; margin-left: -39%; }
+  .scene[data-prism-scene="heading"] { inset: -10px -35% -10px 32%; opacity: .45; }
+  .scene[data-prism-scene="login"] { inset: 20px -50% 55% -65%; }
+  .scene[data-prism-scene="connection"] .optics { width: 150%; max-width: none; margin-left: -30%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene *, .scene *::before, .scene *::after { animation: none !important; transition: none !important; }
+  .spectrum { rotate: none; }
+  .glint { display: none; }
+}

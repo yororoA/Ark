@@ -47,7 +47,7 @@
   legend { padding: 0; margin-bottom: 12px; color: var(--muted); font-size: 10px; letter-spacing: 1px; }
   input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
-.design-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.design-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
 .design-option {
   position: relative; display: block; min-width: 0; cursor: pointer;
   &:hover .design-preview { border-color: var(--accent); }
@@ -135,6 +135,46 @@
   .panel-note { font-family: var(--font-noto-serif), serif; line-height: 1.8; }
 }
 @media (max-width: 540px) { .theme-trigger { width: 44px; height: 44px; } }
+// The previous standalone thick-triangle preview remains in commit b544562.
+.design-preview[data-preview="prism"] {
+  --ark-prism-ray: #f0eee7;
+  --ark-prism-edge: #8d9897;
+  background: #0b0d0e;
+  color: #f0eee7;
+  &::after {
+    content: ''; position: absolute; inset: auto 9px 8px; height: 1px; background: #3e4243;
+  }
+}
+.prism-preview-optics {
+  position: absolute; top: 0; bottom: 0; left: -13.5%; width: 127%; height: 100%; max-width: none;
+  overflow: visible;
+}
+.prism-preview-title {
+  position: absolute; z-index: 1; top: 10px; left: 10px;
+  color: #f0eee7; font: 5px/1.55 var(--font-ibm-plex), sans-serif; letter-spacing: 1.5px;
+  span { display: block; color: #a7a8a3; letter-spacing: .9px; }
+}
+.prism-preview-signature {
+  position: absolute; z-index: 1; left: 10px; bottom: 17px;
+  color: #f0eee7; font: 8px/1.3 var(--font-noto-sans), sans-serif; letter-spacing: 1.5px;
+  small { display: block; margin-top: 3px; color: #8c9693; font: 3px/1.3 var(--font-ibm-plex), sans-serif; letter-spacing: .8px; }
+}
+.prism-preview-stars {
+  position: absolute; inset: 0; color: #bdc8c7; opacity: .55;
+  i { position: absolute; width: 1px; height: 1px; border-radius: 50%; background: currentColor; }
+  i:nth-child(1) { left: 18%; top: 40%; }
+  i:nth-child(2) { left: 35%; top: 15%; }
+  i:nth-child(3) { left: 73%; top: 22%; }
+  i:nth-child(4) { left: 83%; top: 67%; }
+  i:nth-child(5) { left: 57%; top: 76%; }
+}
+:global(html[data-design="prism"]) {
+  .theme-panel { background: var(--ark-prism-panel); box-shadow: 0 20px 60px #0003; border: 1px solid var(--line); border-top: 2px solid var(--ink); }
+  .panel-title { font-family: var(--font-ibm-plex), var(--font-noto-sans); font-size: 20px; }
+  .option-label { font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif; font-size: 14px; letter-spacing: 1px; }
+  .theme-trigger { border-radius: 0; }
+  .design-option input:checked ~ .design-preview { outline: 1px solid var(--ink); outline-offset: 3px; box-shadow: none; }
+}
 @media (max-width: 380px) {
   .theme-panel { padding: 16px; }
   .design-options { gap: 8px; }

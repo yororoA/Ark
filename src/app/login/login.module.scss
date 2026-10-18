@@ -1,4 +1,5 @@
 @use '@/styles/appearance-tokens' as appearance;
+@use '@/styles/prism-motion';
 
 .login-scene {
   @include appearance.surface;
@@ -302,7 +303,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.login-rain, .login-p3r { display: none; }
+.login-rain, .login-p3r, .login-prism { display: none; }
 
 :global(html[data-design="archive"]) {
   .access-panel { box-shadow: 8px 8px 0 var(--soft); }
@@ -407,7 +408,43 @@
   }
 }
 
+:global(html[data-design="prism"]) {
+  .legacy-brand { display: none; }
+  .login-scene { isolation: isolate; }
+  .login-scene { --display-latin: var(--font-ibm-plex), sans-serif; --display-cjk: var(--font-noto-sans), sans-serif; }
+  .login-header, .login-footer { margin-inline: 6%; border-color: var(--line); }
+  .login-main { gap: 60px; padding: 90px 6% 64px; align-items: end; }
+  .login-signature { display: none; }
+  .login-prism { display: block; margin-bottom: 38px; padding-top: 200px; small { font: 8px/1.5 var(--font-ibm-plex); letter-spacing: 2px; color: var(--muted); } span { display: block; font: 400 17px/1.8 var(--display-latin); letter-spacing: .22em; margin-top: 15px; } }
+  .login-copy { align-self: end; animation: prism-type .8s ease-out backwards; }
+  .login-copy h1 { font-size: 30px; letter-spacing: .12em; }
+  .login-copy > p { font-size: 14px; }
+  .login-eyebrow { font-size: 8px; }
+  .archive-register dd { font-family: var(--font-ibm-plex); }
+  .access-panel { background: var(--ark-prism-panel); border: 1px solid var(--line); border-top: 2px solid var(--ink); padding: 34px; box-shadow: none; @include prism-motion.aperture(.55s); }
+  .access-panel::after { inset: -1px 0 auto; width: auto; height: 2px; border: 0; background: var(--ark-spectrum); }
+  .panel-header { border-color: var(--line); }
+  .account-glyph { border-radius: 50%; border: 1px solid var(--line); box-shadow: none; }
+  .primary-action { background: var(--ink); color: var(--paper); border: 1px solid var(--ink); box-shadow: none; }
+  .primary-action:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  .secondary-action { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  &[data-prism-wipe="covered"] { .login-copy, .access-panel { animation-play-state: paused; } }
+  @media (max-width: 820px) {
+    .login-main { gap: 38px; padding-top: 55px; }
+    .login-prism span { font-size: 17px; }
+  }
+  @media (max-width: 600px) {
+    .login-main { padding: 38px 6% 44px; gap: 34px; }
+    .login-prism { margin-bottom: 26px; padding-top: 150px; span { font-size: 15px; } }
+    .login-copy h1 { font-size: 28px; }
+    .access-panel { padding: 26px; }
+    .login-header nav { gap: 12px; font-size: 10px; }
+  }
+}
+@include prism-motion.keyframes;
+
 @media (prefers-reduced-motion: reduce) {
   .login-copy, .access-panel { animation: none; }
   :global(html[data-design="p3r"]) { .primary-action { transition: none; } }
+  :global(html[data-design="prism"]) { .login-scene *, .login-scene *::before, .login-scene *::after { animation: none !important; transition: none !important; } }
 }

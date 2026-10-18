@@ -97,3 +97,12 @@
     transition: none;
   }
 }
+
+:global(html[data-design='prism']) .mascot-toggle {
+  border-radius: 50%;
+  box-shadow: none;
+  background: var(--ark-prism-panel);
+  backdrop-filter: none;
+  &:hover, &[data-active] { background: var(--ark-ink); color: var(--ark-paper); }
+  &:active { transform: none; }
+}

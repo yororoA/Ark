@@ -10,9 +10,12 @@ import { Locale, sections } from '@/lib/blog'
 import { legacyDestination } from '@/lib/legacy-route'
 import { BlogSelect } from './controls'
 import ArchiveLogo from '@/components/brand/archive-logo'
+import PrismLogo from '@/components/brand/prism-logo'
+import PrismStars from '@/components/appearance/prism-stars'
 import ThemePicker from '@/components/appearance/theme-picker'
 import { useAppearance } from '@/components/appearance/appearance-store'
 import { P3RMenu } from './p3r-navigation'
+import { PrismMenu } from './prism-navigation'
 import { syncAuthDetails } from '@/store/auth'
 import styles from './blog.module.scss'
 
@@ -31,7 +34,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   }, [pathname, router])
   useEffect(() => {
     // The P3R menu animates its own dismissal from the dialog's cancel event.
-    if (!open || design === 'p3r') return
+    if (!open || design === 'p3r' || design === 'prism') return
     const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
     window.addEventListener('keydown', close)
     return () => window.removeEventListener('keydown', close)
@@ -45,10 +48,12 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
   return (
     <div className={styles['blog-root']} data-blog-root>
+      <PrismStars />
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
         <Link href="/home" className={styles['brand']} aria-label="YororoIce Ark">
-          <ArchiveLogo priority />
+          <span className={styles['legacy-brand']}><ArchiveLogo priority /></span>
+          <PrismLogo />
         </Link>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
           {sections.map(([key, number]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span className={styles['nav-index']} aria-hidden="true">{number}</span>{t(key)}</Link>)}
@@ -64,9 +69,10 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       {/* onNavigate closes the menu beneath a page wipe instead of at the click. */}
-      {open && (design === 'p3r' ? <P3RMenu locale={locale} close={() => setOpen(false)} /> : <nav className={styles['mobile-nav']} aria-label={t('menu')}>{sections.map(([key, number]) => <Link href={`/${key}`} key={key} onNavigate={() => setOpen(false)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span>{number}</span>{t(key)}<ArrowUpRight size={18} /></Link>)}<Link href="/chat" onNavigate={() => setOpen(false)} aria-current={pathname.startsWith('/chat') ? 'page' : undefined}><span>07</span>{t('chat')}<ArrowUpRight size={18} /></Link></nav>)}
+      {open && (design === 'prism' ? <PrismMenu locale={locale} close={() => setOpen(false)} /> : design === 'p3r' ? <P3RMenu locale={locale} close={() => setOpen(false)} /> : <nav className={styles['mobile-nav']} aria-label={t('menu')}>{sections.map(([key, number]) => <Link href={`/${key}`} key={key} onNavigate={() => setOpen(false)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span>{number}</span>{t(key)}<ArrowUpRight size={18} /></Link>)}<Link href="/chat" onNavigate={() => setOpen(false)} aria-current={pathname.startsWith('/chat') ? 'page' : undefined}><span>07</span>{t('chat')}<ArrowUpRight size={18} /></Link></nav>)}
       <main id="main-content" className={styles['main-content']}>{children}</main>
       <footer className={styles['site-footer']}>
+        <div className={styles['prism-footer-mark']}><span>YororoIce.</span><small>THE DARK SIDE OF THE EVERYDAY</small><i aria-hidden="true" /></div>
         <div className={styles['footer-signatures']}>
           <Image src="/logo_white.png" width={172} height={79} alt="YororoIce" />
           <i aria-hidden="true" />

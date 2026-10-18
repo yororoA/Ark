@@ -1,0 +1,20 @@
+// An aperture opens along the path of a ray. Backwards fill leaves no clip or
+// transform on the finished panel, including native dialogs and portaled menus.
+@mixin aperture($duration: .42s) {
+  animation: prism-aperture $duration cubic-bezier(.65, 0, .35, 1) backwards;
+}
+@mixin keyframes {
+  @keyframes prism-aperture {
+    from { clip-path: polygon(0 48%, 0 48%, 0 52%, 0 52%); }
+    45% { clip-path: polygon(-2% 32%, 102% 48%, 102% 52%, -2% 68%); }
+    to { clip-path: polygon(-5% -5%, 105% -5%, 105% 105%, -5% 105%); }
+  }
+  @keyframes prism-type {
+    from { opacity: 0; translate: 0 16px; clip-path: inset(0 0 100%); }
+    to { opacity: 1; translate: 0; clip-path: inset(-8px); }
+  }
+  @keyframes prism-line {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+}
