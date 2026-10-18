@@ -413,10 +413,15 @@
   .login-scene { isolation: isolate; }
   .login-scene { --display-latin: var(--font-ibm-plex), sans-serif; --display-cjk: var(--font-noto-sans), sans-serif; }
   .login-header, .login-footer { margin-inline: 6%; border-color: var(--line); }
-  .login-main { gap: 60px; padding: 90px 6% 64px; align-items: end; }
+  .login-main {
+    min-height: 0;
+    gap: clamp(40px, 5vw, 60px);
+    padding: clamp(44px, 7vh, 64px) 6% clamp(38px, 5vh, 52px);
+    align-items: center;
+  }
   .login-signature { display: none; }
-  .login-prism { display: block; margin-bottom: 38px; padding-top: 200px; small { font: 8px/1.5 var(--font-ibm-plex); letter-spacing: 2px; color: var(--muted); } span { display: block; font: 400 17px/1.8 var(--display-latin); letter-spacing: .22em; margin-top: 15px; } }
-  .login-copy { align-self: end; animation: prism-type .8s ease-out backwards; }
+  .login-prism { display: block; margin-bottom: clamp(24px, 4vh, 34px); padding-top: clamp(82px, 16vh, 150px); small { font: 8px/1.5 var(--font-ibm-plex); letter-spacing: 2px; color: var(--muted); } span { display: block; font: 400 17px/1.8 var(--display-latin); letter-spacing: .22em; margin-top: 15px; } }
+  .login-copy { align-self: center; animation: prism-type .8s ease-out backwards; }
   .login-copy h1 { font-size: 30px; letter-spacing: .12em; }
   .login-copy > p { font-size: 14px; }
   .login-eyebrow { font-size: 8px; }
@@ -433,9 +438,16 @@
     .login-main { gap: 38px; padding-top: 55px; }
     .login-prism span { font-size: 17px; }
   }
+  @media (max-height: 820px) and (min-width: 601px) {
+    .login-main { padding-block: 32px; }
+    .login-prism { margin-bottom: 20px; padding-top: clamp(48px, 9vh, 72px); }
+    .login-copy h1 { margin-block: 18px; }
+    .access-notes { margin-top: 20px; }
+    .archive-register { margin-top: 24px; }
+  }
   @media (max-width: 600px) {
     .login-main { padding: 38px 6% 44px; gap: 34px; }
-    .login-prism { margin-bottom: 26px; padding-top: 150px; span { font-size: 15px; } }
+    .login-prism { margin-bottom: 26px; padding-top: clamp(90px, 30vw, 130px); span { font-size: 15px; } }
     .login-copy h1 { font-size: 28px; }
     .access-panel { padding: 26px; }
     .login-header nav { gap: 12px; font-size: 10px; }
