@@ -10,6 +10,9 @@ const PREFERENCE_EVENT = 'ark:mascot-preference'
 const MOBILE_QUERY = '(max-width: 767px), (pointer: coarse)'
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 const MASCOT_PACKS = ['Neuron', 'Eviling'] as const
+const MIN_PAGE_SCALE = .5
+const MAX_PAGE_SCALE = 2
+let baselinePixelRatio: number | undefined
 
 type MascotStatus = 'idle' | 'ready' | 'error'
 
@@ -57,6 +60,23 @@ function subscribe(listener: () => void) {
   }
 }
 
+function pageScale(baselinePixelRatio: number) {
+  const pixelRatio = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0
+    ? devicePixelRatio
+    : baselinePixelRatio
+  const viewportScale = window.visualViewport?.scale ?? 1
+  const scale = pixelRatio / baselinePixelRatio * viewportScale
+  return Math.min(MAX_PAGE_SCALE, Math.max(MIN_PAGE_SCALE, scale))
+}
+
+function readBaselinePixelRatio() {
+  if (baselinePixelRatio !== undefined) return baselinePixelRatio
+  baselinePixelRatio = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0
+    ? devicePixelRatio
+    : 1
+  return baselinePixelRatio
+}
+
 export default function WebMascot() {
   const pathname = usePathname()
   const hostRef = useRef<HTMLDivElement>(null)
@@ -72,14 +92,44 @@ export default function WebMascot() {
     if (!host) return
     let active = true
     let destroy: (() => void) | undefined
+    let removeScaleListeners: (() => void) | undefined
 
     void import('web-mascot')
-      .then(async ({ configure, createMascot }) => {
+      .then(async ({ configure, createMascot, MascotEngine }) => {
         if (!active) return
         configure({
           assets: '/mascot_pack',
           animationConfigUrl: '/mascot_pack/animation.config.json',
         })
+        await MascotEngine.reloadAnimationConfig('/mascot_pack/animation.config.json')
+        if (!active) return
+        const initialPixelRatio = readBaselinePixelRatio()
+        const baseConfig = MascotEngine.getAnimationConfig().toJSON()
+        const baseScales = Object.fromEntries(
+          MASCOT_PACKS.map(pack => [pack, MascotEngine.getAnimationConfig().mascotScale(pack)]),
+        ) as Record<(typeof MASCOT_PACKS)[number], number>
+        const baseMascots = baseConfig.mascots ?? {}
+        let appliedScale = 0
+        let scaleFrame = 0
+        const applyPageScale = () => {
+          const nextScale = pageScale(initialPixelRatio)
+          if (Math.abs(nextScale - appliedScale) < .001) return
+          appliedScale = nextScale
+          const mascots = { ...baseMascots }
+          for (const pack of MASCOT_PACKS) {
+            mascots[pack] = {
+              ...baseMascots[pack],
+              scale: baseScales[pack] * nextScale,
+            }
+          }
+          MascotEngine.setAnimationConfig({ ...baseConfig, mascots }, 'Ark page scale')
+          host.dataset.pageScale = nextScale.toFixed(3)
+        }
+        const schedulePageScale = () => {
+          cancelAnimationFrame(scaleFrame)
+          scaleFrame = requestAnimationFrame(applyPageScale)
+        }
+        applyPageScale()
         const results = await Promise.allSettled(
           MASCOT_PACKS.map(pack => createMascot({ container: host, pack })),
         )
@@ -95,6 +145,13 @@ export default function WebMascot() {
         }
         destroy = () => mascots.forEach(mascot => mascot.destroy())
         Array.from(host.children).forEach(child => child.setAttribute('data-ark-mascot', ''))
+        window.addEventListener('resize', schedulePageScale)
+        window.visualViewport?.addEventListener('resize', schedulePageScale)
+        removeScaleListeners = () => {
+          cancelAnimationFrame(scaleFrame)
+          window.removeEventListener('resize', schedulePageScale)
+          window.visualViewport?.removeEventListener('resize', schedulePageScale)
+        }
         setStatus('ready')
       })
       .catch(() => {
@@ -103,6 +160,7 @@ export default function WebMascot() {
 
     return () => {
       active = false
+      removeScaleListeners?.()
       destroy?.()
       host.replaceChildren()
     }
