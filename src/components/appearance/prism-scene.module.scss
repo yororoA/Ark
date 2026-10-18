@@ -14,6 +14,11 @@
   path { animation: spectrum-arrive 1s ease-in-out both; animation-delay: calc(.54s + var(--band) * 38ms); }
 }
 .glint { stroke-dasharray: .07 .93; stroke-dashoffset: 1; opacity: .65; animation: edge-trace 2.1s ease-in-out both; }
+[data-animated="false"] {
+  .prism-body, .incident-beam, .spectrum path, .glint { animation: none; }
+  .spectrum { rotate: 0deg; transition: none; }
+  .glint { display: none; }
+}
 .scene[data-prism-scene="heading"] {
   inset: -20px 0 -20px 50%; opacity: .8;
 }

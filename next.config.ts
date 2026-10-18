@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     turbopackFileSystemCacheForDev: false,
   },
   allowedDevOrigins:[
+    '127.0.0.1',
     "*.trycloudflare.com",
     "*.ngrok-free.app"
   ]

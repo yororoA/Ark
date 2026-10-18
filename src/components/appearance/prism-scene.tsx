@@ -5,8 +5,34 @@ import { useAppearance } from './appearance-store'
 import { SPECTRUM } from '@/lib/prism-copy'
 import styles from './prism-scene.module.scss'
 
-// One optical construction used in the hero, chapter headers and connection.
-// Rays meet the two triangle faces; no bitmap, texture download or WebGL loop.
+export function PrismOptics({ className, animated = true }: { className?: string; animated?: boolean }) {
+  return <svg viewBox="0 0 1200 620" fill="none" className={className} data-animated={animated}>
+    <g className={styles['incident-beam']}>
+      <path d="M-1600 994L508 304" stroke="var(--ark-prism-ray)" strokeWidth="1.5" />
+      <path d="M-1600 998L508 305" stroke="var(--ark-prism-ray)" strokeWidth=".5" opacity=".28" />
+    </g>
+    <g className={styles['prism-body']}>
+      <path d="M620 110L400 490H840Z" fill="var(--ark-prism-ray)" fillOpacity=".018" stroke="var(--ark-prism-edge)" strokeWidth="1.2" />
+      <path d="M620 116L405 487H835Z" stroke="var(--ark-prism-edge)" strokeOpacity=".25" strokeWidth=".6" />
+      <path d="M508 304L732 304L754 342Z" fill="var(--ark-prism-ray)" fillOpacity=".1" />
+      <path d="M508 304L732 304M508 304L754 342" stroke="var(--ark-prism-ray)" strokeWidth=".6" opacity=".4" />
+    </g>
+    <g className={styles.spectrum}>
+      {SPECTRUM.map((color, index) => {
+        const y1 = 304 + index * 6.33, y2 = y1 + 6.5
+        const x1 = 620 + (y1 - 110) * 220 / 380, x2 = 620 + (y2 - 110) * 220 / 380
+        const far1 = y1 + (2300 - x1) * (123 + index * 40 - y1) / (1230 - x1)
+        const far2 = y2 + (2300 - x2) * (164 + index * 40 - y2) / (1230 - x2)
+        return <path key={color} style={{ '--band': index } as CSSProperties}
+          d={`M${x1} ${y1}L2300 ${far1}V${far2}L${x2} ${y2}Z`} fill={color} />
+      })}
+    </g>
+    <path className={styles.glint} d="M620 110L400 490H840Z" stroke="var(--ark-prism-ray)" strokeWidth="1.8" pathLength="1" />
+  </svg>
+}
+
+// The hero owns pointer parallax; its optical geometry is also shared by the
+// appearance preview so the two compositions cannot drift apart.
 export default function PrismScene({ variant = 'hero' }: { variant?: 'hero' | 'heading' | 'login' | 'connection' | 'menu' }) {
   const ref = useRef<HTMLDivElement>(null)
   const { design } = useAppearance()
@@ -55,28 +81,6 @@ export default function PrismScene({ variant = 'hero' }: { variant?: 'hero' | 'h
     </svg>
   </div>
   return <div ref={ref} className={styles.scene} data-prism-scene={variant} aria-hidden="true">
-    <svg viewBox="0 0 1200 620" fill="none" className={styles.optics}>
-      <g className={styles['incident-beam']}>
-        <path d="M-1600 994L508 304" stroke="var(--ark-prism-ray)" strokeWidth="1.5" />
-        <path d="M-1600 998L508 305" stroke="var(--ark-prism-ray)" strokeWidth=".5" opacity=".28" />
-      </g>
-      <g className={styles['prism-body']}>
-        <path d="M620 110L400 490H840Z" fill="var(--ark-prism-ray)" fillOpacity=".018" stroke="var(--ark-prism-edge)" strokeWidth="1.2" />
-        <path d="M620 116L405 487H835Z" stroke="var(--ark-prism-edge)" strokeOpacity=".25" strokeWidth=".6" />
-        <path d="M508 304L732 304L754 342Z" fill="var(--ark-prism-ray)" fillOpacity=".1" />
-        <path d="M508 304L732 304M508 304L754 342" stroke="var(--ark-prism-ray)" strokeWidth=".6" opacity=".4" />
-      </g>
-      <g className={styles.spectrum}>
-        {SPECTRUM.map((color, index) => {
-          const y1 = 304 + index * 6.33, y2 = y1 + 6.5
-          const x1 = 620 + (y1 - 110) * 220 / 380, x2 = 620 + (y2 - 110) * 220 / 380
-          const far1 = y1 + (2300 - x1) * (123 + index * 40 - y1) / (1230 - x1)
-          const far2 = y2 + (2300 - x2) * (164 + index * 40 - y2) / (1230 - x2)
-          return <path key={color} style={{ '--band': index } as CSSProperties}
-            d={`M${x1} ${y1}L2300 ${far1}V${far2}L${x2} ${y2}Z`} fill={color} />
-        })}
-      </g>
-      <path className={styles.glint} d="M620 110L400 490H840Z" stroke="var(--ark-prism-ray)" strokeWidth="1.8" pathLength="1" />
-    </svg>
+    <PrismOptics className={styles.optics} />
   </div>
 }
