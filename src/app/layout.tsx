@@ -10,6 +10,7 @@ import { AppearanceObserver } from "@/components/appearance/appearance-store";
 import RainConnectionBoundary from "@/components/appearance/rain-connection-boundary";
 import P3REffects from "@/components/appearance/p3r-effects";
 import RainEffects from "@/components/appearance/rain-effects";
+import PrismEffects from "@/components/appearance/prism-effects";
 import WebMascot from "@/components/mascot/web-mascot";
 import StructuredData from "@/components/seo/structured-data";
 import { DEFAULT_SOCIAL_IMAGE, SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo";
@@ -157,6 +158,7 @@ export default function RootLayout({
         <AppearanceObserver />
         <P3REffects />
         <RainEffects />
+        <PrismEffects />
         <RouteScrollManager />
         <div id="portal-root" />
         <BgImage />

@@ -1,0 +1,10 @@
+.logo {
+  display: none; align-items: center; gap: 14px; color: var(--ark-ink);
+  svg { width: 40px; height: 38px; flex: none; }
+  > span { font: 12px/1.4 var(--font-ibm-plex), sans-serif; letter-spacing: 2px; }
+  small { display: block; font-size: 5px; letter-spacing: 1px; margin-top: 7px; color: var(--ark-muted); }
+}
+:global(html[data-design="prism"]) .logo { display: flex; }
+@media (max-width: 540px) {
+  .logo { gap: 8px; svg { width: 27px; height: 30px; } > span { font-size: 9px; letter-spacing: 1px; } small { font-size: 4px; } }
+}

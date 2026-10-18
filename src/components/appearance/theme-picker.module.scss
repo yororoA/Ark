@@ -47,7 +47,7 @@
   legend { padding: 0; margin-bottom: 12px; color: var(--muted); font-size: 10px; letter-spacing: 1px; }
   input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
-.design-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.design-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
 .design-option {
   position: relative; display: block; min-width: 0; cursor: pointer;
   &:hover .design-preview { border-color: var(--accent); }
@@ -135,6 +135,22 @@
   .panel-note { font-family: var(--font-noto-serif), serif; line-height: 1.8; }
 }
 @media (max-width: 540px) { .theme-trigger { width: 44px; height: 44px; } }
+.design-preview[data-preview="prism"] {
+  background: #0b0d0e; color: #f0eee7;
+  .preview-caption { color: #a7a8a3; border: 0; letter-spacing: 1px; }
+  .preview-type { top: 26px; left: 35%; color: #d7dfdc; font: 64px/1 sans-serif; letter-spacing: 0; }
+  .preview-type span { margin: 14px 0 0 -22px; font: 6px/1 var(--font-ibm-plex); letter-spacing: 1px; }
+  .preview-art { inset: 50px -20px auto 57%; width: auto; height: 27px; background: linear-gradient(#e66054 0% 16.66%, #e9994d 16.66% 33.33%, #e8cd65 33.33% 50%, #77b787 50% 66.66%, #669ed1 66.66% 83.33%, #aa88bc 83.33%); clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 60%); transform: rotate(-10deg); i { display: none; } }
+  .preview-layout { inset: 70px 54% auto -4px; display: block; height: 1px; background: #f0eee7; transform: rotate(-20deg); i { display: none; } }
+  .preview-line { background: #3e4243; }
+}
+:global(html[data-design="prism"]) {
+  .theme-panel { background: var(--ark-prism-panel); box-shadow: 0 20px 60px #0003; border: 1px solid var(--line); border-top: 2px solid var(--ink); }
+  .panel-title { font-family: var(--font-ibm-plex), var(--font-noto-sans); font-size: 20px; }
+  .option-label { font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif; font-size: 14px; letter-spacing: 1px; }
+  .theme-trigger { border-radius: 0; }
+  .design-option input:checked ~ .design-preview { outline: 1px solid var(--ink); outline-offset: 3px; box-shadow: none; }
+}
 @media (max-width: 380px) {
   .theme-panel { padding: 16px; }
   .design-options { gap: 8px; }
