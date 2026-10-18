@@ -18,6 +18,7 @@ import ThemePicker from '@/components/appearance/theme-picker';
 import RainPlanes from '@/components/appearance/rain-planes';
 import P3RScene from '@/components/appearance/p3r-scene';
 import PrismScene from '@/components/appearance/prism-scene';
+import PrismStars from '@/components/appearance/prism-stars';
 import { useAppearance } from '@/components/appearance/appearance-store';
 import { useRainConnection } from '@/components/appearance/rain-connection-store';
 import { QINGJIAN_COPY } from '@/lib/qingjian-copy';
@@ -167,6 +168,7 @@ function Login() {
       )}
       {/* The previous dark sphere composition remains available in commit 26f4085. */}
       <div className={styles['login-scene']} inert={isConnecting || showAccountManagement || isDeclarationVisible}>
+        <PrismStars />
         <P3RScene variant="login" />
         <PrismScene variant="login" />
         <header className={styles['login-header']}>

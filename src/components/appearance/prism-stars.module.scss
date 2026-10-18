@@ -1,0 +1,17 @@
+.stars {
+  display: none; position: fixed; inset: 0; z-index: -1; overflow: hidden;
+  pointer-events: none; color: var(--ark-prism-ray); opacity: .7;
+  // Keep the reading column quiet, retain stars around artwork and margins.
+  mask-image: linear-gradient(90deg, #000, #0008 24%, #0005 50%, #0008 76%, #000);
+  &[data-local="true"] { position: absolute; mask-image: none; }
+  svg { width: 100%; height: 100%; }
+  circle { fill: currentColor; opacity: .2; animation: twinkle var(--star-duration) ease-in-out var(--star-delay) infinite; }
+  &[data-paused="true"] * { animation-play-state: paused; }
+}
+:global(html[data-design="prism"]) .stars { display: block; }
+.bright-stars { opacity: .48; animation: twinkle 7.3s ease-in-out -1.4s infinite; }
+@keyframes twinkle { 0%, 100% { opacity: .14; } 48% { opacity: .7; } }
+@media (max-width: 640px) { .stars { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  .stars *, .bright-stars { animation: none !important; opacity: .3; }
+}

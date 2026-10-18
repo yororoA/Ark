@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 import { ArrowDown, ArrowUpRight, X } from 'lucide-react'
 import Link from '@/components/appearance/p3r-link'
 import PrismScene from '@/components/appearance/prism-scene'
+import PrismStars from '@/components/appearance/prism-stars'
+import PrismRecord from './prism-record'
 import { useAppearance } from '@/components/appearance/appearance-store'
 import { isP3RWipeCovering } from '@/components/appearance/p3r-transition'
 import { PRISM_COPY, SPECTRUM } from '@/lib/prism-copy'
@@ -59,11 +61,7 @@ export function PrismHome({ locale, featured, status, articles, moments, dates, 
       <div className={styles['sleeve-grid']}>{articles.slice(0, 4).map((entry, index) => {
         const preview = articlePreview(entry.content)
         return <Link href={`/articles/${entry._id}`} key={entry._id} className={styles['record-sleeve']} data-record-reveal="visible" style={{ '--record-color': SPECTRUM[index % 6] } as CSSProperties}>
-          <div className={styles['sleeve-art']} data-cover={!!preview.coverUrl}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- Reuse the actual article's media. */}
-            {preview.coverUrl ? <img src={preview.coverUrl} alt={preview.coverAlt || entry.title} loading="lazy" decoding="async" /> : <div className={styles['record-grooves']}><span>{String(index + 1).padStart(2, '0')}</span></div>}
-            <span className={styles['sleeve-category']}>{entry.category || 'YOROROICE'}</span>
-          </div>
+          <PrismRecord title={entry.title} category={entry.category} coverUrl={preview.coverUrl} coverAlt={preview.coverAlt} id={entry._id} date={entry.createdAt} />
           <div className={styles['sleeve-details']}><time>{dateLabel(entry.createdAt, locale)}</time><h3>{entry.title}</h3><p>{excerpt(preview.content, 95)}</p><ArrowUpRight size={20} /></div>
         </Link>
       })}</div>
@@ -94,6 +92,8 @@ export function PrismMenu({ locale, close }: { locale: Locale; close: () => void
   const closeRef = useRef(close)
   useEffect(() => { closeRef.current = close }, [close])
   const pathname = usePathname()
+  const current = destinations.findIndex(([key]) => pathname.startsWith(`/${key}`))
+  const selected = active < 0 ? Math.max(0, current) : active
   useEffect(() => {
     const dialog = ref.current!
     const opener = document.activeElement
@@ -143,16 +143,23 @@ export function PrismMenu({ locale, close }: { locale: Locale; close: () => void
   }
   return <dialog ref={ref} className={styles['menu-dialog']} aria-label={PRISM_COPY[locale].menu} data-testid="prism-menu"
     onCancel={event => { event.preventDefault(); dismiss() }} onClose={() => { if (!ref.current?.open) close() }}>
+    <PrismStars local />
     <div className={styles['menu-top']}><Link href="/home" onNavigate={dismiss}>YOROROICE / ARK</Link><button type="button" aria-label={translate(locale, 'close')} onClick={dismiss}><span>ESC</span><X size={24} /></button></div>
     <div className={styles['menu-body']}>
       <svg className={styles['menu-rays']} viewBox="0 0 1000 650" preserveAspectRatio="none" aria-hidden="true">
-        <ellipse cx="500" cy="325" rx="145" ry="145" fill="none" stroke="currentColor" strokeDasharray="1 10" />
-        {stations.map(([x, y], index) => <path key={index} d={`M500 325L${x * 10} ${y * 6.5}`} stroke={SPECTRUM[index % 6]} data-lit={active === index} style={{ '--order': index } as CSSProperties} />)}
+        <ellipse cx="500" cy="325" rx="158" ry="158" fill="none" stroke="currentColor" strokeWidth=".6" />
+        <ellipse cx="500" cy="325" rx="173" ry="173" fill="none" stroke="currentColor" strokeDasharray="1 6" />
+        {Array.from({ length: 48 }, (_, index) => {
+          const angle = index / 48 * Math.PI * 2, inner = index % 4 === 0 ? 180 : 186
+          return <line key={index} x1={500 + Math.cos(angle) * inner} y1={325 + Math.sin(angle) * inner} x2={500 + Math.cos(angle) * 192} y2={325 + Math.sin(angle) * 192} stroke="currentColor" strokeWidth=".7" />
+        })}
+        {stations.map(([x, y], index) => <path key={index} d={`M500 325L${x * 10} ${y * 6.5}`} stroke={SPECTRUM[index % 6]} data-lit={selected === index} style={{ '--order': index } as CSSProperties} />)}
       </svg>
-      <div className={styles['menu-core']} aria-hidden="true"><svg viewBox="0 0 160 145" fill="none"><path d="M80 8L7 134H153Z" stroke="currentColor" /><path d="M0 84L40 76L117 72L160 60M40 76L123 82L160 90" stroke="currentColor" opacity=".4" /></svg><span>{PRISM_COPY[locale].name}</span><small>CHOOSE A FREQUENCY</small></div>
+      <div className={styles['menu-core']} aria-hidden="true" style={{ '--selected-color': SPECTRUM[selected % 6] } as CSSProperties}><small>THE DARK SIDE</small><svg viewBox="0 0 160 145" fill="none"><path d="M80 8L7 134H153Z" stroke="currentColor" /><path d="M0 84L40 76L117 72L160 60M40 76L123 82L160 90" stroke="currentColor" opacity=".4" /></svg><span key={selected}>{translate(locale, destinations[selected][0])}</span><small>{destinations[selected][1]} / {destinations[selected][2].toUpperCase()}</small></div>
       <nav onKeyDown={navigateWithKeys} aria-label={PRISM_COPY[locale].menu} className={styles['track-list']}>
         {destinations.map(([key, number, english], index) => <Link key={key} href={`/${key}`} onNavigate={dismiss}
           aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}
+          data-selected={selected === index}
           onMouseEnter={() => setActive(index)} onMouseLeave={() => setActive(-1)} onFocus={() => setActive(index)} onBlur={() => setActive(-1)}
           style={{ '--track': SPECTRUM[index % SPECTRUM.length], '--order': index, '--station-x': `${stations[index][0]}%`, '--station-y': `${stations[index][1]}%` } as CSSProperties}>
           <small>{number}</small><span>{translate(locale, key)}<em>{english}</em></span><ArrowUpRight size={18} />

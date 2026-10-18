@@ -410,6 +410,7 @@
 
 :global(html[data-design="prism"]) {
   .legacy-brand { display: none; }
+  .login-scene { isolation: isolate; }
   .login-scene { --display-latin: var(--font-ibm-plex), sans-serif; --display-cjk: var(--font-noto-sans), sans-serif; }
   .login-header, .login-footer { margin-inline: 6%; border-color: var(--line); }
   .login-main { gap: 60px; padding: 90px 6% 64px; align-items: end; }

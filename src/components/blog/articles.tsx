@@ -11,11 +11,13 @@ import { send, useBlog, useBlogData, useBlogReferenceData } from './blog-provide
 import { useManagedUploads } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
+import PrismRecord from './prism-record'
 import { detailPath, listPath, newestFirst, prepareListReturn, rememberListPosition, safeReturnPath, useRestoreListPosition } from './list-navigation'
 
 function ArticleListEntry({ entry, locale, read, returnTo }: { entry: Entry; locale: Parameters<typeof dateLabel>[1]; read: string; returnTo: string }) {
   const preview = articlePreview(entry.content)
   return <Link key={entry._id} href={detailPath('articles', entry._id, returnTo)} className={styles['article-card']} data-cover={!!preview.coverUrl} onNavigate={() => rememberListPosition(returnTo)}>
+    <PrismRecord title={entry.title} category={entry.category} coverUrl={preview.coverUrl} coverAlt={preview.coverAlt} id={entry._id} date={entry.createdAt} />
     <time className={styles['article-date']} dateTime={entry.createdAt}><strong>{new Date(entry.createdAt).getUTCDate().toString().padStart(2, '0')}</strong>{entry.createdAt.slice(0, 7).replace('-', ' / ')}</time>
     {preview.coverUrl && <figure className={styles['article-cover']}><img src={preview.coverUrl} alt={preview.coverAlt || entry.title} loading="lazy" /></figure>}
     <div className={styles['article-card-body']}><h2>{entry.title}</h2><p>{excerpt(preview.content, 190)}</p><div className={styles['entry-meta']}><span>{entry.category}</span><span>{entry.username || 'YororoIce'}</span><span>{dateLabel(entry.createdAt, locale)}</span><span>♡ {entry.likes || 0}</span></div></div>

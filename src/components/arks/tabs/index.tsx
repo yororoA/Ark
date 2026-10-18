@@ -19,6 +19,8 @@ export default function Tabs({ items, value, onValueChange, className }: TabsPro
       {items.map((item) => (
         <button
           key={item.value}
+          type="button"
+          aria-pressed={value === item.value}
           className={cn(styles.tab, value === item.value && styles.active)}
           onClick={() => onValueChange(item.value)}
         >

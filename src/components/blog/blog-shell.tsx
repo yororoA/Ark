@@ -11,6 +11,7 @@ import { legacyDestination } from '@/lib/legacy-route'
 import { BlogSelect } from './controls'
 import ArchiveLogo from '@/components/brand/archive-logo'
 import PrismLogo from '@/components/brand/prism-logo'
+import PrismStars from '@/components/appearance/prism-stars'
 import ThemePicker from '@/components/appearance/theme-picker'
 import { useAppearance } from '@/components/appearance/appearance-store'
 import { P3RMenu } from './p3r-navigation'
@@ -47,6 +48,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
   return (
     <div className={styles['blog-root']} data-blog-root>
+      <PrismStars />
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
         <Link href="/home" className={styles['brand']} aria-label="YororoIce Ark">

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import Portal from '@/components/Portal'
 import type { RainConnection } from './rain-connection-store'
-import PrismScene from './prism-scene'
+import PrismEclipse, { ECLIPSE_COVER_MS, ECLIPSE_REVEAL_MS } from './prism-eclipse'
 import styles from './prism-connection.module.scss'
 
 interface Props extends RainConnection {
@@ -33,7 +33,7 @@ export default function PrismConnectionSequence({ status, username, error, desti
     const timer = window.setTimeout(() => {
       setCovered(true)
       if (motion.matches) setQuick(true)
-    }, motion.matches ? 0 : 1700)
+    }, motion.matches ? 0 : ECLIPSE_COVER_MS)
     motion.addEventListener('change', preference)
     document.addEventListener('visibilitychange', visibility)
     return () => {
@@ -51,7 +51,7 @@ export default function PrismConnectionSequence({ status, username, error, desti
   }, [covered, status, onCovered])
   useEffect(() => {
     if (!revealing) return
-    const timer = window.setTimeout(onComplete, quick ? 0 : 680)
+    const timer = window.setTimeout(onComplete, quick ? 0 : ECLIPSE_REVEAL_MS)
     return () => clearTimeout(timer)
   }, [revealing, quick, onComplete])
   const dismissOrSkip = () => status === 'success' ? skip() : onDismiss()
@@ -68,12 +68,12 @@ export default function PrismConnectionSequence({ status, username, error, desti
   return <Portal black={false}>
     <section ref={ref} className={styles.sequence} data-testid="prism-connection" data-phase={phase} data-quick={quick}
       role="dialog" aria-modal="true" aria-label="月之暗面 · 接入" aria-busy={status === 'pending'} tabIndex={-1} onKeyDown={key}>
-      <div className={styles['top-line']}><span>YOROROICE / ARK</span><span>THE DARK SIDE OF THE MOON</span></div>
-      <PrismScene variant="connection" />
+      <PrismEclipse phase={phase} quick={quick} onUnavailable={skip} />
+      <div className={styles['top-line']}><span>YOROROICE / ARK</span><span>ECLIPSE · 月之暗面</span></div>
       <div className={styles.identity}>
-        <small>WORDS / MOMENTS / ECHOES</small><strong>{username}</strong>
+        <small>{covered ? 'TOTALITY / 进入另一面' : 'APPROACHING THE DARK SIDE'}</small><strong>{username}</strong>
         <p role="status">{failed ? '连接失败。' : status === 'pending' ? '正在确认身份…' : pageReady ? '连接已建立。' : '正在打开页面…'}</p>
-        <div className={styles['spectrum-line']} aria-hidden="true" />
+        <div className={styles['contact-marks']} aria-hidden="true"><i /><span>{covered ? '●' : '◐'}</span><i /></div>
       </div>
       {failed ? <div className={styles.failure}><p role="alert">{error || '暂时无法连接，请重试。'}</p><button type="button" onClick={onDismiss}>返回登录 ↗</button></div>
         : !revealing ? <button className={styles.skip} type="button" onClick={dismissOrSkip}>{status === 'success' ? '跳过动画 ↗' : '返回登录 ↗'}</button> : null}
