@@ -6,13 +6,13 @@ import sharp from 'sharp';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const baseURL = process.env.TEST_BASE_URL || 'http://localhost:9999';
-const screenshotDirectory = join(process.cwd(), 'test-results', 'login-animation');
+const screenshotDirectory = process.env.LOGIN_SCREENSHOT_DIR || join(process.cwd(), 'test-results', 'login-animation');
 const account = { uid: 'animation-fixture', username: 'Test Doctor', lastLoginAt: '2026-01-01T00:00:00.000Z' };
 let browser;
 
 before(async () => {
   await mkdir(screenshotDirectory, { recursive: true });
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH } : {}) });
 });
 
 after(async () => {
@@ -25,7 +25,9 @@ async function session(t, { viewport = { width: 1440, height: 900 }, reducedMoti
   // Isolated synthetic identity; all auth requests are intercepted before leaving the browser.
   await context.addInitScript((details) => {
     localStorage.setItem('authDetails', JSON.stringify(details));
+    localStorage.setItem('ark.design.v1', 'archive');
   }, accounts);
+  await context.route('**/api/session?all=true', route => route.fulfill({ json: { data: accounts, activeUid: accounts[0]?.uid || null } }));
   const requests = [];
   await context.route('**/api/auth/**', async (route) => {
     const request = route.request();
@@ -37,7 +39,8 @@ async function session(t, { viewport = { width: 1440, height: 900 }, reducedMoti
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(`${baseURL}/login`);
-  await page.getByRole('button', { name: accounts.length ? '建立连接' : '其他账号登录', exact: true }).waitFor();
+  if (accounts.length) await page.getByRole('button', { name: '建立连接', exact: true }).waitFor();
+  else await page.getByRole('dialog', { name: '账号管理', exact: true }).waitFor();
   await page.evaluate(() => document.fonts.ready);
   t.after(() => assert.deepEqual(errors, [], 'No uncaught browser errors'));
   return { page, requests };
@@ -159,7 +162,10 @@ test('failure shows the backend message and can start a fresh connection', async
   await page.waitForTimeout(800);
   await shot(page, 'desktop-04-error');
   await page.getByRole('button', { name: '返回登录', exact: true }).click();
-  await page.getByRole('button', { name: '登录', exact: true }).click();
+  // An expired saved session now correctly opens the credential form.
+  await page.locator('#username').fill('fixture-user');
+  await page.locator('#password').fill('synthetic-test-only');
+  await page.getByRole('button', { name: '登录', exact: true }).last().click();
   await phase(page, 'boot').waitFor();
   await page.waitForURL('**/home');
   assert.equal(requests.length, 2);
@@ -192,10 +198,7 @@ test('reduced motion preference does not suppress the connection animation', asy
 for (const action of ['login', 'register']) {
   test(`first-time ${action} preserves the existing auth payload`, async (t) => {
     const { page, requests } = await session(t, { accounts: [], reducedMotion: 'reduce' });
-    await page.getByRole('button', { name: '其他账号登录', exact: true }).click();
-    if (action === 'login') {
-      await page.getByRole('button', { name: '登录', exact: true }).first().click();
-    }
+    await page.getByRole('button', { name: action === 'login' ? '登录' : '注册', exact: true }).first().click();
     await page.locator('#username').fill('fixture-user');
     await page.locator('#password').fill('synthetic-test-only');
     if (action === 'register') {
@@ -244,10 +247,10 @@ test('landscape terminal remains readable and a late response cannot navigate an
   await page.waitForTimeout(2400);
   await checkTerminalLayout(page);
   await shot(page, 'landscape-01-terminal');
-  await page.goto(`${baseURL}/`);
+  await page.goto(`${baseURL}/articles`);
   finish();
   await page.waitForTimeout(1500);
-  assert.equal(new URL(page.url()).pathname, '/');
+  assert.equal(new URL(page.url()).pathname, '/articles');
   assert.equal(await page.getByRole('dialog').count(), 0);
   assert.equal(await page.getByRole('img', { name: 'bg', exact: true }).count(), 0);
 });

@@ -3,16 +3,18 @@ import Portal from "@/components/Portal"
 import { QINGJIAN_COPY } from "@/lib/qingjian-copy"
 import Lenis from "lenis"
 import styles from "./components.module.scss"
+import { usePortalDialog } from '@/hooks/use-portal-dialog'
 
 export default function Declaration(props: { onClose: () => void }) {
   const { onClose } = props
+  const dialogRef = usePortalDialog(onClose)
   const [wrapperEl, setWrapperEl] = useState<HTMLDivElement | null>(null)
   const wrapperRef = useCallback((node: HTMLDivElement | null) => {
     setWrapperEl(node)
   }, [])
 
   useEffect(() => {
-    if (!wrapperEl) return
+    if (!wrapperEl || matchMedia('(pointer: coarse), (prefers-reduced-motion: reduce)').matches) return
     const lenis = new Lenis({
       wrapper: wrapperEl,
       content: wrapperEl.firstElementChild as HTMLElement,
@@ -23,7 +25,7 @@ export default function Declaration(props: { onClose: () => void }) {
 
   return (
     <Portal className={styles['dialog-overlay']}>
-      <div className={styles.declaration} role="dialog" aria-modal="true" aria-label="免责声明">
+      <div ref={dialogRef} tabIndex={-1} className={styles.declaration} role="dialog" aria-modal="true" aria-label="免责声明">
         <div ref={wrapperRef} className={styles.declarationContentWrapper}>
           <h1>免责声明</h1>
           <pre>{'【声明】\n'

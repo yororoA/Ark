@@ -3,6 +3,7 @@ import Portal from "@/components/Portal";
 import Button from "@/components/arks/button";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
+import { usePortalDialog } from '@/hooks/use-portal-dialog';
 
 interface SystemDialogProps {
   operation: string;
@@ -14,10 +15,10 @@ interface SystemDialogProps {
 }
 
 export default function SystemDialog(props: SystemDialogProps) {
-
+  const dialogRef = usePortalDialog(props.onCancel);
   return (
     <Portal className="flex items-center justify-center z-[10000]">
-      <div className={cn(styles.DialogWrap, 'z-[10001]')}>
+      <div ref={dialogRef} tabIndex={-1} role="alertdialog" aria-modal="true" aria-label={props.contentTitle} className={cn(styles.DialogWrap, 'z-[10001]')}>
         <div className={cn(styles.DialogTitle)}>系统提示</div>
         <div className={cn(styles.DialogContent)}>
           <props.children size={80} className={cn(styles.icon)} />
