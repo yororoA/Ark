@@ -3,7 +3,7 @@
 import Link from '@/components/appearance/p3r-link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ArrowUp, ArrowUpRight, Menu, X } from 'lucide-react'
 import BlogProvider, { request, useBlog } from './blog-provider'
 import { Locale, sections } from '@/lib/blog'
@@ -16,6 +16,7 @@ import ThemePicker from '@/components/appearance/theme-picker'
 import { useAppearance } from '@/components/appearance/appearance-store'
 import { P3RMenu } from './p3r-navigation'
 import { PrismMenu } from './prism-navigation'
+import MobileNavigation from './mobile-navigation'
 import { syncAuthDetails } from '@/store/auth'
 import styles from './blog.module.scss'
 
@@ -25,6 +26,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const closeMenu = useCallback(() => setOpen(false), [])
   useEffect(() => {
     const hash = location.hash.slice(1)
     if (!/^\/(?:town|account)(?:\/|\?|$)/.test(hash)) return
@@ -32,13 +34,6 @@ function Shell({ children }: { children: React.ReactNode }) {
     const destination = legacyDestination(old.pathname, old.searchParams)
     if (destination) router.replace(destination)
   }, [pathname, router])
-  useEffect(() => {
-    // The P3R menu animates its own dismissal from the dialog's cancel event.
-    if (!open || design === 'p3r' || design === 'prism') return
-    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
-    window.addEventListener('keydown', close)
-    return () => window.removeEventListener('keydown', close)
-  }, [open, design])
   async function logout() {
     try {
       await request('/api/session', { method: 'DELETE' })
@@ -69,7 +64,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       {/* onNavigate closes the menu beneath a page wipe instead of at the click. */}
-      {open && (design === 'prism' ? <PrismMenu locale={locale} close={() => setOpen(false)} /> : design === 'p3r' ? <P3RMenu locale={locale} close={() => setOpen(false)} /> : <nav className={styles['mobile-nav']} aria-label={t('menu')}>{sections.map(([key, number]) => <Link href={`/${key}`} key={key} onNavigate={() => setOpen(false)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span>{number}</span>{t(key)}<ArrowUpRight size={18} /></Link>)}<Link href="/chat" onNavigate={() => setOpen(false)} aria-current={pathname.startsWith('/chat') ? 'page' : undefined}><span>07</span>{t('chat')}<ArrowUpRight size={18} /></Link></nav>)}
+      {open && (design === 'prism' ? <PrismMenu locale={locale} close={closeMenu} /> : design === 'p3r' ? <P3RMenu locale={locale} close={closeMenu} /> : <MobileNavigation close={closeMenu} />)}
       <main id="main-content" className={styles['main-content']}>{children}</main>
       <footer className={styles['site-footer']}>
         <div className={styles['prism-footer-mark']}><span>YororoIce.</span><small>THE DARK SIDE OF THE EVERYDAY</small><i aria-hidden="true" /></div>

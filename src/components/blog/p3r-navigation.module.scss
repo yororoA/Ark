@@ -76,6 +76,7 @@
 .menu-dialog {
   position: fixed; inset: 0; margin: 0; width: 100%; max-width: none; height: 100%; max-height: none; padding: 24px 5%;
   border: 0; background: #0754e4; overflow: auto; overscroll-behavior: contain;
+  padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom));
   &[open] { display: flex; flex-direction: column; }
   // The page stays visible around the flooding outline, like the reference.
   // Previous opaque backdrop and centred ::after ring: commit 65630bf.
@@ -140,6 +141,17 @@
   .menu-top > a { font-size: 9px; letter-spacing: 1px; }
 }
 @media (max-width: 360px) { .home-menu, .menu-body { padding-inline: 1%; } .destination-label { font-size: 7px; } .destination-list a { gap: 7px; } }
+@media (max-height: 500px) and (orientation: landscape) {
+  .menu-dialog { padding: 12px max(5%, env(safe-area-inset-right)) 12px max(5%, env(safe-area-inset-left)); }
+  .menu-body { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 8%; padding-block: 22px; }
+  .menu-word { font-size: 100px; }
+  .menu-identity .date { margin-bottom: 22px; }
+  .menu-identity > p { display: none; }
+  .menu-body .destination-list { transform: rotate(-4deg); }
+  .menu-body .destination-list a { min-height: 44px; }
+  .menu-body .destination-name { font-size: 32px; }
+  .menu-bottom { padding-block: 8px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .home-stage *, .menu-dialog * { animation: none !important; }
   .destination-list a, .destination-list a::before, .continue-link { transition: none; }
