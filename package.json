@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "verify:blog": "node scripts/verify-blog.mjs",
-    "verify:blog:preview": "node scripts/verify-blog.mjs --serve"
+    "verify:blog:preview": "node scripts/verify-blog.mjs --serve",
+    "verify:mobile": "node --test tests/mobile-adaptation.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
