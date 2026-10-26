@@ -47,6 +47,8 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
   const messagesRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const stickToBottom = useRef(true)
+  const userScrolling = useRef(false)
+  const scrollIdle = useRef<ReturnType<typeof setTimeout> | null>(null)
   const olderPosition = useRef<{ height: number; top: number } | null>(null)
   const base = `chat/history?type=${conversation.type}&userId=${encodeURIComponent(conversation.id)}&account=${session!.uid}&limit=15`
   const { data, error, isLoading, isValidating, mutate, size, setSize } = useSWRInfinite<Envelope<Message[]>>(
@@ -74,9 +76,18 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
     directDomUpdates: true,
   })
   const keepLatestVisible = useCallback(() => {
+    if (stickToBottom.current) virtualizer.scrollToEnd()
+  }, [virtualizer])
+  function recordScrollIntent() { userScrolling.current = true }
+  function recordScrollPosition() {
     const scroller = messagesRef.current
-    if (scroller && stickToBottom.current) scroller.scrollTop = scroller.scrollHeight
-  }, [])
+    // Virtualizer measurements also dispatch scroll events. Only a user
+    // gesture can opt out of following the latest message.
+    if (!scroller || !userScrolling.current) return
+    stickToBottom.current = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 60
+    if (scrollIdle.current) clearTimeout(scrollIdle.current)
+    scrollIdle.current = setTimeout(() => { userScrolling.current = false }, 150)
+  }
   useEffect(() => {
     const onMessage = (event: Event) => {
       const payload = (event as CustomEvent<ChatEvent>).detail
@@ -96,9 +107,23 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
       scroller.scrollTop = olderPosition.current.top + scroller.scrollHeight - olderPosition.current.height
       olderPosition.current = null
     } else if (stickToBottom.current) {
-      scroller.scrollTop = scroller.scrollHeight
+      keepLatestVisible()
     }
-  }, [latest, messages.length, isValidating])
+  }, [latest, messages.length, isValidating, keepLatestVisible])
+  useEffect(() => {
+    const scroller = messagesRef.current
+    if (!scroller) return
+    // Keyboard, orientation and attachment changes resize the log independently
+    // of its messages. Preserve the user's position unless they were at the end.
+    const observer = new ResizeObserver(keepLatestVisible)
+    observer.observe(scroller)
+    const list = scroller.querySelector(`.${styles['virtual-message-list']}`)
+    if (list) observer.observe(list)
+    return () => {
+      observer.disconnect()
+      if (scrollIdle.current) clearTimeout(scrollIdle.current)
+    }
+  }, [keepLatestVisible])
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     const hasContent = content.trim() || uploads.items.length
@@ -108,6 +133,7 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
       const assets = await uploads.uploadAll()
       const result = await send<Envelope<Message>>('chat/send', { type: conversation.type, targetUserId: conversation.id, text: content.trim(), assetIds: assets.map(asset => asset.id), replyto: reply ? `${reply.username}: ${excerpt(reply.text, 200) || t('image')}` : '' })
       stickToBottom.current = true
+      userScrolling.current = false
       setIncoming(previous => [...previous, result.data])
       setContent(''); setReply(null); uploads.reset()
       await mutate()
@@ -118,7 +144,11 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
   return <section className={styles['chat-main']} aria-label={label}>
     <div className={styles['chat-status']} title={label}><strong>{label}</strong><span aria-hidden="true">·</span><span role="status">{t(connection === 'connected' ? 'connected' : 'reconnecting')}</span><button type="button" className={`${styles['icon-button']} ${styles['chat-expand']}`} aria-label={expandLabel} title={expandLabel} aria-pressed={expanded} onClick={toggleExpanded}>{expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button></div>
     <span className={styles['sr-only']} aria-live="polite">{messages.at(-1)?.text || (messages.at(-1)?.imgurl ? t('image') : '')}</span>
-    <div className={styles['messages']} ref={messagesRef} role="log" aria-label={label} onScroll={() => { const el = messagesRef.current!; stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60 }}>
+    <div className={styles['messages']} ref={messagesRef} role="log" aria-label={label}
+      onWheel={recordScrollIntent} onTouchMove={recordScrollIntent}
+      onPointerDown={recordScrollIntent}
+      onKeyDown={event => { if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) recordScrollIntent() }}
+      onScroll={recordScrollPosition}>
       {hasMore && <div className={styles['older-messages']}><button className={styles['secondary-button']} disabled={isValidating} onClick={() => { const el = messagesRef.current!; olderPosition.current = { height: el.scrollHeight, top: el.scrollTop }; stickToBottom.current = false; void setSize(size + 1) }}>{t('older')}</button></div>}
       <State loading={isLoading} error={error} empty={!!data && !messages.length} retry={() => mutate()} />
       <div ref={virtualizer.containerRef} className={styles['virtual-message-list']}>{virtualizer.getVirtualItems().map(virtualRow => {
@@ -126,7 +156,7 @@ function ConversationView({ conversation, expanded, toggleExpanded }: {
         const urls = Array.isArray(message.imgurl) ? message.imgurl : message.imgurl ? [message.imgurl] : []
         const media: Media[] = urls.filter(url => /^https?:\/\//.test(url)).map(url => ({ url, filename: url.split('/').pop() || '', mime: /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) ? 'video/mp4' : 'image/jpeg' }))
         const own = message.uid === session!.uid
-        return <div key={message._id} ref={virtualizer.measureElement} data-index={virtualRow.index} className={styles['message-row']} data-own={own}>
+        return <div key={message._id} ref={virtualizer.measureElement} data-index={virtualRow.index} data-message-id={message._id} className={styles['message-row']} data-own={own}>
           <article className={styles['message']} data-own={own} style={senderStyle(message.username)}>
             <small className={styles['message-meta']} title={message.username}>{message.username} · {dateLabel(message.createdAt, locale)} {new Date(message.createdAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</small>
             {message.replyto && <blockquote className={styles['message-quote']}>{message.replyto}</blockquote>}
@@ -182,11 +212,32 @@ function ChatContent({ expanded, toggleExpanded }: { expanded: boolean; toggleEx
 export default function Chat() {
   const { session } = useBlog()
   const [expanded, setExpanded] = useState(false)
+  const pageRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const root = pageRef.current?.closest<HTMLElement>(`.${styles['blog-root']}`)
+    if (!root) return
+    const viewport = window.visualViewport
+    const resize = () => {
+      root.style.setProperty('--chat-viewport-height', `${viewport?.height ?? window.innerHeight}px`)
+      root.style.setProperty('--chat-viewport-top', `${viewport?.offsetTop ?? 0}px`)
+    }
+    resize()
+    viewport?.addEventListener('resize', resize)
+    viewport?.addEventListener('scroll', resize)
+    window.addEventListener('resize', resize)
+    return () => {
+      viewport?.removeEventListener('resize', resize)
+      viewport?.removeEventListener('scroll', resize)
+      window.removeEventListener('resize', resize)
+      root.style.removeProperty('--chat-viewport-height')
+      root.style.removeProperty('--chat-viewport-top')
+    }
+  }, [])
   useEffect(() => {
     if (!expanded) return
     const collapse = (event: KeyboardEvent) => { if (event.key === 'Escape') setExpanded(false) }
     window.addEventListener('keydown', collapse)
     return () => window.removeEventListener('keydown', collapse)
   }, [expanded])
-  return <div className={`${styles['page']} ${styles['chat-page']}`} data-expanded={expanded}><PageHeading title="chat" english="Across the distance" number="07" /><RequireLogin guestAllowed><ChatContent key={session?.uid} expanded={expanded} toggleExpanded={() => setExpanded(value => !value)} /></RequireLogin></div>
+  return <div ref={pageRef} className={`${styles['page']} ${styles['chat-page']}`} data-expanded={expanded}><PageHeading title="chat" english="Across the distance" number="07" /><RequireLogin guestAllowed><ChatContent key={session?.uid} expanded={expanded} toggleExpanded={() => setExpanded(value => !value)} /></RequireLogin></div>
 }

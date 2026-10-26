@@ -16,6 +16,26 @@ export function usePortalDialog(close?: () => void, active = true) {
     }
   }, [dialog])
   useEffect(() => {
+    const overlay = dialog?.parentElement
+    if (!overlay || !active) return
+    const viewport = window.visualViewport
+    const resize = () => {
+      overlay.style.setProperty('--dialog-viewport-height', `${viewport?.height ?? window.innerHeight}px`)
+      overlay.style.setProperty('--dialog-viewport-top', `${viewport?.offsetTop ?? 0}px`)
+    }
+    resize()
+    viewport?.addEventListener('resize', resize)
+    viewport?.addEventListener('scroll', resize)
+    window.addEventListener('resize', resize)
+    return () => {
+      viewport?.removeEventListener('resize', resize)
+      viewport?.removeEventListener('scroll', resize)
+      window.removeEventListener('resize', resize)
+      overlay.style.removeProperty('--dialog-viewport-height')
+      overlay.style.removeProperty('--dialog-viewport-top')
+    }
+  }, [dialog, active])
+  useEffect(() => {
     if (!dialog || !active) return
     const overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'

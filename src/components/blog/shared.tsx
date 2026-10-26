@@ -147,12 +147,18 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [panning, setPanning] = useState(false)
   const mediaRef = useRef<HTMLDivElement>(null)
-  const dragRef = useRef({ active: false, pointerId: -1, x: 0, y: 0, panX: 0, panY: 0 })
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>())
+  const viewRef = useRef({ scale: 1, pan: { x: 0, y: 0 } })
+  const gestureRef = useRef({ distance: 0, x: 0, y: 0, scale: 1, pan: { x: 0, y: 0 } })
   const { t, locale } = useBlog()
   const item = files[active]
   const isImage = !item.mime.startsWith('video')
   const resetView = useCallback(() => {
-    dragRef.current.active = false
+    for (const id of pointersRef.current.keys()) {
+      if (mediaRef.current?.hasPointerCapture(id)) mediaRef.current.releasePointerCapture(id)
+    }
+    pointersRef.current.clear()
+    viewRef.current = { scale: 1, pan: { x: 0, y: 0 } }
     setPanning(false)
     setScale(1)
     setPan({ x: 0, y: 0 })
@@ -162,25 +168,53 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
     resetView()
   }
   function changeScale(offset: number) {
-    setScale(value => Math.max(.5, Math.min(3, Number((value + offset).toFixed(2)))))
+    const next = Math.max(.5, Math.min(3, Number((viewRef.current.scale + offset).toFixed(2))))
+    viewRef.current.scale = next
+    setScale(next)
+  }
+  function rebaseGesture() {
+    const [first, second] = [...pointersRef.current.values()]
+    if (!first) return
+    gestureRef.current = {
+      distance: second ? Math.hypot(second.x - first.x, second.y - first.y) : 0,
+      x: second ? (first.x + second.x) / 2 : first.x,
+      y: second ? (first.y + second.y) / 2 : first.y,
+      scale: viewRef.current.scale,
+      pan: viewRef.current.pan,
+    }
   }
   function startPan(event: React.PointerEvent<HTMLDivElement>) {
     if (!isImage || event.button !== 0) return
     event.preventDefault()
     event.currentTarget.setPointerCapture(event.pointerId)
-    dragRef.current = { active: true, pointerId: event.pointerId, x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y }
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    rebaseGesture()
     setPanning(true)
   }
   function movePan(event: React.PointerEvent<HTMLDivElement>) {
-    const drag = dragRef.current
-    if (!drag.active || drag.pointerId !== event.pointerId) return
+    if (!pointersRef.current.has(event.pointerId)) return
     event.preventDefault()
-    setPan({ x: drag.panX + event.clientX - drag.x, y: drag.panY + event.clientY - drag.y })
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    const [first, second] = [...pointersRef.current.values()]
+    const gesture = gestureRef.current
+    const midpoint = second ? { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 } : first
+    const distance = second ? Math.hypot(second.x - first.x, second.y - first.y) : 0
+    const nextScale = gesture.distance ? Math.max(.5, Math.min(3, gesture.scale * distance / gesture.distance)) : gesture.scale
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const center = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 }
+    const ratio = nextScale / gesture.scale
+    const nextPan = {
+      x: midpoint.x - center.x - (gesture.x - center.x - gesture.pan.x) * ratio,
+      y: midpoint.y - center.y - (gesture.y - center.y - gesture.pan.y) * ratio,
+    }
+    viewRef.current = { scale: nextScale, pan: nextPan }
+    setScale(nextScale)
+    setPan(nextPan)
   }
   function endPan(event: React.PointerEvent<HTMLDivElement>) {
-    if (dragRef.current.pointerId !== event.pointerId) return
-    dragRef.current.active = false
-    setPanning(false)
+    if (!pointersRef.current.delete(event.pointerId)) return
+    rebaseGesture()
+    setPanning(pointersRef.current.size > 0)
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
   useEffect(() => {
@@ -190,7 +224,9 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
       event.preventDefault()
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? media.clientHeight : 1
       const factor = Math.exp(-event.deltaY * unit * .002)
-      setScale(value => Math.max(.5, Math.min(3, Number((value * factor).toFixed(3)))))
+      const next = Math.max(.5, Math.min(3, Number((viewRef.current.scale * factor).toFixed(3))))
+      viewRef.current.scale = next
+      setScale(next)
     }
     media.addEventListener('wheel', zoom, { passive: false })
     return () => media.removeEventListener('wheel', zoom)
@@ -227,10 +263,11 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
       onPointerMove={movePan}
       onPointerUp={endPan}
       onPointerCancel={endPan}
+      onLostPointerCapture={endPan}
     >
       {isImage
         ? <div className={styles['preview-canvas']} style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={item.desc || item.filename} style={{ transform: `scale(${scale})` }} /></div>
-        : <video key={item.url} src={item.url} controls autoPlay />}
+        : <video key={item.url} src={item.url} controls autoPlay playsInline />}
     </div>
     <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`}>
       <div className={styles['preview-navigation']}>
