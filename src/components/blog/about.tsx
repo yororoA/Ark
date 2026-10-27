@@ -2,9 +2,10 @@
 /* eslint-disable @next/next/no-img-element -- Link icons are arbitrary external URLs managed by the site owner. */
 
 import { useState } from 'react'
+import { useSWRConfig } from 'swr'
 import { ArrowUpRight, Pencil, Plus } from 'lucide-react'
 import { BlogLink, Comment, dateLabel, Envelope, PROFILE, safeUrl } from '@/lib/blog'
-import { send, useBlog, useBlogData } from './blog-provider'
+import { request, send, useBlog, useBlogData } from './blog-provider'
 import { DeleteButton, Markdown, Modal, PageHeading, Pagination, State, styles } from './shared'
 import { BlogSelect } from './controls'
 
@@ -64,6 +65,7 @@ function Links() {
 
 function Guestbook() {
   const { t, session, locale, notify } = useBlog()
+  const { mutate: refresh } = useSWRConfig()
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
   const [page, setPage] = useState(1)
@@ -76,7 +78,12 @@ function Guestbook() {
     setBusy(true); setSubmitError('')
     try {
       await send('guestbook', { content: content.trim(), username: name.trim() || session?.username || 'Guest' })
-      setContent(''); setPage(1); await mutate(); notify(t('saved'))
+      setContent('')
+      // Revalidate the destination page even when page 1 is already cached.
+      if (page === 1) await mutate()
+      else await refresh('/api/blog/guestbook?page=1&limit=8', await request<Envelope<Comment[]>>('guestbook?page=1&limit=8'), { revalidate: false })
+      setPage(1)
+      notify(t('saved'))
     } catch (error) { setSubmitError((error as Error).message) } finally { setBusy(false) }
   }
   return <section className={styles['guestbook']} id="guestbook"><div><div className={styles['section-heading']}><div><div className={styles['eyebrow']}>LEAVE AN ECHO</div><h2>{t('guestbook')}</h2></div></div>

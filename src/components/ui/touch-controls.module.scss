@@ -1,0 +1,12 @@
+.button, .menu-item { max-width: 100%; min-width: 0; overflow-wrap: anywhere; }
+.menu-content {
+  max-width: calc(100vw - 24px);
+  max-height: var(--radix-dropdown-menu-content-available-height, calc(100dvh - 24px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 540px), (pointer: coarse) {
+  .button { min-width: 44px; min-height: 44px; height: auto; white-space: normal; padding-block: 8px; }
+  .menu-item { min-height: 44px; white-space: normal; }
+}

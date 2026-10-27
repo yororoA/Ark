@@ -136,3 +136,36 @@ $scale: 3;
     opacity: 0;
   }
 }
+
+@media (max-width: 540px), (max-height: 500px) {
+  .wrap .animation {
+    height: clamp(64px, 16svh, 96px);
+    min-height: 64px;
+    padding: 12px max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    font-size: 16px;
+    -webkit-text-stroke: 0;
+
+    .animationIcon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding-left: 40px;
+      &::before, &::after { left: 16px; width: 16px; height: 16px; margin: -8px; border-width: 2px; }
+      .animationText {
+        position: static;
+        min-width: 0;
+        max-width: 100%;
+        transform: none;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap .charJump, .wrap .animation .animationIcon::after { animation: none; }
+  .wrap .animation .animationIcon::after { display: none; }
+}
