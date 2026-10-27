@@ -639,7 +639,8 @@ test('connection composition fills the viewport and Loading ends before synchron
   assert.ok(progressSamples[0].value >= 0 && progressSamples[0].value <= 100);
   assert.ok(progressSamples.at(-1).value >= progressSamples[0].value + 24);
   assert.ok(progressSamples.every(sample => sample.value <= 100 && sample.labels === 2));
-  assert.equal(progressSamples[0].color, 'rgb(236, 232, 115)');
+  // The archive theme's synchronization bar uses its existing signal red.
+  assert.equal(progressSamples[0].color, 'rgb(196, 59, 48)');
   await shot(page, 'reference-960-network');
   await page.waitForURL('**/home');
 });
