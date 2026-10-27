@@ -152,6 +152,15 @@
   .menu-body .destination-name { font-size: 32px; }
   .menu-bottom { padding-block: 8px; }
 }
+.menu-dialog {
+  padding-inline: max(5%, env(safe-area-inset-left)) max(5%, env(safe-area-inset-right));
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+@media (max-width: 540px) {
+  // Reserve room for the tilted list and the active row's horizontal movement.
+  .menu-body .destination-list { margin-inline: 12px; transform: rotate(-4deg); }
+}
 @media (prefers-reduced-motion: reduce) {
   .home-stage *, .menu-dialog * { animation: none !important; }
   .destination-list a, .destination-list a::before, .continue-link { transition: none; }

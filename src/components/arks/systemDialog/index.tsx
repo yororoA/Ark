@@ -17,7 +17,7 @@ interface SystemDialogProps {
 export default function SystemDialog(props: SystemDialogProps) {
   const dialogRef = usePortalDialog(props.onCancel);
   return (
-    <Portal className="flex items-center justify-center z-[10000]">
+    <Portal className={cn(styles['dialog-overlay'], 'flex items-center justify-center z-[10000]')}>
       <div ref={dialogRef} tabIndex={-1} role="alertdialog" aria-modal="true" aria-label={props.contentTitle} className={cn(styles.DialogWrap, 'z-[10001]')}>
         <div className={cn(styles.DialogTitle)}>系统提示</div>
         <div className={cn(styles.DialogContent)}>

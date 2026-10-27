@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Pl
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
+import { observeVisualViewport } from '@/lib/visual-viewport'
 import RainPlanes from '@/components/appearance/rain-planes'
 import P3RScene from '@/components/appearance/p3r-scene'
 import PrismScene from '@/components/appearance/prism-scene'
@@ -40,7 +41,8 @@ export function PageHeading({ title, english, number, children }: { title: TextK
 export function State({ loading, error, empty, retry }: { loading?: boolean; error?: Error; empty?: boolean; retry?: () => void }) {
   const { t } = useBlog()
   if (!loading && !error && !empty) return null
-  return <div className={styles['state-box']} role={error ? 'alert' : 'status'}>{loading ? <><span className={styles['loading-line']} />{t('loading')}</> : error ? <><p>{error.message}</p><button className={styles['secondary-button']} onClick={retry}>{t('retry')}</button></> : <p>{t('noResults')}</p>}</div>
+  // Keep recovery controls reachable while an automatic retry is in flight.
+  return <div className={styles['state-box']} role={error ? 'alert' : 'status'}>{error ? <><p>{error.message}</p><button className={styles['secondary-button']} onClick={retry}>{t('retry')}</button></> : loading ? <><span className={styles['loading-line']} />{t('loading')}</> : <p>{t('noResults')}</p>}</div>
 }
 
 const markdownComponents: Components = {
@@ -57,9 +59,22 @@ export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: O
     const textarea = ref.current
     if (!textarea) return
     textarea.style.height = '0'
-    textarea.style.height = `${textarea.scrollHeight}px`
+    const borderHeight = textarea.offsetHeight - textarea.clientHeight
+    textarea.style.height = `${textarea.scrollHeight + borderHeight}px`
   }, [])
   useEffect(resize, [resize, value])
+  useEffect(() => {
+    const textarea = ref.current
+    if (!textarea) return
+    let width = textarea.clientWidth
+    const observer = new ResizeObserver(() => {
+      if (textarea.clientWidth === width) return
+      width = textarea.clientWidth
+      resize()
+    })
+    observer.observe(textarea)
+    return () => observer.disconnect()
+  }, [resize])
   return <textarea {...props} ref={ref} rows={minRows} value={value} style={{ ...style, overflowY: 'hidden' }} onInput={event => { resize(); onInput?.(event) }} />
 }
 export function RequireLogin({ children, guestAllowed = false }: { children: React.ReactNode; guestAllowed?: boolean }) {
@@ -97,12 +112,14 @@ export function Modal({ title, children, close, variant = 'default', description
     const dialog = ref.current
     const opener = document.activeElement
     dialog?.showModal()
+    const releaseViewport = dialog ? observeVisualViewport(dialog, 'dialog') : undefined
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       dialog?.close()
+      releaseViewport?.()
       document.body.style.overflow = previous
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus()
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
     }
   }, [])
   return <dialog ref={ref} className={styles['dialog']} data-variant={variant} role={variant === 'confirm' ? 'alertdialog' : undefined} aria-label={title} aria-describedby={descriptionId} onKeyDown={e => {

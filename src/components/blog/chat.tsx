@@ -6,6 +6,7 @@ import useSWRInfinite from 'swr/infinite'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Maximize2, MessageCircle, Minimize2, Reply, Send, UsersRound, X } from 'lucide-react'
 import { dateLabel, Envelope, excerpt, Media } from '@/lib/blog'
+import { observeVisualViewport } from '@/lib/visual-viewport'
 import { request, send, useBlog, useBlogData } from './blog-provider'
 import { useManagedUploads } from './media-upload'
 import { FilePicker, MediaGrid, PageHeading, RequireLogin, State, styles } from './shared'
@@ -216,22 +217,7 @@ export default function Chat() {
   useEffect(() => {
     const root = pageRef.current?.closest<HTMLElement>(`.${styles['blog-root']}`)
     if (!root) return
-    const viewport = window.visualViewport
-    const resize = () => {
-      root.style.setProperty('--chat-viewport-height', `${viewport?.height ?? window.innerHeight}px`)
-      root.style.setProperty('--chat-viewport-top', `${viewport?.offsetTop ?? 0}px`)
-    }
-    resize()
-    viewport?.addEventListener('resize', resize)
-    viewport?.addEventListener('scroll', resize)
-    window.addEventListener('resize', resize)
-    return () => {
-      viewport?.removeEventListener('resize', resize)
-      viewport?.removeEventListener('scroll', resize)
-      window.removeEventListener('resize', resize)
-      root.style.removeProperty('--chat-viewport-height')
-      root.style.removeProperty('--chat-viewport-top')
-    }
+    return observeVisualViewport(root, 'chat')
   }, [])
   useEffect(() => {
     if (!expanded) return

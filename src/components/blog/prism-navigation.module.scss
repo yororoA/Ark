@@ -155,6 +155,11 @@
   .track-list em { font-size: 7px; margin-top: 4px; }
   .track-list svg { display: none; }
 }
+.menu-dialog {
+  padding-inline: max(5%, env(safe-area-inset-left)) max(5%, env(safe-area-inset-right));
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
 @media (prefers-reduced-motion: reduce) {
   .prism-home *, .menu-dialog *, .prism-home *::after, .menu-dialog *::after { animation: none !important; transition: none !important; }
 }

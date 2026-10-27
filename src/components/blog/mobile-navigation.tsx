@@ -16,7 +16,7 @@ export default function MobileNavigation({ close }: { close: () => void }) {
     const dialog = ref.current
     const opener = document.activeElement
     const overflow = document.body.style.overflow
-    const desktop = matchMedia('(min-width: 821px)')
+    const desktop = matchMedia('(min-width: 1101px)')
     dialog?.showModal()
     dialog?.querySelector<HTMLAnchorElement>('[aria-current="page"]')?.focus({ preventScroll: true })
     document.body.style.overflow = 'hidden'
