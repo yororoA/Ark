@@ -43,13 +43,20 @@
 .icon-button { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: transparent; border: 1px solid transparent; transition: border-color .2s, color .2s; &:hover { color: var(--accent); border-color: var(--line); } }
 .menu-button { display: none; }
 .mobile-menu-dialog {
-  position: fixed; inset: var(--site-header-height) 0 auto; margin: 0; padding: 0;
-  width: 100%; max-width: none; max-height: calc(100dvh - var(--site-header-height));
-  border: 0; background: var(--paper); color: var(--ink); overflow-y: auto; overscroll-behavior: contain;
+  // Previously the dialog started below the header, leaving its X behind
+  // ::backdrop. A transparent full-height shell gives that position a real close.
+  position: fixed; inset: 0; margin: 0; padding: var(--site-header-height) 0 0;
+  width: 100%; max-width: none; height: 100dvh; max-height: none;
+  border: 0; background: transparent; color: var(--ink); overflow: hidden;
   &::backdrop { background: #0002; }
 }
+.mobile-menu-close {
+  position: absolute; z-index: 1; left: var(--menu-toggle-left); top: var(--menu-toggle-top);
+  width: var(--menu-toggle-width, 44px); height: var(--menu-toggle-height, 44px);
+  color: var(--ink); background: var(--paper);
+}
 .mobile-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 11px; letter-spacing: 1px; }
-.mobile-nav { position: relative; background: var(--paper); border-bottom: 1px solid var(--ink); padding: 15px 6% max(30px, env(safe-area-inset-bottom)); box-shadow: 0 20px 25px #0001;
+.mobile-nav { position: relative; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border-bottom: 1px solid var(--ink); padding: 15px 6% max(30px, env(safe-area-inset-bottom)); box-shadow: 0 20px 25px #0001;
   a { display: flex; padding: 15px 0; border-bottom: 1px solid var(--line); gap: 18px; font-family: var(--song); font-size: 22px; span { font: 10px/1.8 var(--font-ibm-plex); margin-right: 10px; } svg { margin-left: auto; } &[aria-current] { color: var(--accent); } }
 }
 .main-content { min-height: 65vh; }

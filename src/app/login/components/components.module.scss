@@ -327,7 +327,9 @@
 }
 
 @media (max-width: 600px) {
-  .dialog-overlay { align-items: flex-end; padding: 12px; }
+  // Previously bottom aligned; keep the primary login centred in the visible
+  // viewport, including when the keyboard reduces or shifts that viewport.
+  .dialog-overlay { align-items: center; padding: 12px; }
   .accountManagement, .declaration { max-height: calc(100dvh - 24px); }
   .accountManagementTitle { padding: 11px 14px; }
   .accountManagementTitle h1 { font-size: 24px; }

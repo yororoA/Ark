@@ -60,7 +60,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             { value: 'ja', label: '日本語' }, { value: 'de', label: 'Deutsch' },
           ]} />
           <ThemePicker locale={locale} />
-          <button className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={open ? t('close') : t('menu')} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X size={20} /> : <Menu size={20} />}</button>
+          <button data-menu-toggle className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={open ? t('close') : t('menu')} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
       {/* onNavigate closes the menu beneath a page wipe instead of at the click. */}

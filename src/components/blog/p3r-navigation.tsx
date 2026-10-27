@@ -93,15 +93,15 @@ const STEPS = [0, .25, .5, .75, 1]
 // The menu floods out of its opener like the page wipe and drains back into
 // it on dismissal. The rim is the band between two outlines of one edge.
 // `reach` lets a drain start from an interrupted flood instead of a full cover.
-function floodMenu(dialog: HTMLDialogElement, rim: HTMLElement, { x, y }: Point, opening: boolean, reach = 1) {
-  const radius = fluidCoverRadius(x, y, innerWidth, innerHeight)
+function floodMenu(surface: HTMLElement, rim: HTMLElement, { x, y }: Point, opening: boolean, reach = 1) {
+  const radius = fluidCoverRadius(x, y, surface.clientWidth, surface.clientHeight)
   const seed = fluidSeed()
   const duration = opening ? MENU_OPEN_MS : MENU_CLOSE_MS * Math.max(.4, reach)
   const steps = opening ? STEPS : STEPS.map(step => step * reach).reverse()
   const outline = (progress: number, inset = 0) => fluidPoints(x, y, Math.max(0, radius * progress - inset), progress * duration, seed)
   const timing: KeyframeAnimationOptions = { duration, easing: opening ? easeOut : easeInOut, fill: opening ? 'none' : 'forwards' }
   return [
-    dialog.animate(steps.map(progress => ({ clipPath: `path("${outlinePath(outline(progress))}")` })), timing),
+    surface.animate(steps.map(progress => ({ clipPath: `path("${outlinePath(outline(progress))}")` })), timing),
     rim.animate(steps.map(progress => ({ clipPath: `path(evenodd, "${outlinePath(outline(progress))}${outlinePath(outline(progress, RIM_WIDTH))}")` })), timing),
   ]
 }
@@ -117,6 +117,7 @@ function menuOrigin(opener: Element | null): Point {
 
 export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const surface = useRef<HTMLDivElement>(null)
   const rim = useRef<HTMLSpanElement>(null)
   const origin = useRef<Point>({ x: 0, y: 0 })
   const flooding = useRef<Animation[]>([])
@@ -127,9 +128,9 @@ export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }
     const previous = document.body.style.overflow
     origin.current = menuOrigin(opener)
     dialog?.showModal()
-    dialog?.querySelector<HTMLAnchorElement>('[aria-current="page"]')?.focus()
+    dialog?.querySelector<HTMLAnchorElement>('[aria-current="page"]')?.focus({ preventScroll: true })
     document.body.style.overflow = 'hidden'
-    flooding.current = dialog && rim.current && canFlood(dialog) ? floodMenu(dialog, rim.current, origin.current, true) : []
+    flooding.current = dialog && surface.current && rim.current && canFlood(dialog) ? floodMenu(surface.current, rim.current, origin.current, true) : []
     return () => {
       flooding.current.forEach(animation => animation.cancel())
       if (closing.current) {
@@ -145,9 +146,9 @@ export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }
   // Esc, the close button and same-page links drain the menu. Under the page
   // wipe it is already hidden, so it leaves at once.
   function dismiss() {
-    const dialog = ref.current, edge = rim.current
+    const dialog = ref.current, panel = surface.current, edge = rim.current
     if (closing.current) return
-    const drains = !!dialog && !!edge && canFlood(dialog) && !isP3RWipeCovering()
+    const drains = !!dialog && !!panel && !!edge && canFlood(dialog) && !isP3RWipeCovering()
     if (!drains) { close(); return }
     dialog.dataset.closing = 'true'
     dialog.inert = true
@@ -163,7 +164,7 @@ export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }
       closing.current = null
       close()
     }
-    const animations = floodMenu(dialog, edge, origin.current, false, reach)
+    const animations = floodMenu(panel, edge, origin.current, false, reach)
     // A throttled tab may never finish the animation; close anyway.
     closing.current = { animations, timer: window.setTimeout(done, MENU_CLOSE_MS + 200) }
     animations[0].finished.then(done, done)
@@ -172,13 +173,19 @@ export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }
     onCancel={event => { event.preventDefault(); dismiss() }}
     // Chrome force-closes after repeated Esc without activation; keep state in sync.
     onClose={() => { if (ref.current && !ref.current.open) close() }}>
-    <P3RScene variant="menu" />
-    <span ref={rim} className={styles['menu-rim']} aria-hidden="true" />
-    <div className={styles['menu-top']}><Link href="/home" onNavigate={dismiss}>YOROROICE / ARK</Link><button type="button" onClick={dismiss} aria-label={translate(locale, 'close')}><span>ESC</span><X size={24} /></button></div>
-    <div className={styles['menu-body']}>
-      <div className={styles['menu-identity']}><P3RDate locale={locale} /><span className={styles['menu-word']} aria-hidden="true">MENU</span><p>{P3R_COPY[locale].note}</p></div>
-      <DestinationList locale={locale} close={dismiss} />
+    {/* Keep the native top layer stationary. Clip a viewport-sized surface,
+        with scrolling inside it, so focusing a lower row cannot move the flood. */}
+    <div ref={surface} className={styles['menu-surface']}>
+      <P3RScene variant="menu" />
+      <span ref={rim} className={styles['menu-rim']} aria-hidden="true" />
+      <div className={styles['menu-scroll']}>
+        <div className={styles['menu-top']}><Link href="/home" onNavigate={dismiss}>YOROROICE / ARK</Link><button type="button" onClick={dismiss} aria-label={translate(locale, 'close')}><span>ESC</span><X size={24} /></button></div>
+        <div className={styles['menu-body']}>
+          <div className={styles['menu-identity']}><P3RDate locale={locale} /><span className={styles['menu-word']} aria-hidden="true">MENU</span><p>{P3R_COPY[locale].note}</p></div>
+          <DestinationList locale={locale} close={dismiss} />
+        </div>
+        <div className={styles['menu-bottom']}><Link href="/login" onNavigate={dismiss}>{translate(locale, 'login')}<ArrowUpRight size={18} /></Link><span>YOROROICE / P3R</span></div>
+      </div>
     </div>
-    <div className={styles['menu-bottom']}><Link href="/login" onNavigate={dismiss}>{translate(locale, 'login')}<ArrowUpRight size={18} /></Link><span>YOROROICE / P3R</span></div>
   </dialog>
 }

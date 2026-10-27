@@ -74,30 +74,35 @@
 // Entrances mounted beneath the page wipe wait for its hole to open.
 :global(html[data-p3r-wipe="covered"]) .home-stage * { animation-play-state: paused; }
 .menu-dialog {
-  position: fixed; inset: 0; margin: 0; width: 100%; max-width: none; height: 100%; max-height: none; padding: 24px 5%;
-  border: 0; background: #0754e4; overflow: auto; overscroll-behavior: contain;
-  padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(24px, env(safe-area-inset-bottom));
-  &[open] { display: flex; flex-direction: column; }
+  position: fixed; inset: 0; margin: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; padding: 0;
+  border: 0; background: transparent; overflow: hidden;
   // The page stays visible around the flooding outline, like the reference.
   // Previous opaque backdrop and centred ::after ring: commit 65630bf.
   &::backdrop { background: transparent; }
   &[data-closing] .menu-body, &[data-closing] .menu-top, &[data-closing] .menu-bottom { opacity: 0; translate: 18px -6px; transition: opacity .2s ease-in-out, translate .2s ease-in-out; }
 }
+.menu-surface { position: absolute; inset: 0; overflow: hidden; background: #0754e4; }
+.menu-scroll {
+  position: relative; display: flex; flex-direction: column; height: 100%; padding: 24px 5%;
+  overflow-y: auto; overscroll-behavior: contain;
+}
 // Thin cyan band that rides the liquid edge while the menu floods or drains.
-.menu-rim { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: #58e5ff; clip-path: inset(50%); }
+.menu-rim { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: #58e5ff; clip-path: inset(50%); }
 .menu-top, .menu-bottom { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 24px; z-index: 2; flex-shrink: 0; }
-.menu-top { animation: menu-chrome-in .32s ease-out .1s backwards; }
-.menu-bottom { animation: menu-chrome-in .32s ease-out .22s backwards; }
+// Previously the last row took 725ms while the flood finished at 420ms.
+// Every menu entrance now completes within that same flood.
+.menu-top { animation: menu-chrome-in .3s ease-out .06s backwards; }
+.menu-bottom { animation: menu-chrome-in .3s ease-out .1s backwards; }
 .menu-top > a { font-size: 11px; letter-spacing: 2px; }
 .menu-top button { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding: 6px 12px; color: #fff; background: #032369; border: 1px solid #58e5ff; cursor: pointer; }
 .menu-top button span { font-size: 10px; }
 .menu-body { position: relative; z-index: 1; display: grid; grid-template-columns: .9fr 1fr; gap: 8%; width: min(1180px, 100%); margin: auto; padding-block: 38px; align-items: center; flex: 1; }
-.menu-body .destination-list a { min-height: 58px; animation-delay: calc(.1s + var(--item) * 35ms); }
+.menu-body .destination-list a { min-height: 58px; animation-duration: .26s; animation-delay: calc(.04s + var(--item) * 15ms); }
 .menu-body .destination-name { font-size: clamp(32px, 4.9vw, 72px); }
 .menu-identity { min-width: 0; }
-.menu-identity .date { margin-bottom: 50px; animation: p3r-stage-slab .36s ease-out .12s backwards; }
-.menu-word { display: block; font: italic 800 clamp(110px, 19vw, 295px)/.8 var(--display); letter-spacing: -.07em; color: transparent; -webkit-text-stroke: 2px #8befff; transform: rotate(-8deg) translateX(-15%); animation: menu-word-in .5s ease-out .08s backwards; }
-.menu-identity > p { margin-top: 40px; color: #c9f8ff; font-size: 13px; animation: p3r-stage-rise .36s ease-out .24s backwards; }
+.menu-identity .date { margin-bottom: 50px; animation: p3r-stage-slab .3s ease-out .08s backwards; }
+.menu-word { display: block; font: italic 800 clamp(110px, 19vw, 295px)/.8 var(--display); letter-spacing: -.07em; color: transparent; -webkit-text-stroke: 2px #8befff; transform: rotate(-8deg) translateX(-15%); animation: menu-word-in .32s ease-out .08s backwards; }
+.menu-identity > p { margin-top: 40px; color: #c9f8ff; font-size: 13px; animation: p3r-stage-rise .3s ease-out .1s backwards; }
 .menu-bottom { padding-block: 18px 5px; border-top: 1px solid #58e5ff70; font-size: 11px; }
 .menu-bottom a { display: flex; align-items: center; gap: 18px; min-height: 44px; }
 .menu-bottom > span { color: #8feeff; font: italic 800 21px/1 var(--display); }
@@ -129,7 +134,7 @@
   .destination-name { font-size: clamp(28px, 8vw, 41px); }
   .destination-label { display: inline; font-size: 8px; }
   .stage-bottom { padding-block: 17px; font-size: 9px; gap: 12px; }
-  .menu-dialog { padding: 16px 7%; }
+  .menu-scroll { padding: 16px 7%; }
   .menu-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; align-content: center; gap: 40px; padding: 26px 3%; }
   .menu-identity { display: flex; justify-content: space-between; align-items: center; }
   .menu-identity .date { margin: 0; }
@@ -142,7 +147,7 @@
 }
 @media (max-width: 360px) { .home-menu, .menu-body { padding-inline: 1%; } .destination-label { font-size: 7px; } .destination-list a { gap: 7px; } }
 @media (max-height: 500px) and (orientation: landscape) {
-  .menu-dialog { padding: 12px max(5%, env(safe-area-inset-right)) 12px max(5%, env(safe-area-inset-left)); }
+  .menu-scroll { padding: 12px max(5%, env(safe-area-inset-right)) 12px max(5%, env(safe-area-inset-left)); }
   .menu-body { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 8%; padding-block: 22px; }
   .menu-word { font-size: 100px; }
   .menu-identity .date { margin-bottom: 22px; }
@@ -152,7 +157,7 @@
   .menu-body .destination-name { font-size: 32px; }
   .menu-bottom { padding-block: 8px; }
 }
-.menu-dialog {
+.menu-scroll {
   padding-inline: max(5%, env(safe-area-inset-left)) max(5%, env(safe-area-inset-right));
   padding-top: max(16px, env(safe-area-inset-top));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
