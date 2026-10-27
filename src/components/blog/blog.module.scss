@@ -43,21 +43,72 @@
 .icon-button { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: transparent; border: 1px solid transparent; transition: border-color .2s, color .2s; &:hover { color: var(--accent); border-color: var(--line); } }
 .menu-button { display: none; }
 .mobile-menu-dialog {
-  // Previously the dialog started below the header, leaving its X behind
-  // ::backdrop. A transparent full-height shell gives that position a real close.
-  position: fixed; inset: 0; margin: 0; padding: var(--site-header-height) 0 0;
+  // Previous header-position overlay: 65fc116. This menu now owns the full
+  // opaque viewport, including its top bar and bottom account entrance.
+  position: fixed; inset: 0; margin: 0;
+  padding: max(16px, env(safe-area-inset-top)) max(5%, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(5%, env(safe-area-inset-left));
   width: 100%; max-width: none; height: 100dvh; max-height: none;
-  border: 0; background: transparent; color: var(--ink); overflow: hidden;
-  &::backdrop { background: #0002; }
+  border: 0; background: var(--paper); color: var(--ink); overflow: hidden; isolation: isolate;
+  &[open] { display: flex; flex-direction: column; }
+  &::backdrop { background: var(--paper); }
 }
+.mobile-menu-top, .mobile-menu-bottom {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-shrink: 0;
+  font-size: 9px; letter-spacing: 1px;
+}
+.mobile-menu-top { padding-bottom: 12px; border-bottom: 1px solid var(--ink); }
+.mobile-menu-top > a { min-height: 44px; display: inline-flex; align-items: center; }
 .mobile-menu-close {
-  position: absolute; z-index: 1; left: var(--menu-toggle-left); top: var(--menu-toggle-top);
-  width: var(--menu-toggle-width, 44px); height: var(--menu-toggle-height, 44px);
-  color: var(--ink); background: var(--paper);
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-width: 44px; min-height: 44px; padding: 8px 12px;
+  color: var(--ink); background: var(--paper); border: 1px solid var(--line);
+  &:hover { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+  span { font-size: 11px; letter-spacing: 0; }
 }
-.mobile-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 11px; letter-spacing: 1px; }
-.mobile-nav { position: relative; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border-bottom: 1px solid var(--ink); padding: 15px 6% max(30px, env(safe-area-inset-bottom)); box-shadow: 0 20px 25px #0001;
-  a { display: flex; padding: 15px 0; border-bottom: 1px solid var(--line); gap: 18px; font-family: var(--song); font-size: 22px; span { font: 10px/1.8 var(--font-ibm-plex); margin-right: 10px; } svg { margin-left: auto; } &[aria-current] { color: var(--accent); } }
+.mobile-menu-body {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-content: start; min-height: 0; flex: 1;
+  padding-block: 24px; overflow-y: auto; overscroll-behavior: contain;
+}
+.mobile-menu-identity {
+  min-width: 0;
+  > span { display: block; color: var(--accent); font-size: 8px; letter-spacing: 1.5px; }
+  h2 { margin: 12px 0; font: 400 clamp(48px, 8vw, 96px)/1.08 var(--song); overflow-wrap: anywhere; }
+  p { max-width: 270px; font: 12px/1.8 var(--song); color: var(--muted); }
+}
+.mobile-nav {
+  position: relative; min-width: 0; animation: mobile-menu-in .3s ease-in-out both;
+  a { display: grid; grid-template-columns: 24px minmax(0, 1fr) 20px; align-items: center; min-height: 58px; padding: 8px 10px; border-bottom: 1px solid var(--line); gap: 16px; border-left: 2px solid transparent; transition: color .2s ease-in-out, background .2s ease-in-out;
+    &:hover, &:focus-visible, &[aria-current] { color: var(--accent); background: var(--soft); border-left-color: var(--accent); }
+    &:focus-visible { outline-offset: -2px; }
+  }
+}
+.mobile-nav-number { color: var(--accent); font: 10px/1.5 var(--font-ibm-plex); }
+.mobile-nav-label {
+  min-width: 0; display: flex; flex-direction: column; gap: 3px;
+  strong { font: 400 24px/1.25 var(--song); overflow-wrap: anywhere; }
+  small { color: var(--muted); font: 8px/1.5 var(--font-ibm-plex); letter-spacing: 1px; text-transform: uppercase; }
+}
+.mobile-menu-bottom {
+  border-top: 1px solid var(--ink); padding-top: 12px; color: var(--muted);
+  > a { min-height: 44px; display: inline-flex; align-items: center; gap: 14px; color: var(--ink); font-size: 11px; letter-spacing: 0; }
+}
+@keyframes mobile-menu-in { from { opacity: 0; translate: 0 8px; } }
+@media (min-width: 701px) {
+  .mobile-menu-body { grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 8%; align-content: safe center; align-items: center; }
+  .mobile-nav-label strong { font-size: 28px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-menu-top { padding-bottom: 6px; }
+  .mobile-menu-bottom { padding-top: 6px; }
+  .mobile-menu-body { grid-template-columns: minmax(0, .5fr) minmax(0, 1fr); gap: 24px; padding-block: 12px; align-content: start; }
+  .mobile-menu-identity h2 { font-size: 42px; }
+  .mobile-menu-identity p { font-size: 11px; }
+  .mobile-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+  .mobile-nav a { min-height: 50px; gap: 8px; padding: 6px; }
+  .mobile-nav-label strong { font-size: 18px; }
+  .mobile-nav-label small { font-size: 7px; letter-spacing: .5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-dialog * { animation: none !important; transition: none !important; }
 }
 .main-content { min-height: 65vh; }
 .site-footer {

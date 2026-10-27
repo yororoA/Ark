@@ -45,6 +45,7 @@ const words = {
   logout: ['退出登录', 'Sign out', 'ログアウト', 'Abmelden'],
   account: ['切换账号', 'Switch account', 'アカウント切替', 'Konto wechseln'],
   menu: ['打开导航', 'Open menu', 'メニュー', 'Menü öffnen'],
+  contents: ['目录', 'Contents', '目次', 'Inhalt'],
   close: ['关闭', 'Close', '閉じる', 'Schließen'],
   light: ['浅色', 'Light', 'ライト', 'Hell'],
   dark: ['深色', 'Dark', 'ダーク', 'Dunkel'],
