@@ -11,8 +11,9 @@
     "lint": "eslint",
     "verify:blog": "node scripts/verify-blog.mjs",
     "verify:blog:preview": "node scripts/verify-blog.mjs --serve",
-    "verify:mobile": "node --test --test-concurrency=1 tests/mobile-adaptation.test.mjs tests/mobile-components.test.mjs",
-    "verify:mobile:components": "node --test tests/mobile-components.test.mjs"
+    "verify:mobile": "node --test --test-concurrency=1 tests/mobile-adaptation.test.mjs tests/mobile-components.test.mjs tests/mobile-feedback.test.mjs",
+    "verify:mobile:components": "node --test tests/mobile-components.test.mjs",
+    "verify:mobile:feedback": "node --test tests/mobile-feedback.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
