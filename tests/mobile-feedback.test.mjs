@@ -87,41 +87,76 @@ for (const design of designs) {
 
 for (const design of ['archive', 'rain']) {
   for (const viewport of [phone, { width: 320, height: 568 }, { width: 844, height: 390 }]) {
-    test(`mobile feedback original menu position closes: ${design} ${viewport.width}`, async t => {
+    test(`mobile feedback standalone full-screen menu: ${design} ${viewport.width}`, async t => {
       const { page } = await session(t, design, viewport)
       await visit(page, '/about')
-      await page.evaluate(() => window.scrollTo({ top: 200, behavior: 'instant' }))
       const opener = page.locator('[data-menu-toggle]')
-      const box = await opener.boundingBox()
+      // Finish hydration and its initial scroll restoration before testing
+      // menu ownership on a scrolled page.
       await opener.tap()
+      await page.keyboard.press('Escape')
+      await expect(page.locator('dialog[open]')).toHaveCount(0)
+      await page.evaluate(() => window.scrollTo({ top: 200, behavior: 'instant' }))
+      const scrollBefore = await page.evaluate(() => scrollY)
+      const openerBox = await opener.boundingBox()
+      await page.touchscreen.tap(openerBox.x + openerBox.width / 2, openerBox.y + openerBox.height / 2)
       const dialog = page.locator('dialog[open]')
       await expect(dialog).toBeVisible()
+      async function fullScreen() {
+        const coverage = await dialog.evaluate(el => {
+          const box = el.getBoundingClientRect()
+          return {
+            full: box.top === 0 && box.left === 0 && Math.abs(box.bottom - innerHeight) < 1 && Math.abs(box.right - innerWidth) < 1,
+            background: getComputedStyle(el).backgroundColor,
+            corners: [[1, 1], [innerWidth - 1, 1], [1, innerHeight - 1], [innerWidth - 1, innerHeight - 1]]
+              .every(([x, y]) => document.elementFromPoint(x, y)?.closest('dialog') === el),
+          }
+        })
+        assert(coverage.full && coverage.corners, 'Standalone menu owns the whole viewport')
+        assert.notEqual(coverage.background, 'rgba(0, 0, 0, 0)', 'Opaque menu hides the original header and page')
+      }
+      await fullScreen()
+      assert.equal(await opener.locator('svg.lucide-menu').count(), 1, 'Original trigger remains a menu icon below the full-screen surface')
       assert.equal(await dialog.getByRole('button', { name: '关闭', exact: true }).count(), 1)
       const close = dialog.getByRole('button', { name: '关闭', exact: true })
       const closeBox = await close.boundingBox()
-      assert(Math.abs(closeBox.x - box.x) < 1 && Math.abs(closeBox.y - box.y) < 1, 'Close stays at the original toggle')
-      assert(closeBox.width >= 44 && closeBox.height >= 44, 'Touch target is at least 44px')
-      const last = dialog.locator('nav a').last()
-      await last.scrollIntoViewIfNeeded()
-      const lastBox = await last.boundingBox()
-      assert(lastBox.y >= 0 && lastBox.y + lastBox.height <= viewport.height + 1, 'Last menu entry is reachable')
-      await expect.poll(() => dialog.locator('nav').evaluate(el => el.getAnimations().filter(animation => animation.playState === 'running').length)).toBe(0)
-      await screenshot(page, `${design}-${viewport.width}-menu-close`)
-      // Tap screen coordinates, not a locator that could silently scroll a
-      // different close into view. Native modality must allow this exact point.
-      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2)
+      assert(closeBox.width >= 44 && closeBox.height >= 44, 'Menu owns a touch-accessible close button')
+      const links = dialog.locator('nav a')
+      await expect(links).toHaveCount(8)
+      const body = dialog.locator('[class*="mobile-menu-body"]')
+      for (const link of await links.all()) {
+        await link.scrollIntoViewIfNeeded()
+        const box = await link.boundingBox()
+        const bodyBox = await body.boundingBox()
+        assert(box.x >= 0 && box.x + box.width <= viewport.width + 1, 'Every menu label stays in view')
+        assert(box.y >= bodyBox.y - 1 && box.y + box.height <= bodyBox.y + bodyBox.height + 1, 'Every destination is reachable inside the menu scroll area')
+      }
+      await expect(close).toBeInViewport()
+      await expect(dialog.locator('[class*="mobile-menu-bottom"] a')).toBeInViewport()
+      await links.first().focus()
+      await page.keyboard.press('End')
+      await expect(links.last()).toBeFocused()
+      await expect(links.last()).toBeInViewport()
+      await expect.poll(() => dialog.evaluate(el => el.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running').length)).toBe(0)
+      await screenshot(page, `${design}-${viewport.width}-standalone-menu`)
+      assert.equal(await page.evaluate(() => scrollY), scrollBefore, 'Opening and menu scrolling preserve the page position')
+      await close.tap()
       await expect(dialog).toHaveCount(0)
       await expect(opener).toBeFocused()
+      assert.equal(await page.evaluate(() => scrollY), scrollBefore)
       assert.notEqual(await page.evaluate(() => document.body.style.overflow), 'hidden')
-      // Reposition the top-layer control when the phone rotates with menu open.
+      // Rotation keeps the standalone chrome visible while only the body scrolls.
       await opener.tap()
       await page.setViewportSize({ width: viewport.height, height: viewport.width })
-      const rotated = await opener.boundingBox()
-      await expect.poll(async () => {
-        const actual = await close.boundingBox()
-        return Math.abs(actual.x - rotated.x) + Math.abs(actual.y - rotated.y)
-      }).toBeLessThan(2)
-      await page.touchscreen.tap(rotated.x + rotated.width / 2, rotated.y + rotated.height / 2)
+      await fullScreen()
+      await expect(close).toBeInViewport()
+      await page.keyboard.press('Escape')
+      await expect(dialog).toHaveCount(0)
+      await page.emulateMedia({ reducedMotion: 'reduce' })
+      await opener.tap()
+      assert.equal(await dialog.evaluate(el => el.getAnimations({ subtree: true }).length), 0, 'Reduced motion skips menu entrances')
+      await dialog.locator('nav a[href="/moments"]').tap()
+      await expect(page).toHaveURL(`${baseURL}/moments`)
       await expect(dialog).toHaveCount(0)
     })
   }
