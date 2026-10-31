@@ -11,6 +11,7 @@ import { send, useBlog, useBlogData, useBlogReferenceData } from './blog-provide
 import { useManagedUploads } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
+import { shareContent } from '@/lib/share'
 import PrismRecord from './prism-record'
 import { detailPath, listPath, newestFirst, prepareListReturn, rememberListPosition, safeReturnPath, useRestoreListPosition } from './list-navigation'
 
@@ -25,11 +26,22 @@ function ArticleListEntry({ entry, locale, read, returnTo }: { entry: Entry; loc
   </Link>
 }
 
+function ArticleSearch({ keyword, search }: { keyword: string; search: (value: string) => void }) {
+  const { t } = useBlog()
+  const [query, setQuery] = useState(keyword)
+  return <form className={styles['search-field']} role="search" onSubmit={e => {
+    e.preventDefault()
+    search(query.trim())
+    // A submitted phone search should reveal its results and bottom navigation.
+    // WebKit keeps the input focused when tapping non-interactive page content.
+    if (matchMedia('(max-width: 640px)').matches) e.currentTarget.querySelector('input')?.blur()
+  }}><Search size={16} /><input type="search" enterKeyHint="search" aria-label={t('search')} placeholder={t('search')} value={query} onChange={e => setQuery(e.target.value)} /><button aria-label={t('search')} className={styles['icon-button']}><ArrowUpRight size={16} /></button></form>
+}
+
 export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }) {
   const { t, locale, session } = useBlog()
   const router = useRouter()
   const params = useSearchParams()
-  const [query, setQuery] = useState(params.get('keyword') || '')
   const keyword = params.get('keyword') || ''
   const category = params.get('category') || ''
   const date = params.get('date') || ''
@@ -52,7 +64,7 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
   }
   return <div className={styles['page']}><PageHeading title="articles" english="Writings" number="01">{session && !session.isGuest && <Link href="/articles/new" className={styles['primary-button']}><Plus size={16} />{t('newArticle')}</Link>}</PageHeading>
     <div className={styles['toolbar']}><DateField value={date} availableDates={availableDates} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
-    <div className={styles['toolbar']}><div className={styles['filters']}><button aria-pressed={!category} onClick={() => filter('category', '')}>{t('all')}</button>{categories.data?.data.map(item => <button key={item} aria-pressed={category === item} onClick={() => filter('category', item)}>{item}</button>)}</div><form className={styles['search-field']} onSubmit={e => { e.preventDefault(); filter('keyword', query) }}><Search size={16} /><input aria-label={t('search')} placeholder={t('search')} value={query} onChange={e => setQuery(e.target.value)} /><button aria-label={t('search')} className={styles['icon-button']}><ArrowUpRight size={16} /></button></form></div>
+    <div className={styles['toolbar']}><div className={styles['filters']}><button aria-pressed={!category} onClick={() => filter('category', '')}>{t('all')}</button>{categories.data?.data.map(item => <button key={item} aria-pressed={category === item} onClick={() => filter('category', item)}>{item}</button>)}</div><ArticleSearch key={keyword} keyword={keyword} search={value => filter('keyword', value)} /></div>
     <State loading={list.isLoading} error={list.error} empty={list.data?.data.length === 0} retry={() => { void list.mutate() }} />
     <div className={styles['article-list']}>{entries.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} returnTo={returnTo} />)}</div>
     <Pagination page={page} pages={list.data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
@@ -97,7 +109,7 @@ export function ArticleDetail({ id, initialArticle }: { id: string; initialArtic
     const url = URL.createObjectURL(new Blob([`# ${article.title}\n\n${article.content}`], { type: 'text/markdown;charset=utf-8' }))
     const link = document.createElement('a'); link.href = url; link.download = `${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`; link.click(); URL.revokeObjectURL(url)
   }
-  return <div className={styles['page']}><div className={styles['reader']}><Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
+  return <div className={styles['page']}><div className={styles['reader']}><Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { const result = await shareContent(article.title); if (result === 'copied') notify(t('copied')); else if (result !== 'shared' && result !== 'cancelled') notify(result) }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
 }
 
 function Editor({ article }: { article?: Entry }) {

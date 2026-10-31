@@ -99,9 +99,23 @@
 - 四主题已接入页面的适配实现与自动化检查已完成，没有发现新的待修复问题。生产构建及生产菜单检查沿用上一轮同一应用代码的通过结果。
 - 尚未完成完整设备验收：iOS Safari、Android 实机键盘、刘海与底部安全区仍需实机验证；未接入页面的 Sphere、通用按钮与下拉菜单仍只有静态检查结果。自动化通过不表示所有设备或所有未接入组件的真实交互已经验证。
 
+## 应用式交互更新（2026-10-31）
+
+- 手机端增加首页、文章、片刻、通信、更多五项底部导航，支持当前栏目高亮、重复点击返回顶部、页面标题与上下文返回；保留四套主题风格。
+- 输入时隐藏底栏并保留页面高度，避免失焦改变按钮位置。搜索提交收起键盘；菜单关闭回到实际打开它的按钮；桌宠避开底栏及手机聊天输入区。
+- 手机通信先显示会话列表，进入后显示独立会话；切换会话保留本次页面中的草稿、引用、附件和阅读位置。并发上传重试完成前禁止切换。桌面继续使用双栏。
+- 列表详情返回、浏览器后退恢复筛选与滚动，前进后退同步搜索词。分享优先使用系统能力，取消保持安静，失败时退回复制或展示链接；分享链接不携带筛选参数。
+- 长文章发布按钮经过失焦位置和实际点击复测，首次点击可正常发布。
+
+本轮原有187项回归首轮183通过、4项长文发布失败；修正后受影响24项全部通过。最终聊天调整另复核原有16项，全部通过。新增18项在Chromium和WebKit分别全部通过，其中聊天最后7项再次验证了桌宠避让及返回恢复。这里记录完整回归与定向复测的组合结果，不代表一次全新205项整套运行。
+
+最终lint（保留原有2条警告）、独立类型检查、生产构建、19/19接口契约和资源预算通过：登录JS268/280KB gzip，聊天请求24/24，图片9492/12288KB、单图3622/4096KB。
+
+验收截图、功能/UI记录与原始执行日志保存在本地 `docs/tests/mobile-app/`，不纳入 Git。浏览器模拟覆盖320/390/640px手机和桌面；未进行iOS/Android实机软键盘、非零安全区和原生系统分享面板验收。WebKit聊天UI采用稳定SSE连接替身，真实fixture SSE及续期由Chromium和接口契约覆盖。
+
 ## 运行
 
-需要 Node.js 24 与 Playwright Chromium。测试只能针对隔离的内存后端运行，避免写入真实数据。
+需要 Node.js 24 与 Playwright Chromium；跨浏览器新增套件另需 WebKit。测试只能针对隔离的内存后端运行，避免写入真实数据。
 
 ```sh
 npx playwright install chromium
@@ -114,7 +128,7 @@ ARK_VERIFY_PORT=10400 npm run verify:blog:preview
 TEST_BASE_URL=http://127.0.0.1:10400 npm run verify:mobile
 ```
 
-此命令依次运行 88 项页面回归、76 项组件回归和 23 项反馈回归。仅复测组件时使用 `npm run verify:mobile:components`，仅复测本轮反馈时使用 `npm run verify:mobile:feedback`。
+此命令依次运行88项页面回归、76项组件回归、23项反馈回归、11项应用导航、7项聊天应用交互和7项P3R菜单中间帧检查，共212项。仅复测组件时使用 `npm run verify:mobile:components`，仅复测本轮反馈时使用 `npm run verify:mobile:feedback`。
 
 如果已有 Chromium，可设置 `PLAYWRIGHT_EXECUTABLE_PATH`。`MOBILE_SCREENSHOT_DIR` 可指定已有目录保存截图。
 
@@ -127,3 +141,23 @@ npm run check:quality
 ```
 
 该命令包含 lint、类型检查、生产构建、资源预算与 19 组接口契约验证。
+
+新增套件的WebKit验证：
+
+```sh
+npx playwright install webkit
+TEST_BROWSER=webkit TEST_BASE_URL=http://127.0.0.1:10400 node --test --test-concurrency=1 tests/app-navigation.test.mjs tests/chat-mobile-app.test.mjs
+```
+
+## P3R 菜单中间帧修复（2026-10-31）
+
+响应式窗口在展开期间增高时，原先按初始像素尺寸计算的path裁剪不会随100dvh表面扩展，结束撤掉裁剪后才显示遗漏区域。已将菜单与青色边缘统一改为百分比polygon；中途关闭从当前两层轮廓开始，保持连续。
+
+旧版390×390→390×844用例实际复现：419/440ms下半屏约63.991%像素突变。最终Chromium148、WebKit26.4、本机Chrome149各7项通过；六种尺寸/入口场景变化率均0%。原有4项P3R实时菜单回归通过。lint、类型、生产构建、预算与19/19接口契约通过。
+
+固定视口探查未复现原反馈，用户活动Chrome标签页未直接检查，因此已确认的是上述响应式尺寸缺陷，不能据此断言用户现场的触发条件。菜单逐帧复测与前后截图保存在本地 `docs/tests/p3r-menu-motion/`，不纳入 Git。
+
+```sh
+TEST_BASE_URL=http://127.0.0.1:10400 node --test tests/p3r-menu-motion.test.mjs
+TEST_BROWSER=webkit TEST_BASE_URL=http://127.0.0.1:10400 node --test tests/p3r-menu-motion.test.mjs
+```

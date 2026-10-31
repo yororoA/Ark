@@ -40,7 +40,10 @@ async function session(t, design, viewport, { locale = 'zh', theme = 'light', re
 
 async function visit(page, route) {
   await page.goto(`${baseURL}${route}`, { waitUntil: 'load' })
-  if (route === '/chat') await page.getByRole('log').waitFor()
+  if (route === '/chat') {
+    if (page.viewportSize().width <= 640) await page.locator('button[data-conversation="group"]').tap()
+    await page.getByRole('log').waitFor()
+  }
   else await page.locator('h1:visible').first().waitFor()
   if (route !== '/login' && route !== '/chat') await page.locator('[class*="account-links"]').waitFor({ state: 'attached' })
 }
@@ -335,6 +338,7 @@ for (const design of designs) {
       await expect(page.locator('[class*="chat-page"]')).toHaveAttribute('data-expanded', 'true')
       await fitsViewport(page.locator('[class*="chat-compose"]'), viewport, 'Expanded composer')
       await page.getByRole('button', { name: '还原聊天界面', exact: true }).tap()
+      if (viewport.width <= 640) await page.getByRole('button', { name: '返回会话', exact: true }).tap()
       await page.locator('[class*="conversation-list"]').getByRole('button', { name: '与作者通信', exact: true }).tap()
       await expect(page).toHaveURL(/conversation=admin/)
       await expect(page.getByRole('log')).toHaveAttribute('aria-label', '与作者通信')

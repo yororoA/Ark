@@ -1,5 +1,6 @@
 @use '@/styles/appearance-tokens' as appearance;
 @use './theme-ui';
+@use './app-ui';
 
 .blog-root {
   @include appearance.surface;
@@ -844,3 +845,5 @@
 @media (hover: none) {
   .message-reply, .message[data-own="true"] .message-reply { opacity: 1; pointer-events: auto; transform: none; }
 }
+
+@include app-ui.layout;

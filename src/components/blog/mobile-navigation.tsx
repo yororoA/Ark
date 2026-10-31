@@ -29,7 +29,7 @@ export default function MobileNavigation({ close }: { close: () => void }) {
     const dialog = ref.current
     // Safari does not focus tapped buttons. Remember the actual header toggle
     // for focus restoration; the full-screen menu owns its own close control.
-    const opener = dialog?.closest('[data-blog-root]')?.querySelector<HTMLElement>('[data-menu-toggle]') ?? document.activeElement
+    const opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : dialog?.closest('[data-blog-root]')?.querySelector<HTMLElement>('[data-menu-toggle]')
     const overflow = document.body.style.overflow
     const desktop = matchMedia('(min-width: 1101px)')
     dialog?.showModal()

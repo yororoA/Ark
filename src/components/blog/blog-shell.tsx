@@ -3,7 +3,7 @@
 import Link from '@/components/appearance/p3r-link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { ArrowUp, ArrowUpRight, Menu, X } from 'lucide-react'
 import BlogProvider, { request, useBlog } from './blog-provider'
 import { Locale, sections } from '@/lib/blog'
@@ -17,6 +17,7 @@ import { useAppearance } from '@/components/appearance/appearance-store'
 import { P3RMenu } from './p3r-navigation'
 import { PrismMenu } from './prism-navigation'
 import MobileNavigation from './mobile-navigation'
+import AppNavigation, { MobilePageContext } from './app-navigation'
 import { syncAuthDetails } from '@/store/auth'
 import styles from './blog.module.scss'
 
@@ -43,7 +44,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     } catch (error) { notify((error as Error).message) }
   }
   return (
-    <div className={styles['blog-root']} data-blog-root>
+    <div className={styles['blog-root']} data-blog-root data-section={pathname.split('/')[1]}>
       <PrismStars />
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
@@ -51,6 +52,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <span className={styles['legacy-brand']}><ArchiveLogo priority /></span>
           <PrismLogo />
         </Link>
+        <Suspense><MobilePageContext /></Suspense>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
           {sections.map(([key, number]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span className={styles['nav-index']} aria-hidden="true">{number}</span>{t(key)}</Link>)}
         </nav>
@@ -61,7 +63,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             { value: 'ja', label: '日本語' }, { value: 'de', label: 'Deutsch' },
           ]} />
           <ThemePicker locale={locale} />
-          <button data-menu-toggle className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={showMenuCloseIcon ? t('close') : t('menu')} aria-expanded={open} onClick={() => setOpen(!open)}>{showMenuCloseIcon ? <X size={20} /> : <Menu size={20} />}</button>
+          <button data-menu-toggle className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={showMenuCloseIcon ? t('close') : t('menu')} aria-expanded={open} onClick={event => { event.currentTarget.focus({ preventScroll: true }); setOpen(!open) }}>{showMenuCloseIcon ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
       {/* onNavigate closes the menu beneath a page wipe instead of at the click. */}
@@ -78,6 +80,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className={styles['account-links']}>{session ? <><span>{session.username}</span><Link href="/login">{t('account')}</Link><button onClick={logout}>{t('logout')}</button></> : <Link href="/login">{t('login')} ↗</Link>}<small>© {new Date().getFullYear()} YOROROICE</small></div>
         <button className={styles['icon-button']} aria-label={t('toTop')} onClick={() => window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}><ArrowUp size={20} /></button>
       </footer>
+      <AppNavigation openMenu={() => setOpen(true)} menuOpen={open} />
       {toast && <div className={styles['toast']} role="status">{toast}<button onClick={() => notify('')} aria-label={t('close')}><X size={16} /></button></div>}
     </div>
   )

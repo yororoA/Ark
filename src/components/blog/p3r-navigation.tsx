@@ -85,7 +85,6 @@ export function P3RHome({ locale, featured, status }: { locale: Locale; featured
 // Liquid outline as CSS shapes. Every keyframe keeps one vertex count so the
 // browser interpolates the vertices.
 type Point = { x: number; y: number }
-const outlinePath = (points: [number, number][]) => `M${points.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}Z`
 const RIM_WIDTH = 7
 // Evenly spaced radii; the effect easing alone shapes the speed.
 const STEPS = [0, .25, .5, .75, 1]
@@ -93,16 +92,27 @@ const STEPS = [0, .25, .5, .75, 1]
 // The menu floods out of its opener like the page wipe and drains back into
 // it on dismissal. The rim is the band between two outlines of one edge.
 // `reach` lets a drain start from an interrupted flood instead of a full cover.
-function floodMenu(surface: HTMLElement, rim: HTMLElement, { x, y }: Point, opening: boolean, reach = 1) {
-  const radius = fluidCoverRadius(x, y, surface.clientWidth, surface.clientHeight)
+function floodMenu(surface: HTMLElement, rim: HTMLElement, { x, y }: Point, opening: boolean, reach = 1, start?: { surface: string; rim: string }) {
+  const { clientWidth: width, clientHeight: height } = surface
+  const radius = fluidCoverRadius(x, y, width, height)
   const seed = fluidSeed()
   const duration = opening ? MENU_OPEN_MS : MENU_CLOSE_MS * Math.max(.4, reach)
   const steps = opening ? STEPS : STEPS.map(step => step * reach).reverse()
   const outline = (progress: number, inset = 0) => fluidPoints(x, y, Math.max(0, radius * progress - inset), progress * duration, seed)
   const timing: KeyframeAnimationOptions = { duration, easing: opening ? easeOut : easeInOut, fill: opening ? 'none' : 'forwards' }
+  // The 100dvh surface can resize while opening (responsive mode, browser
+  // chrome, keyboard). Pixel paths retain the old bounds until fill:none
+  // removes the clip. Relative vertices let both layers follow the surface.
+  const vertices = (points: [number, number][]) => points
+    .map(([px, py]) => `${(px / width * 100).toFixed(3)}% ${(py / height * 100).toFixed(3)}%`).join(',')
+  const frames = steps.map(progress => ({ outer: outline(progress), inner: outline(progress, RIM_WIDTH) }))
   return [
-    surface.animate(steps.map(progress => ({ clipPath: `path("${outlinePath(outline(progress))}")` })), timing),
-    rim.animate(steps.map(progress => ({ clipPath: `path(evenodd, "${outlinePath(outline(progress))}${outlinePath(outline(progress, RIM_WIDTH))}")` })), timing),
+    surface.animate(frames.map(({ outer }, index) => ({ clipPath: index === 0 && start ? start.surface : `polygon(${vertices(outer)})` })), timing),
+    // Close each ring, then retrace the bridge. Even-odd filling leaves only
+    // the band, with a fixed vertex count for interpolation at every step.
+    rim.animate(frames.map(({ outer, inner }, index) => ({
+      clipPath: index === 0 && start ? start.rim : `polygon(evenodd, ${vertices([...outer, outer[0], ...inner, inner[0], outer[0]])})`,
+    })), timing),
   ]
 }
 
@@ -155,7 +165,9 @@ export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }
     // Radii are evenly spaced keyframes, so the eased progress approximates
     // the flood's current reach and the drain starts from that outline.
     const [flood] = flooding.current
-    const reach = flood?.playState === 'running' ? flood.effect?.getComputedTiming().progress ?? 1 : 1
+    const reach = flood?.effect?.getComputedTiming().progress ?? 1
+    // Preserve the exact visible edge, including a mid-flood viewport resize.
+    const start = reach < 1 ? { surface: getComputedStyle(panel).clipPath, rim: getComputedStyle(edge).clipPath } : undefined
     flooding.current.forEach(animation => animation.cancel())
     flooding.current = []
     const done = () => {
@@ -164,7 +176,7 @@ export function P3RMenu({ locale, close }: { locale: Locale; close: () => void }
       closing.current = null
       close()
     }
-    const animations = floodMenu(panel, edge, origin.current, false, reach)
+    const animations = floodMenu(panel, edge, origin.current, false, reach, start)
     // A throttled tab may never finish the animation; close anyway.
     closing.current = { animations, timer: window.setTimeout(done, MENU_CLOSE_MS + 200) }
     animations[0].finished.then(done, done)

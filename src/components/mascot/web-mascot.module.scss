@@ -113,3 +113,14 @@
     .mascot-host, .mascot-toggle { visibility: hidden; }
   }
 }
+
+// Keep the companion control above the phone's persistent navigation.
+@media (max-width: 640px) {
+  :global(body:has([data-chat-view="thread"])) {
+    .mascot-host, .mascot-toggle { display: none; }
+  }
+
+  :global(body:has([data-blog-root]:not([data-section="chat"]))) .mascot-toggle {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}
