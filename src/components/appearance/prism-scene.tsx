@@ -1,12 +1,21 @@
 'use client'
 
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import { useAppearance } from './appearance-store'
 import { SPECTRUM } from '@/lib/prism-copy'
 import styles from './prism-scene.module.scss'
 
-export function PrismOptics({ className, animated = true }: { className?: string; animated?: boolean }) {
-  return <svg viewBox="0 0 1200 620" fill="none" className={className} data-animated={animated}>
+export function PrismOptics({ className, animated = true, compact = false, selectedBand }: {
+  className?: string; animated?: boolean; compact?: boolean; selectedBand?: number
+}) {
+  const id = useId().replaceAll(':', '')
+  return <svg viewBox={compact ? '340 70 560 450' : '0 0 1200 620'} fill="none" className={className} data-animated={animated}>
+    <defs>
+      <linearGradient id={`${id}-inside`} x1="508" y1="304" x2="744" y2="323" gradientUnits="userSpaceOnUse">
+        <stop stopColor="var(--ark-prism-ray)" stopOpacity=".7" />
+        <stop offset="1" stopColor="var(--ark-prism-ray)" stopOpacity=".1" />
+      </linearGradient>
+    </defs>
     <g className={styles['incident-beam']}>
       <path d="M-1600 994L508 304" stroke="var(--ark-prism-ray)" strokeWidth="1.5" />
       <path d="M-1600 998L508 305" stroke="var(--ark-prism-ray)" strokeWidth=".5" opacity=".28" />
@@ -14,16 +23,15 @@ export function PrismOptics({ className, animated = true }: { className?: string
     <g className={styles['prism-body']}>
       <path d="M620 110L400 490H840Z" fill="var(--ark-prism-ray)" fillOpacity=".018" stroke="var(--ark-prism-edge)" strokeWidth="1.2" />
       <path d="M620 116L405 487H835Z" stroke="var(--ark-prism-edge)" strokeOpacity=".25" strokeWidth=".6" />
-      <path d="M508 304L732 304L754 342Z" fill="var(--ark-prism-ray)" fillOpacity=".1" />
-      <path d="M508 304L732 304M508 304L754 342" stroke="var(--ark-prism-ray)" strokeWidth=".6" opacity=".4" />
+      <path className={styles['inside-light']} d="M508 304L732 304L754 342Z" fill={`url(#${id}-inside)`} />
     </g>
-    <g className={styles.spectrum}>
+    <g className={styles.spectrum} data-selectable={selectedBand !== undefined}>
       {SPECTRUM.map((color, index) => {
         const y1 = 304 + index * 6.33, y2 = y1 + 6.5
         const x1 = 620 + (y1 - 110) * 220 / 380, x2 = 620 + (y2 - 110) * 220 / 380
         const far1 = y1 + (2300 - x1) * (123 + index * 40 - y1) / (1230 - x1)
         const far2 = y2 + (2300 - x2) * (164 + index * 40 - y2) / (1230 - x2)
-        return <path key={color} style={{ '--band': index } as CSSProperties}
+        return <path key={color} data-lit={selectedBand !== undefined && index === selectedBand % SPECTRUM.length} style={{ '--band': index } as CSSProperties}
           d={`M${x1} ${y1}L2300 ${far1}V${far2}L${x2} ${y2}Z`} fill={color} />
       })}
     </g>
