@@ -24,7 +24,7 @@
     "immer": "^11.1.11",
     "lenis": "^1.3.25",
     "lucide-react": "^1.24.0",
-    "next": "16.2.10",
+    "next": "16.4.3",
     "node-ipinfo": "^4.4.0",
     "radix-ui": "^1.6.2",
     "react": "19.2.4",
@@ -48,7 +48,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.186.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.4.3",
     "sass": "^1.101.0",
     "tailwindcss": "^4",
     "typescript": "^5"
