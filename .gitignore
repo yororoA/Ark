@@ -47,3 +47,6 @@ next-env.d.ts
 default.profraw
 *.profraw
 login-animation.md
+
+# Local acceptance reports and browser evidence
+/docs/tests/

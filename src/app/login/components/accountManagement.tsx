@@ -12,6 +12,7 @@ import Tabs from "@/components/arks/tabs";
 import DeleteLoginRecord from "./deleteLoginRecord";
 import type { ConnectParams } from '../types';
 import ThemePicker from '@/components/appearance/theme-picker';
+import { usePortalDialog } from '@/hooks/use-portal-dialog';
 
 
 
@@ -22,6 +23,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   const [selectedUid, setSelectedUid] = useState<string | undefined>(details[0]?.uid);
   const selectedDetail = details.find((d) => d.uid === selectedUid) ?? details[0];
   const [detailToDelete, setDetailToDelete] = useState<AuthDetail | undefined>(undefined);
+  const dialogRef = usePortalDialog(details.length ? onClose : undefined, !detailToDelete);
 
   // 表单
   const [otherVisable, setOtherVisable] = useState(details.length === 0 || props.preferredMode === 'register');
@@ -86,7 +88,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
           detail={detailToDelete}
         />
       )}
-      <div className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }}>
+      <div ref={dialogRef} tabIndex={-1} className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }}>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
           {otherVisable && details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
           <h1>账号管理</h1>

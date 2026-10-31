@@ -135,6 +135,9 @@
   .panel-note { font-family: var(--font-noto-serif), serif; line-height: 1.8; }
 }
 @media (max-width: 540px) { .theme-trigger { width: 44px; height: 44px; } }
+@media (pointer: coarse), (max-width: 540px) {
+  .theme-trigger, .close-button { min-width: 44px; min-height: 44px; }
+}
 // The previous standalone thick-triangle preview remains in commit b544562.
 .design-preview[data-preview="prism"] {
   --ark-prism-ray: #f0eee7;

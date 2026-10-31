@@ -69,6 +69,14 @@ function pageScale(baselinePixelRatio: number) {
   return Math.min(MAX_PAGE_SCALE, Math.max(MIN_PAGE_SCALE, scale))
 }
 
+function viewportMascotScale() {
+  if (!matchMedia(MOBILE_QUERY).matches) return 1
+  // Use the layout viewport's short edge so rotation and the soft keyboard
+  // do not enlarge the sprite. A 390px phone renders a 128px sprite at 64px.
+  const shortEdge = Math.min(document.documentElement.clientWidth, window.innerHeight)
+  return Math.min(.5, Math.max(.4, shortEdge / 780))
+}
+
 function readBaselinePixelRatio() {
   if (baselinePixelRatio !== undefined) return baselinePixelRatio
   baselinePixelRatio = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0
@@ -112,7 +120,7 @@ export default function WebMascot() {
         let appliedScale = 0
         let scaleFrame = 0
         const applyPageScale = () => {
-          const nextScale = pageScale(initialPixelRatio)
+          const nextScale = pageScale(initialPixelRatio) * viewportMascotScale()
           if (Math.abs(nextScale - appliedScale) < .001) return
           appliedScale = nextScale
           const mascots = { ...baseMascots }
@@ -145,10 +153,13 @@ export default function WebMascot() {
         }
         destroy = () => mascots.forEach(mascot => mascot.destroy())
         Array.from(host.children).forEach(child => child.setAttribute('data-ark-mascot', ''))
+        const mobile = matchMedia(MOBILE_QUERY)
+        mobile.addEventListener('change', schedulePageScale)
         window.addEventListener('resize', schedulePageScale)
         window.visualViewport?.addEventListener('resize', schedulePageScale)
         removeScaleListeners = () => {
           cancelAnimationFrame(scaleFrame)
+          mobile.removeEventListener('change', schedulePageScale)
           window.removeEventListener('resize', schedulePageScale)
           window.visualViewport?.removeEventListener('resize', schedulePageScale)
         }

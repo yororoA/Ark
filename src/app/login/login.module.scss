@@ -455,6 +455,38 @@
 }
 @include prism-motion.keyframes;
 
+@media (max-width: 820px) {
+  :global(html[data-design]) {
+    .login-header { min-height: calc(86px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); }
+    .login-main { min-width: 0; column-gap: 32px; }
+    .access-panel { min-width: 0; }
+    .login-footer { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+    .login-header nav a, .secondary-action, .login-footer button { min-height: 44px; display: inline-flex; align-items: center; }
+    .login-copy h1, .login-copy > p { overflow-wrap: anywhere; }
+  }
+}
+@media (max-width: 680px) {
+  :global(html[data-design]) .login-header { min-height: calc(74px + env(safe-area-inset-top)); }
+}
+@media (max-width: 390px) {
+  :global(html[data-design]) {
+    .access-panel { padding: 20px 16px; }
+    .panel-header { gap: 8px; flex-wrap: wrap; }
+    .panel-index { letter-spacing: 1px; }
+    .account-overview { gap: 12px; }
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  :global(html[data-design]) {
+    .login-header { min-height: calc(64px + env(safe-area-inset-top)); }
+    .login-main { padding-block: 28px; align-items: start; }
+    .login-copy { align-self: start; }
+    .login-prism { padding-top: 24px; }
+    .login-copy h1 { font-size: 30px; }
+    .login-footer { min-height: 56px; }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .login-copy, .access-panel { animation: none; }
   :global(html[data-design="p3r"]) { .primary-action { transition: none; } }

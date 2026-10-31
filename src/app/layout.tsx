@@ -1,7 +1,7 @@
 import "@/styles/globals.scss";
 import "@/app/global.css";
 import "@/styles/appearance.scss";
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { cn } from "@/lib/utils";
 import BgImage from "@/components/arks/bg-image";
 import RouteScrollManager from "@/components/route-scroll-manager";
@@ -66,6 +66,13 @@ const orbitron = Orbitron({
 });
 
 // -------------------------------------------------------------------------------
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
+};
+
 export const metadata: Metadata = {
   metadataBase: SITE_URL,
   title: {

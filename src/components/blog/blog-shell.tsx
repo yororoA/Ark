@@ -3,7 +3,7 @@
 import Link from '@/components/appearance/p3r-link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { ArrowUp, ArrowUpRight, Menu, X } from 'lucide-react'
 import BlogProvider, { request, useBlog } from './blog-provider'
 import { Locale, sections } from '@/lib/blog'
@@ -16,6 +16,8 @@ import ThemePicker from '@/components/appearance/theme-picker'
 import { useAppearance } from '@/components/appearance/appearance-store'
 import { P3RMenu } from './p3r-navigation'
 import { PrismMenu } from './prism-navigation'
+import MobileNavigation from './mobile-navigation'
+import AppNavigation, { MobilePageContext } from './app-navigation'
 import { syncAuthDetails } from '@/store/auth'
 import styles from './blog.module.scss'
 
@@ -25,6 +27,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const showMenuCloseIcon = open && (design === 'p3r' || design === 'prism')
+  const closeMenu = useCallback(() => setOpen(false), [])
   useEffect(() => {
     const hash = location.hash.slice(1)
     if (!/^\/(?:town|account)(?:\/|\?|$)/.test(hash)) return
@@ -32,13 +36,6 @@ function Shell({ children }: { children: React.ReactNode }) {
     const destination = legacyDestination(old.pathname, old.searchParams)
     if (destination) router.replace(destination)
   }, [pathname, router])
-  useEffect(() => {
-    // The P3R menu animates its own dismissal from the dialog's cancel event.
-    if (!open || design === 'p3r' || design === 'prism') return
-    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false) }
-    window.addEventListener('keydown', close)
-    return () => window.removeEventListener('keydown', close)
-  }, [open, design])
   async function logout() {
     try {
       await request('/api/session', { method: 'DELETE' })
@@ -47,7 +44,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     } catch (error) { notify((error as Error).message) }
   }
   return (
-    <div className={styles['blog-root']} data-blog-root>
+    <div className={styles['blog-root']} data-blog-root data-section={pathname.split('/')[1]}>
       <PrismStars />
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
@@ -55,6 +52,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <span className={styles['legacy-brand']}><ArchiveLogo priority /></span>
           <PrismLogo />
         </Link>
+        <Suspense><MobilePageContext /></Suspense>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
           {sections.map(([key, number]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span className={styles['nav-index']} aria-hidden="true">{number}</span>{t(key)}</Link>)}
         </nav>
@@ -65,11 +63,11 @@ function Shell({ children }: { children: React.ReactNode }) {
             { value: 'ja', label: '日本語' }, { value: 'de', label: 'Deutsch' },
           ]} />
           <ThemePicker locale={locale} />
-          <button className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={open ? t('close') : t('menu')} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X size={20} /> : <Menu size={20} />}</button>
+          <button data-menu-toggle className={`${styles['icon-button']} ${styles['menu-button']}`} aria-label={showMenuCloseIcon ? t('close') : t('menu')} aria-expanded={open} onClick={event => { event.currentTarget.focus({ preventScroll: true }); setOpen(!open) }}>{showMenuCloseIcon ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
       {/* onNavigate closes the menu beneath a page wipe instead of at the click. */}
-      {open && (design === 'prism' ? <PrismMenu locale={locale} close={() => setOpen(false)} /> : design === 'p3r' ? <P3RMenu locale={locale} close={() => setOpen(false)} /> : <nav className={styles['mobile-nav']} aria-label={t('menu')}>{sections.map(([key, number]) => <Link href={`/${key}`} key={key} onNavigate={() => setOpen(false)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span>{number}</span>{t(key)}<ArrowUpRight size={18} /></Link>)}<Link href="/chat" onNavigate={() => setOpen(false)} aria-current={pathname.startsWith('/chat') ? 'page' : undefined}><span>07</span>{t('chat')}<ArrowUpRight size={18} /></Link></nav>)}
+      {open && (design === 'prism' ? <PrismMenu locale={locale} close={closeMenu} /> : design === 'p3r' ? <P3RMenu locale={locale} close={closeMenu} /> : <MobileNavigation close={closeMenu} />)}
       <main id="main-content" className={styles['main-content']}>{children}</main>
       <footer className={styles['site-footer']}>
         <div className={styles['prism-footer-mark']}><span>YororoIce.</span><small>THE DARK SIDE OF THE EVERYDAY</small><i aria-hidden="true" /></div>
@@ -82,6 +80,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className={styles['account-links']}>{session ? <><span>{session.username}</span><Link href="/login">{t('account')}</Link><button onClick={logout}>{t('logout')}</button></> : <Link href="/login">{t('login')} ↗</Link>}<small>© {new Date().getFullYear()} YOROROICE</small></div>
         <button className={styles['icon-button']} aria-label={t('toTop')} onClick={() => window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })}><ArrowUp size={20} /></button>
       </footer>
+      <AppNavigation openMenu={() => setOpen(true)} menuOpen={open} />
       {toast && <div className={styles['toast']} role="status">{toast}<button onClick={() => notify('')} aria-label={t('close')}><X size={16} /></button></div>}
     </div>
   )

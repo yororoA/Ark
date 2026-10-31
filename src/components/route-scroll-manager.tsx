@@ -2,10 +2,18 @@
 
 import { useLayoutEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { hasPendingListReturn } from '@/components/blog/list-navigation'
+import { hasPendingListReturn, prepareListReturn } from '@/components/blog/list-navigation'
 
 export default function RouteScrollManager() {
   const pathname = usePathname()
+
+  useLayoutEffect(() => {
+    // Browser back (including a phone's edge gesture) must restore the same
+    // filtered list position as the visible return link.
+    const restoreList = () => prepareListReturn(`${location.pathname}${location.search}`)
+    window.addEventListener('popstate', restoreList)
+    return () => window.removeEventListener('popstate', restoreList)
+  }, [])
 
   useLayoutEffect(() => {
     const previousRestoration = history.scrollRestoration

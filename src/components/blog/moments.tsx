@@ -11,6 +11,7 @@ import { send, sendIdempotent, useBlog, useBlogData, useBlogReferenceData } from
 import { useManagedUploads, type UploadedAsset } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
+import { shareContent } from '@/lib/share'
 import { detailPath, listPath, newestFirst, prepareListReturn, rememberListPosition, safeReturnPath, useRestoreListPosition } from './list-navigation'
 
 function useMomentMedia(entry: Entry) {
@@ -129,7 +130,7 @@ function MomentReader({ entry, refresh }: { entry: Entry; refresh: () => Promise
   }
   return <><header className={styles['reader-header']}><div className={styles['eyebrow']}>02 / FRAGMENTS</div><h1>{entry.title}</h1><div className={styles['entry-meta']}><span>{entry.username || 'YororoIce'}</span><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><span>↗ {views}</span></div></header>
     <Markdown content={entry.content} /><MediaGrid files={media.files} /><State loading={media.isLoading} error={media.error} retry={() => media.mutate()} />
-    <div className={styles['reader-actions']}><LikeButton kind="moment" id={entry._id} count={entry.likes} /><button className={styles['secondary-button']} onClick={async () => { try { await navigator.clipboard.writeText(location.href); notify(t('copied')) } catch { notify(location.href) } }}><Share2 size={15} />{t('share')}</button>{canDelete && <DeleteButton name={entry.title} onDelete={remove} />}</div>
+    <div className={styles['reader-actions']}><LikeButton kind="moment" id={entry._id} count={entry.likes} /><button className={styles['secondary-button']} onClick={async () => { const result = await shareContent(entry.title); if (result === 'copied') notify(t('copied')); else if (result !== 'shared' && result !== 'cancelled') notify(result) }}><Share2 size={15} />{t('share')}</button>{canDelete && <DeleteButton name={entry.title} onDelete={remove} />}</div>
     <Comments entry={entry} refresh={refresh} />
   </>
 }

@@ -8,9 +8,11 @@ import { once } from 'node:events'
 import { resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
-const work = resolve(root, '.git/ark-research/contract-app')
-const origin = 'http://127.0.0.1:10000'
-const backend = 'http://127.0.0.1:10001'
+const port = Number(process.env.ARK_VERIFY_PORT || 10000)
+assert(Number.isInteger(port) && port >= 1024 && port < 65535, 'ARK_VERIFY_PORT must leave room for the backend port')
+const work = resolve(root, `.git/ark-research/contract-app${port === 10000 ? '' : `-${port}`}`)
+const origin = `http://127.0.0.1:${port}`
+const backend = `http://127.0.0.1:${port + 1}`
 const articleId = 'aaaaaaaaaaaaaaaaaaaaaaaa'
 const draftArticleId = 'dddddddddddddddddddddddd'
 const momentId = 'bbbbbbbbbbbbbbbbbbbbbbbb'
@@ -272,10 +274,10 @@ await mkdir(work, { recursive: true })
 await cp(resolve(root, 'src'), resolve(work, 'src'), { recursive: true })
 for (const file of ['package.json', 'tsconfig.json', 'next.config.ts', 'next-env.d.ts', 'postcss.config.mjs']) await cp(resolve(root, file), resolve(work, file))
 for (const dir of ['node_modules', 'public']) await symlink(resolve(root, dir), resolve(work, dir)).catch(error => { if (error.code !== 'EEXIST') throw error })
-server.listen(10001, '127.0.0.1')
+server.listen(port + 1, '127.0.0.1')
 await once(server, 'listening')
 let log = ''
-const app = spawn(process.execPath, [resolve(root, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '-H', '127.0.0.1', '-p', '10000'], {
+const app = spawn(process.execPath, [resolve(root, 'node_modules/next/dist/bin/next'), 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
   cwd: work, env: { ...process.env, BACKEND_URL: backend, ADMIN_UIDS: 'test-admin' }, stdio: ['ignore', 'pipe', 'pipe'],
 })
 const ready = new Promise((resolveReady, reject) => {

@@ -19,8 +19,8 @@
   bottom: max(18px, env(safe-area-inset-bottom));
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   color: var(--ark-ink);
   background: color-mix(in srgb, var(--ark-paper) 88%, transparent);
@@ -105,4 +105,22 @@
   backdrop-filter: none;
   &:hover, &[data-active] { background: var(--ark-ink); color: var(--ark-paper); }
   &:active { transform: none; }
+}
+
+@media (max-width: 1100px), (pointer: coarse) {
+  // Leave the visible input area and chat composer free while typing.
+  :global(body):has(:is(input, textarea, [contenteditable='true']):focus) {
+    .mascot-host, .mascot-toggle { visibility: hidden; }
+  }
+}
+
+// Keep the companion control above the phone's persistent navigation.
+@media (max-width: 640px) {
+  :global(body:has([data-chat-view="thread"])) {
+    .mascot-host, .mascot-toggle { display: none; }
+  }
+
+  :global(body:has([data-blog-root]:not([data-section="chat"]))) .mascot-toggle {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
 }

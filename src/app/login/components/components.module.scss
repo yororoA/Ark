@@ -327,7 +327,9 @@
 }
 
 @media (max-width: 600px) {
-  .dialog-overlay { align-items: flex-end; padding: 12px; }
+  // Previously bottom aligned; keep the primary login centred in the visible
+  // viewport, including when the keyboard reduces or shifts that viewport.
+  .dialog-overlay { align-items: center; padding: 12px; }
   .accountManagement, .declaration { max-height: calc(100dvh - 24px); }
   .accountManagementTitle { padding: 11px 14px; }
   .accountManagementTitle h1 { font-size: 24px; }
@@ -341,4 +343,41 @@
   .avatar { width: 38px; height: 38px; font-size: 19px; }
   .account .account-name { font-size: 16px; }
   .declarationContentWrapper { padding: 20px; font-size: 13px; }
+}
+
+// Allocate the remaining panel space to scrolling rather than subtracting a
+// fixed footer estimate, which becomes negative on landscape phones.
+:global(html[data-design]) {
+  .dialog-overlay { min-height: 0; top: var(--dialog-viewport-top, 0); height: var(--dialog-viewport-height, 100dvh); box-sizing: border-box; }
+  .accountManagement { min-height: min(350px, calc(var(--dialog-viewport-height, 100dvh) - 36px)); }
+  .declaration { height: min(620px, calc(var(--dialog-viewport-height, 100dvh) - 36px)); }
+  .accountManagement, .declaration { box-sizing: border-box; max-height: 100%; }
+  .account-body { display: flex; flex-direction: column; min-height: 0; }
+  .account-list { min-height: 0; max-height: none; overflow-y: auto; }
+  .accountManagement .form { flex: 1; }
+  .accountManagementTitle h1 { min-width: 0; overflow-wrap: anywhere; }
+  .accountManagementFooter > a { min-height: 44px; display: inline-flex; align-items: center; }
+}
+@media (max-width: 600px), (max-height: 500px) {
+  :global(html[data-design]) {
+    .dialog-overlay {
+      padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    }
+    .accountManagementTitle { min-height: 64px; padding: 10px 12px; gap: 8px; }
+    .accountManagementTitle h1 { font-size: 22px; letter-spacing: 0; }
+    .accountManagementTitle h1::after { font-size: 8px; }
+    .icon-button { width: 44px; height: 44px; }
+    .accountManagement .form, .account-body { padding: 12px; }
+    .accountManagementFooter { padding: 8px 12px; flex-wrap: wrap; gap: 8px; }
+    .accountManagementFooter > button { flex-basis: auto; margin-left: auto; }
+    .inputGroup { gap: 14px; }
+    .code-button { min-height: 44px !important; padding-inline: 8px !important; font-size: 11px; }
+  }
+}
+@media (max-height: 500px) {
+  :global(html[data-design]) {
+    .accountManagement { min-height: 0; }
+    .accountManagementTitle h1::after { display: none; }
+    .accountManagement .form { gap: 12px; }
+  }
 }

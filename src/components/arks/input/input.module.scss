@@ -61,3 +61,7 @@
   &:hover { color: var(--accent, #bb3429); }
   &:focus-visible { outline: 2px solid var(--accent, #bb3429); outline-offset: 1px; }
 }
+
+@media (pointer: coarse) {
+  .toggleBtn { width: 44px; height: 44px; }
+}

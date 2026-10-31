@@ -206,7 +206,8 @@ export default function SphereCanvas({
     >
       <div
         className={className}
-        style={{ width: size, height: size, position: 'relative' }}
+        // Keep the square inside the viewport when a caller uses a desktop size.
+        style={{ width: `min(${size}, 100vw, 100svh)`, aspectRatio: '1', position: 'relative' }}
       >
         <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
       </div>
