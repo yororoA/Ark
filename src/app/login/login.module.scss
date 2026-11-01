@@ -1,5 +1,6 @@
 @use '@/styles/appearance-tokens' as appearance;
 @use '@/styles/prism-motion';
+@use './allotype-login';
 
 .login-scene {
   @include appearance.surface;
@@ -23,6 +24,8 @@
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
   ::selection { color: var(--paper); background: var(--accent); }
 }
+
+@include allotype-login.personality;
 
 .login-header {
   position: relative;
@@ -409,7 +412,6 @@
 }
 
 :global(html[data-design="prism"]) {
-  .legacy-brand { display: none; }
   .login-scene { isolation: isolate; }
   .login-scene { --display-latin: var(--font-ibm-plex), sans-serif; --display-cjk: var(--font-noto-sans), sans-serif; }
   .login-header, .login-footer { margin-inline: 6%; border-color: var(--line); }

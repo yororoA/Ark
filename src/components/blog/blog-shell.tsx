@@ -10,7 +10,6 @@ import { Locale, sections } from '@/lib/blog'
 import { legacyDestination } from '@/lib/legacy-route'
 import { BlogSelect } from './controls'
 import ArchiveLogo from '@/components/brand/archive-logo'
-import PrismLogo from '@/components/brand/prism-logo'
 import PrismStars from '@/components/appearance/prism-stars'
 import ThemePicker from '@/components/appearance/theme-picker'
 import { useAppearance } from '@/components/appearance/appearance-store'
@@ -49,8 +48,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <a href="#main-content" className={styles['skip-link']}>{t('read')}</a>
       <header className={styles['site-header']}>
         <Link href="/home" className={styles['brand']} aria-label="YororoIce Ark">
-          <span className={styles['legacy-brand']}><ArchiveLogo priority /></span>
-          <PrismLogo />
+          <ArchiveLogo priority />
         </Link>
         <Suspense><MobilePageContext /></Suspense>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
@@ -70,7 +68,6 @@ function Shell({ children }: { children: React.ReactNode }) {
       {open && (design === 'prism' ? <PrismMenu locale={locale} close={closeMenu} /> : design === 'p3r' ? <P3RMenu locale={locale} close={closeMenu} /> : <MobileNavigation close={closeMenu} />)}
       <main id="main-content" className={styles['main-content']}>{children}</main>
       <footer className={styles['site-footer']}>
-        <div className={styles['prism-footer-mark']}><span>YororoIce.</span><small>THE DARK SIDE OF THE EVERYDAY</small><i aria-hidden="true" /></div>
         <div className={styles['footer-signatures']}>
           <Image src="/logo_white.png" width={172} height={79} alt="YororoIce" />
           <i aria-hidden="true" />

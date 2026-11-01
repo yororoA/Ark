@@ -107,6 +107,29 @@
   --ark-prism-edge: #b7c3c4;
 }
 
+@mixin allotype-day {
+  --ark-paper: #e7d47b;
+  --ark-ink: #492b38;
+  --ark-muted: #695040;
+  --ark-line: #9a855c;
+  --ark-accent: #a51b3c;
+  --ark-soft: #efdf9a;
+  --ark-allotype-red: #ff1346;
+  --ark-allotype-lime: #c6dc4c;
+  --ark-allotype-plum: #623b49;
+  --ark-allotype-panel: #f1e4ad;
+}
+
+@mixin allotype-night {
+  --ark-paper: #211b20;
+  --ark-ink: #e7d47b;
+  --ark-muted: #c4b396;
+  --ark-line: #6c585c;
+  --ark-accent: #ff8c9d;
+  --ark-soft: #352831;
+  --ark-allotype-panel: #30232d;
+}
+
 @mixin night {
   --ark-color-scheme: dark;
   --ark-white-logo-filter: none;
@@ -115,6 +138,7 @@
   &[data-design="rain"] { @include rain-night; }
   &[data-design="p3r"] { @include p3r-night; }
   &[data-design="prism"] { @include prism-night; }
+  &[data-design="allotype"] { @include allotype-night; }
 }
 
 :root {
@@ -140,6 +164,7 @@
   &[data-design="rain"] { @include rain-day; }
   &[data-design="p3r"] { @include p3r-day; }
   &[data-design="prism"] { @include prism-day; }
+  &[data-design="allotype"] { @include allotype-day; }
   &[data-theme="dark"] { @include night; }
   @media (prefers-color-scheme: dark) {
     &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }

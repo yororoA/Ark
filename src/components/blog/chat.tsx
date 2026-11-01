@@ -20,6 +20,21 @@ type ConversationMemory = {
   content: string; reply: Message | null; files: File[]; assets: UploadedAsset[]
   scrollTop: number; atBottom: boolean; pages: number; measurements: VirtualItem[]
 }
+let tabConversationMemories: Map<string, Map<string, ConversationMemory>> | undefined
+
+function memoriesForAccount(uid: string) {
+  // Keep in-progress rooms through a visit to Theme without putting messages
+  // or File objects in persistent storage. Never share this cache during SSR.
+  if (typeof window === 'undefined') return new Map<string, ConversationMemory>()
+  const accounts = tabConversationMemories ??= new Map()
+  let memories = accounts.get(uid)
+  if (!memories) {
+    memories = new Map()
+    accounts.set(uid, memories)
+  }
+  return memories
+}
+
 const mobileCopy: Record<Locale, { back: string; choose: string; group: string; private: string }> = {
   zh: { back: '返回会话', choose: '选择一个会话，开始聊天', group: '公共聊天室', private: '私信会话' },
   en: { back: 'Back to chats', choose: 'Choose a conversation to start chatting', group: 'Public conversation', private: 'Private conversation' },
@@ -68,7 +83,7 @@ function ConversationView({ conversation, expanded, toggleExpanded, backToChats,
   memories: Map<string, ConversationMemory>
   setNavigationBusy: (busy: boolean) => void
 }) {
-  const { t, locale, session, connection } = useBlog()
+  const { t, locale, session, connection, notify } = useBlog()
   const [initialMemory] = useState(() => memories.get(conversation.id))
   const [content, setContent] = useState(initialMemory?.content || '')
   const [reply, setReply] = useState<Message | null>(initialMemory?.reply || null)
@@ -117,9 +132,26 @@ function ConversationView({ conversation, expanded, toggleExpanded, backToChats,
     if (messagesRef.current?.clientHeight && stickToBottom.current) virtualizer.scrollToEnd()
   }, [virtualizer])
   useEffect(() => {
-    setNavigationBusy(busy || uploads.isUploading)
-    return () => setNavigationBusy(false)
-  }, [busy, uploads.isUploading, setNavigationBusy])
+    const pending = busy || uploads.isUploading
+    setNavigationBusy(pending)
+    const keepSending = (event: MouseEvent) => {
+      if (!pending || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const anchor = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null
+      if (!anchor || (anchor.target && anchor.target !== '_self') || anchor.hasAttribute('download')) return
+      const target = new URL(anchor.href)
+      if (target.origin !== location.origin || target.pathname !== '/theme') return
+      // A second room mount could otherwise restore an in-flight draft and
+      // submit it again before the original request has finished.
+      event.preventDefault()
+      event.stopPropagation()
+      notify(t('sending'))
+    }
+    if (pending) document.addEventListener('click', keepSending, true)
+    return () => {
+      document.removeEventListener('click', keepSending, true)
+      setNavigationBusy(false)
+    }
+  }, [busy, uploads.isUploading, setNavigationBusy, notify, t])
   useEffect(() => {
     if (!initialMemory) return
     setFiles(initialMemory.files)
@@ -217,6 +249,8 @@ function ConversationView({ conversation, expanded, toggleExpanded, backToChats,
       const result = await send<Envelope<Message>>('chat/send', { type: conversation.type, targetUserId: conversation.id, text: content.trim(), assetIds: assets.map(asset => asset.id), replyto: reply ? `${reply.username}: ${excerpt(reply.text, 200) || t('image')}` : '' })
       stickToBottom.current = true
       userScrolling.current = false
+      const saved = memories.get(conversation.id)
+      if (saved) memories.set(conversation.id, { ...saved, content: '', reply: null, files: [], assets: [], atBottom: true })
       setIncoming(previous => [...previous, result.data])
       setContent(''); setReply(null); uploads.reset()
       await mutate()
@@ -278,7 +312,7 @@ function ChatContent({ expanded, toggleExpanded }: { expanded: boolean; toggleEx
   const threadOpen = !!params.get('conversation')
   const phone = useSyncExternalStore(subscribePhone, isPhone, serverIsPhone)
   const visible = !phone || threadOpen
-  const [memories] = useState(() => new Map<string, ConversationMemory>())
+  const [memories] = useState(() => memoriesForAccount(session!.uid))
   const [navigationBusy, setNavigationBusy] = useState(false)
   const conversationList = useRef<HTMLElement>(null)
   const returnFocus = useRef<string | null>(null)

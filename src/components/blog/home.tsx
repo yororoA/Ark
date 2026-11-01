@@ -11,6 +11,7 @@ import { State, styles } from './shared'
 import RainArtwork from './rain-artwork'
 import { P3RHome } from './p3r-navigation'
 import { PrismHome } from './prism-navigation'
+import AllotypeHome from './allotype-home'
 
 const ORBIT_SLOTS = [
   { track: 'outer', start: '8%', duration: '72s', delay: '-5.76s' },
@@ -129,6 +130,9 @@ export default function Home({
   const calendarStart = new Date()
   calendarStart.setUTCDate(calendarStart.getUTCDate() - 83)
   return <>
+    <AllotypeHome locale={locale} articles={orbitArticles} moments={orbitMoments}
+      articleState={<State loading={articles.isLoading} error={articles.error} empty={articles.data?.data.length === 0} retry={() => articles.mutate()} />}
+      momentState={<State loading={moments.isLoading} error={moments.error} empty={moments.data?.data.entries.length === 0} retry={() => moments.mutate()} />} />
     <P3RHome locale={locale} featured={featured} status={statusLabel} />
     <PrismHome locale={locale} featured={featured} status={statusLabel} articles={orbitArticles} moments={orbitMoments} dates={moments.data?.data.activeDates || []}
       articleState={<State loading={articles.isLoading} error={articles.error} empty={articles.data?.data.length === 0} retry={() => articles.mutate()} />}
