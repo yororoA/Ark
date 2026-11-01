@@ -3,6 +3,13 @@
 @use '@/styles/rain-motion';
 @use '@/styles/prism-motion';
 
+:global(html[data-design="allotype"]) {
+  .dialog-overlay { background: color-mix(in srgb, var(--ark-paper) 82%, transparent); backdrop-filter: blur(12px); }
+  .accountManagement, .declaration { border: 1px solid var(--ink); background: var(--ark-allotype-panel); box-shadow: 8px 8px 0 var(--ink); }
+  .accountManagementTitle { border-color: var(--ink); h1 { font-family: var(--font-noto-sans); font-weight: 700; letter-spacing: -1px; } }
+  .icon-button { border-radius: 50%; }
+}
+
 .dialog-overlay {
   @include appearance.surface;
 }

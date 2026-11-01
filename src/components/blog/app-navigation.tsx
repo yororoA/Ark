@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { ArrowLeft, BookOpen, Grid2X2, House, MessageCircle, Sparkles } from 'lucide-react'
 import Link from '@/components/appearance/p3r-link'
 import { sections } from '@/lib/blog'
+import { safeThemeReturn } from '@/lib/theme-navigation'
 import { useBlog } from './blog-provider'
 import { prepareListReturn, safeReturnPath } from './list-navigation'
 import styles from './blog.module.scss'
@@ -19,7 +20,15 @@ const tabs = [
 export function MobilePageContext() {
   const pathname = usePathname()
   const params = useSearchParams()
-  const { t } = useBlog()
+  const { t, locale } = useBlog()
+  if (pathname === '/theme') {
+    const returnTo = safeThemeReturn(params.get('returnTo'))
+    const title = { zh: '外观', en: 'Appearance', ja: '外観', de: 'Darstellung' }[locale]
+    return <div className={styles['mobile-page-context']}>
+      <Link href={returnTo} scroll={false} aria-label={t('back')} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={21} /></Link>
+      <span>{title}</span>
+    </div>
+  }
   const [, section, id, action] = pathname.split('/')
   const key = sections.find(([key]) => key === section)?.[0] ?? (section === 'chat' ? 'chat' : null)
   if (!key || key === 'home') return null

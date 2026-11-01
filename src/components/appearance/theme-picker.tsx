@@ -1,91 +1,55 @@
 'use client'
 
-import { useCallback, useId, useState } from 'react'
-import { Popover } from '@base-ui/react/popover'
-import { Check, Monitor, Moon, Palette, Sun, X } from 'lucide-react'
-import { COLOR_MODES, DESIGNS } from '@/lib/appearance'
+import { Suspense, useSyncExternalStore } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { Palette } from 'lucide-react'
 import type { Locale } from '@/lib/blog'
-import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
-import { P3R_COPY } from '@/lib/p3r-copy'
-import { PRISM_COPY } from '@/lib/prism-copy'
-import { useAppearance } from './appearance-store'
-import { PrismOptics } from './prism-scene'
-import styles from './theme-picker.module.scss'
+import { safeThemeReturn } from '@/lib/theme-navigation'
+import Link from './p3r-link'
+import styles from './theme-link.module.scss'
 
-const COPY = {
-  zh: { title: '外观', design: '视觉主题', mode: '明暗模式', archive: '档案', archiveNote: '编号 · 索引 · 编辑排版', light: '浅色', dark: '深色', system: '跟随系统', close: '关闭外观设置', note: '让文字，留在喜欢的风景里。' },
-  en: { title: 'Appearance', design: 'Visual theme', mode: 'Color mode', archive: 'Archive', archiveNote: 'Indexed · Editorial', light: 'Light', dark: 'Dark', system: 'System', close: 'Close appearance settings', note: 'A different atmosphere for the same stories.' },
-  ja: { title: '外観', design: 'テーマ', mode: 'カラーモード', archive: '記録', archiveNote: '番号・索引・誌面', light: 'ライト', dark: 'ダーク', system: 'システム', close: '外観設定を閉じる', note: '好きな景色に、言葉を残す。' },
-  de: { title: 'Darstellung', design: 'Visuelles Thema', mode: 'Farbmodus', archive: 'Archiv', archiveNote: 'Index · Editorial', light: 'Hell', dark: 'Dunkel', system: 'System', close: 'Darstellung schließen', note: 'Eine andere Atmosphäre für dieselben Geschichten.' },
+const LOCATION_EVENT = 'ark:appearance-location'
+function subscribeLocation(listener: () => void) {
+  window.addEventListener('hashchange', listener)
+  window.addEventListener('popstate', listener)
+  window.addEventListener(LOCATION_EVENT, listener)
+  return () => {
+    window.removeEventListener('hashchange', listener)
+    window.removeEventListener('popstate', listener)
+    window.removeEventListener(LOCATION_EVENT, listener)
+  }
 }
-const MODE_ICONS = { light: Sun, dark: Moon, system: Monitor }
+const readHash = () => window.location.hash
+const serverHash = () => ''
+const refreshLocation = () => window.dispatchEvent(new Event(LOCATION_EVENT))
 
-function PrismThemePreview() {
-  return <>
-    <PrismOptics className={styles['prism-preview-optics']} animated={false} />
-    <span className={styles['prism-preview-title']}>THE DARK SIDE<span>OF THE EVERYDAY.</span></span>
-    <span className={styles['prism-preview-signature']}>月之暗面<small>by YororoIce</small></span>
-    <span className={styles['prism-preview-stars']}><i /><i /><i /><i /><i /></span>
-  </>
+const TITLES = { zh: '外观', en: 'Appearance', ja: '外観', de: 'Darstellung' }
+
+function AppearanceLink({ locale, href, current = false, onIntent }: { locale: Locale; href: string; current?: boolean; onIntent?: () => void }) {
+  return <Link href={href} className={styles['theme-link']} aria-label={TITLES[locale]} title={TITLES[locale]} aria-current={current ? 'page' : undefined}
+    onFocus={onIntent} onMouseEnter={onIntent} onPointerDown={onIntent}>
+    <Palette size={18} strokeWidth={1.4} aria-hidden="true" />
+  </Link>
+}
+
+function CurrentAppearanceLink({ locale }: { locale: Locale }) {
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const hash = useSyncExternalStore(subscribeLocation, readHash, serverHash)
+  const query = params.toString()
+  const current = pathname === '/theme'
+  const path = `${pathname}${query ? `?${query}` : ''}${hash}`
+  // Intent refresh also covers same-page Next links whose pushState changes
+  // the fragment without dispatching a native hashchange event.
+  // Keep a real destination for modified clicks and query-only navigations.
+  // The current theme page must not become its own nested return destination.
+  const href = current ? path : `/theme?${new URLSearchParams({ returnTo: safeThemeReturn(path) })}`
+  return <AppearanceLink locale={locale} href={href} current={current} onIntent={refreshLocation} />
 }
 
 export default function ThemePicker({ locale = 'zh' }: { locale?: Locale }) {
-  const { design, colorMode, setDesign, setColorMode } = useAppearance()
-  const copy = COPY[locale]
-  const qingjian = QINGJIAN_COPY[locale]
-  const p3r = P3R_COPY[locale]
-  const prism = PRISM_COPY[locale]
-  const id = useId()
-  const [container, setContainer] = useState<HTMLElement | null>(null)
-  const triggerRef = useCallback((node: HTMLButtonElement | null) => {
-    // Account management and native dialogs must keep popups in their layer.
-    if (node) setContainer(node.closest<HTMLElement>('dialog, [role="dialog"]'))
-  }, [])
-  return <Popover.Root>
-    <Popover.Trigger ref={triggerRef} className={styles['theme-trigger']} aria-label={copy.title} title={copy.title}>
-      <Palette size={18} strokeWidth={1.4} />
-    </Popover.Trigger>
-    <Popover.Portal container={container ?? undefined}>
-      <Popover.Positioner className={styles['theme-positioner']} positionMethod="fixed" align="end" sideOffset={12} collisionPadding={12}>
-        <Popover.Popup className={styles['theme-panel']}>
-          <div className={styles['panel-heading']}>
-            <Popover.Title className={styles['panel-title']}>{copy.title}<span aria-hidden="true"> / APPEARANCE</span></Popover.Title>
-            <Popover.Close className={styles['close-button']} aria-label={copy.close}><X size={17} strokeWidth={1.4} /></Popover.Close>
-          </div>
-          <fieldset className={styles['theme-field']}>
-            <legend>{copy.design}</legend>
-            <div className={styles['design-options']}>
-              {DESIGNS.map(option => <label key={option} className={styles['design-option']}>
-                <input type="radio" name={`${id}-design`} value={option} checked={design === option} onChange={() => setDesign(option)} />
-                <span className={styles['design-preview']} data-preview={option} aria-hidden="true">
-                  {option === 'prism' ? <PrismThemePreview /> : <>
-                    <span className={styles['preview-caption']}>{option === 'archive' ? '01 / PERSONAL ARCHIVE' : option === 'p3r' ? 'YOUR DAYS. YOUR STORY.' : 'A QUIET JOURNAL'}</span>
-                    <span className={styles['preview-type']}>{option === 'archive' ? 'Ark.' : option === 'p3r' ? 'P3R' : '笺'}<span>{option === 'archive' ? 'INDEX / 01' : option === 'p3r' ? 'RELOAD' : QINGJIAN_COPY.en.name}</span></span>
-                    <span className={styles['preview-art']}><i /><i /><i /></span>
-                    <span className={styles['preview-layout']}><i /><i /><i /></span>
-                    <span className={styles['preview-line']} />
-                  </>}
-                </span>
-                <span className={styles['option-label']}>{option === 'prism' ? prism.name : option === 'archive' ? copy.archive : option === 'p3r' ? p3r.name : qingjian.name}<Check size={13} aria-hidden="true" /></span>
-                <span className={styles['option-note']}>{option === 'prism' ? prism.description : option === 'archive' ? copy.archiveNote : option === 'p3r' ? p3r.description : qingjian.description}</span>
-              </label>)}
-            </div>
-          </fieldset>
-          <fieldset className={styles['theme-field']}>
-            <legend>{copy.mode}</legend>
-            <div className={styles['mode-options']}>
-              {COLOR_MODES.map(mode => {
-                const Icon = MODE_ICONS[mode]
-                return <label key={mode} className={styles['mode-option']}>
-                  <input type="radio" name={`${id}-mode`} value={mode} checked={colorMode === mode} onChange={() => setColorMode(mode)} />
-                  <span><Icon size={15} strokeWidth={1.4} />{copy[mode]}</span>
-                </label>
-              })}
-            </div>
-          </fieldset>
-          <Popover.Description className={styles['panel-note']}>{copy.note}</Popover.Description>
-        </Popover.Popup>
-      </Popover.Positioner>
-    </Popover.Portal>
-  </Popover.Root>
+  // Only this small link depends on search params; headers remain prerenderable.
+  return <Suspense fallback={<AppearanceLink locale={locale} href="/theme" />}>
+    <CurrentAppearanceLink locale={locale} />
+  </Suspense>
 }

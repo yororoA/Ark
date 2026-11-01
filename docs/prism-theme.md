@@ -18,8 +18,8 @@
 用户指出首版像“档案和 P3R 融合”，并提供首页、菜单及首页下半部截图。
 据此放弃大字左右分栏、重复棱镜横幅、宋体目录与旧日历格的组合：
 
-- **页头与页脚**：统一为细线棱镜品牌标识、紧凑字标与圆点选中状态；页脚采用小字号署名。
-  旧主题继续使用原品牌标识。登录入口复用同一个 `PrismLogo`。
+- **页头与页脚**：与其它主题共用品牌 Logo；博客与登录页使用 `ArchiveLogo`，页脚使用通用 Logo 与签名组合。
+  保留月之暗面的导航选中样式与页面配色。
 - **首页**：从屏幕左侧入射，棱镜折射到屏幕右边缘；大小写拉开字距的小标题与署名让主体图形成为焦点。
   浅色首页、页头、正文使用同一套冷灰纸色，避免暖白页头接黑色海报的断层。
 - **首页内容**：独立的 A/B 分区；文章为真实封面与说明并列的唱片封套，片刻按日期刻度分布。
@@ -83,7 +83,7 @@
 | 文章唱片封套 | `src/components/blog/prism-record.*` |
 | 首页与导航 | `src/components/blog/prism-navigation.*` |
 | 全站组件样式 | `src/components/blog/_prism-ui.scss` |
-| 品牌标识 | `src/components/brand/prism-logo.*` |
+| 共用品牌标识 | `src/components/brand/archive-logo.*` |
 | 页面转场 | `src/components/appearance/prism-effects.*` |
 | 登录接入 | `src/components/appearance/prism-connection-*`、`prism-connection.module.scss` |
 | 月蚀绘制 | `src/components/appearance/prism-eclipse.tsx` |

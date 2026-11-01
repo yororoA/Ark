@@ -13,12 +13,12 @@ import ConnectionSequence, { type ConnectionState } from "./components/connectio
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ArchiveLogo from '@/components/brand/archive-logo';
-import PrismLogo from '@/components/brand/prism-logo';
 import ThemePicker from '@/components/appearance/theme-picker';
 import RainPlanes from '@/components/appearance/rain-planes';
 import P3RScene from '@/components/appearance/p3r-scene';
 import PrismScene from '@/components/appearance/prism-scene';
 import PrismStars from '@/components/appearance/prism-stars';
+import AllotypeArt from '@/components/appearance/allotype-art';
 import { useAppearance } from '@/components/appearance/appearance-store';
 import { useRainConnection } from '@/components/appearance/rain-connection-store';
 import { QINGJIAN_COPY } from '@/lib/qingjian-copy';
@@ -45,6 +45,10 @@ function Login() {
   const destination = loginDestination(returnTo);
   const { design } = useAppearance();
   useEffect(() => {
+    if (design === 'allotype') {
+      void import('@/components/appearance/allotype-connection-sequence').catch(() => {});
+      return;
+    }
     if (design === 'prism') {
       void import('@/components/appearance/prism-connection-sequence').catch(() => {});
       return;
@@ -102,7 +106,7 @@ function Login() {
     setConnectionDesign(design);
     setConnection(initial);
     setIsDeclarationVisible(false);
-    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism';
+    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism' || design === 'allotype';
     const rainId = themedConnection
       ? useRainConnection.getState().begin({ ...initial, design, destination, onDismiss: handleDismissConnection })
       : null;
@@ -172,12 +176,13 @@ function Login() {
         <P3RScene variant="login" />
         <PrismScene variant="login" />
         <header className={styles['login-header']}>
-          <Link href="/home" aria-label="YororoIce Ark"><span className={styles['legacy-brand']}><ArchiveLogo priority /></span><PrismLogo /></Link>
+          <Link href="/home" aria-label="YororoIce Ark"><ArchiveLogo priority /></Link>
           <nav aria-label="登录页导航"><Link href="/home">浏览首页</Link><Link href="/terms">社区约定</Link><ThemePicker /></nav>
         </header>
         <main className={styles['login-main']}>
           <RainPlanes variant="identity" />
           <section className={styles['login-copy']}>
+            <div className={styles['login-allotype']} aria-hidden="true"><span>HELLO,<br /><i>another you.</i></span>{design === 'allotype' ? <AllotypeArt index={3} /> : null}</div>
             <div className={styles['login-prism']} aria-hidden="true"><small>THE DARK SIDE OF THE MOON</small><span>THE OTHER<br />SIDE OF YOU.</span></div>
             <div className={styles['login-p3r']} aria-hidden="true"><span>CONTINUE</span><strong>YOUR STORY.</strong></div>
             <div className={styles['login-signature']} aria-hidden="true"><Image src="/bines_sign.png" alt="" fill sizes="300px" priority /></div>

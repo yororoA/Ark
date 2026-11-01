@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useSWRConfig } from 'swr'
 import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowUpRight, Download, Pencil, Plus, Search, Share2 } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Download, Pencil, Plus, Search, Share2, X } from 'lucide-react'
 import { articlePreview, dateLabel, Entry, Envelope, excerpt, SitemapContent } from '@/lib/blog'
 import { send, useBlog, useBlogData, useBlogReferenceData } from './blog-provider'
-import { useManagedUploads } from './media-upload'
+import { useManagedUploads, type UploadedAsset } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
 import { shareContent } from '@/lib/share'
@@ -112,22 +112,86 @@ export function ArticleDetail({ id, initialArticle }: { id: string; initialArtic
   return <div className={styles['page']}><div className={styles['reader']}><Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { const result = await shareContent(article.title); if (result === 'copied') notify(t('copied')); else if (result !== 'shared' && result !== 'cancelled') notify(result) }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
 }
 
-function Editor({ article }: { article?: Entry }) {
+type ArticleDraft = {
+  title: string; content: string; category: string; tags: string; preview: boolean
+  mediaAssetIds: string[]; files: File[]; assets: UploadedAsset[]
+}
+// This tab's memory only: do not persist unpublished text or local Files.
+const articleDrafts = new Map<string, ArticleDraft>()
+
+function Editor({ article, draftKey }: { article?: Entry; draftKey: string }) {
   const { t, notify } = useBlog()
   const router = useRouter()
   const { mutate } = useSWRConfig()
-  const [title, setTitle] = useState(article?.title || '')
-  const [content, setContent] = useState(article?.content || '')
-  const [category, setCategory] = useState(article?.category || '')
-  const [tags, setTags] = useState(article?.tags?.join(', ') || '')
-  const [preview, setPreview] = useState(false)
+  // RequireLogin mounts the editor only after the client session is known;
+  // its server/hydration loading state never reads a user's in-memory draft.
+  const [initialDraft] = useState(() => articleDrafts.get(draftKey))
+  const [title, setTitle] = useState(initialDraft?.title ?? article?.title ?? '')
+  const [content, setContent] = useState(initialDraft?.content ?? article?.content ?? '')
+  const [category, setCategory] = useState(initialDraft?.category ?? article?.category ?? '')
+  const [tags, setTags] = useState(initialDraft?.tags ?? article?.tags?.join(', ') ?? '')
+  const [preview, setPreview] = useState(initialDraft?.preview ?? false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [mediaAssetIds, setMediaAssetIds] = useState(article?.mediaAssets || [])
+  const [mediaAssetIds, setMediaAssetIds] = useState(initialDraft?.mediaAssetIds ?? article?.mediaAssets ?? [])
   const uploads = useManagedUploads('article', 1)
+  const { setFiles, restoreAssets } = uploads
+  const restoredAssets = uploads.items.flatMap(item => !item.file && item.asset ? [item.asset] : [])
+  const restoredOnce = useRef(false)
+  const queueReady = useRef(!initialDraft?.files.length && !initialDraft?.assets.length)
+  const discarded = useRef(false)
   const editor = useRef<HTMLTextAreaElement>(null)
   const selection = useRef({ start: content.length, end: content.length })
   const restoreCursor = useRef<number | null>(null)
+  useEffect(() => {
+    if (restoredOnce.current) return
+    restoredOnce.current = true
+    if (!initialDraft) return
+    setFiles(initialDraft.files)
+    restoreAssets(initialDraft.assets)
+  }, [initialDraft, setFiles, restoreAssets])
+  useEffect(() => {
+    // Do not overwrite a restored queue with the hook's initial empty state.
+    if (!queueReady.current && !uploads.items.length) return
+    queueReady.current = true
+    if (discarded.current) return
+    articleDrafts.set(draftKey, {
+      title, content, category, tags, preview, mediaAssetIds,
+      files: uploads.items.flatMap(item => item.file && !item.asset ? [item.file] : []),
+      assets: uploads.assets,
+    })
+  }, [draftKey, title, content, category, tags, preview, mediaAssetIds, uploads.items, uploads.assets])
+  useEffect(() => {
+    if (!busy && !uploads.isUploading) return
+    const keepActiveEditor = (event: MouseEvent) => {
+      if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null
+      if (!link || (link.target && link.target !== '_self') || link.hasAttribute('download')) return
+      const url = new URL(link.href)
+      if (url.origin === location.origin && url.pathname === '/theme') {
+        event.preventDefault()
+        event.stopPropagation()
+        notify(t(uploads.isUploading ? 'uploadingFile' : 'saving'))
+      }
+    }
+    document.addEventListener('click', keepActiveEditor, true)
+    return () => document.removeEventListener('click', keepActiveEditor, true)
+  }, [busy, uploads.isUploading, notify, t])
+  function clearDraft(savedArticle = article) {
+    discarded.current = true
+    articleDrafts.delete(draftKey)
+    // Also reset a page retained by the router after cancel/publish.
+    setTitle(savedArticle?.title ?? '')
+    setContent(savedArticle?.content ?? '')
+    setCategory(savedArticle?.category ?? '')
+    setTags(savedArticle?.tags?.join(', ') ?? '')
+    setMediaAssetIds(savedArticle?.mediaAssets ?? [])
+    setPreview(false)
+    uploads.reset()
+    selection.current = { start: savedArticle?.content.length ?? 0, end: savedArticle?.content.length ?? 0 }
+    restoreCursor.current = null
+  }
+  function resumeDraft() { discarded.current = false }
   function rememberSelection(textarea: HTMLTextAreaElement) {
     editor.current = textarea
     selection.current = { start: textarea.selectionStart, end: textarea.selectionEnd }
@@ -146,6 +210,7 @@ function Editor({ article }: { article?: Entry }) {
     e.preventDefault(); setBusy(true); setError('')
     try {
       const result = await send<Envelope<Entry>>(article ? `knowledge/${article._id}` : 'knowledge', { title: title.trim(), content, category, tags: tags.split(/[,，]/).map(tag => tag.trim()).filter(Boolean), mediaAssetIds }, article ? 'PUT' : 'POST')
+      clearDraft(article ? result.data : undefined)
       await mutate(`/api/blog/knowledge/${result.data._id}`, result, { revalidate: false })
       await mutate(key => typeof key === 'string' && (
         key.startsWith('/api/blog/knowledge?')
@@ -157,15 +222,16 @@ function Editor({ article }: { article?: Entry }) {
     } catch (error) { setError((error as Error).message) } finally { setBusy(false) }
   }
   async function upload() {
-    if (!uploads.files[0]) return
-    const image = uploads.files[0]
+    if (!uploads.items.length) return
+    const filename = uploads.files[0]?.name || uploads.assets[0]?.filename || ''
     const range = selection.current
     setBusy(true); setError('')
     try {
       const assets = await uploads.uploadAll()
+      if (discarded.current) return
       const asset = assets.at(-1)
       if (!asset) throw new Error(t('uploadFailed'))
-      const markdown = `![${image.name.replace(/[\[\]]/g, '')}](${asset.url})`
+      const markdown = `![${filename.replace(/[\[\]]/g, '')}](${asset.url})`
       let cursor = range.start + markdown.length
       setContent(value => {
         const start = Math.min(range.start, value.length)
@@ -179,11 +245,34 @@ function Editor({ article }: { article?: Entry }) {
       uploads.reset()
     } catch (error) { setError((error as Error).message) } finally { setBusy(false) }
   }
-  return <form className={styles['form']} onSubmit={submit}><label className={styles['field']}>{t('title')}<input required value={title} maxLength={200} onChange={e => setTitle(e.target.value)} /></label><div className={styles['form-row']}><label className={styles['field']}>{t('category')}<input value={category} onChange={e => setCategory(e.target.value)} /></label><label className={styles['field']}>{t('tags')}<input value={tags} onChange={e => setTags(e.target.value)} /></label></div><div className={styles['form-actions']}><button type="button" className={styles['secondary-button']} aria-pressed={preview} onClick={() => setPreview(!preview)}>{t(preview ? 'edit' : 'preview')}</button><FilePicker files={uploads.files} setFiles={uploads.setFiles} uploadItems={uploads.items} onRetry={key => { void uploads.retry(key).catch(uploadError => setError((uploadError as Error).message)) }} onRemove={uploads.remove} max={1} imageOnly label={t('insertMedia')} onBeforeSelect={() => { if (editor.current?.isConnected) rememberSelection(editor.current) }} />{!!uploads.files.length && <button type="button" className={styles['secondary-button']} disabled={busy || uploads.isUploading} onClick={upload}>{t('insertMedia')}</button>}</div>{preview ? <><Markdown content={content} /><LocalMediaGrid files={uploads.files} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea required minRows={14} disabled={busy} className={styles['editor-textarea']} value={content} onChange={e => { setContent(e.target.value); rememberSelection(e.currentTarget) }} onSelect={e => rememberSelection(e.currentTarget)} onBlur={e => rememberSelection(e.currentTarget)} /></label>}{error && <p role="alert" className={styles['error']}>{error}</p>}<div className={styles['form-actions']}><button className={styles['primary-button']} disabled={busy || uploads.isUploading || !title.trim() || !content.trim()}>{t(busy ? 'saving' : article ? 'save' : 'publish')}</button><Link href={article ? `/articles/${article._id}` : '/articles'} className={styles['secondary-button']}>{t('cancel')}</Link></div></form>
+  return <form className={styles['form']} onSubmit={submit} onChangeCapture={resumeDraft} onClickCapture={resumeDraft} onDropCapture={resumeDraft}>
+    <label className={styles['field']}>{t('title')}<input required value={title} maxLength={200} onChange={e => setTitle(e.target.value)} /></label>
+    <div className={styles['form-row']}>
+      <label className={styles['field']}>{t('category')}<input value={category} onChange={e => setCategory(e.target.value)} /></label>
+      <label className={styles['field']}>{t('tags')}<input value={tags} onChange={e => setTags(e.target.value)} /></label>
+    </div>
+    <div className={styles['form-actions']}>
+      <button type="button" className={styles['secondary-button']} aria-pressed={preview} onClick={() => setPreview(!preview)}>{t(preview ? 'edit' : 'preview')}</button>
+      <FilePicker files={uploads.files} setFiles={uploads.setFiles} uploadItems={uploads.items} onRetry={key => { void uploads.retry(key).catch(uploadError => setError((uploadError as Error).message)) }} onRemove={uploads.remove} max={1 - restoredAssets.length} imageOnly label={t('insertMedia')} onBeforeSelect={() => { if (editor.current?.isConnected) rememberSelection(editor.current) }} />
+      {!!uploads.items.length && <button type="button" className={styles['secondary-button']} disabled={busy || uploads.isUploading} onClick={upload}>{t('insertMedia')}</button>}
+    </div>
+    {!!restoredAssets.length && <ul className={styles['upload-files']}>{restoredAssets.map(asset => <li key={asset.id} data-status="done">
+      <div className={styles['upload-file-summary']}><span title={asset.filename}>{asset.filename}</span><small>{t('uploadDone')}</small>
+        <button type="button" className={styles['icon-button']} aria-label={`${t('removeFile')} ${asset.filename}`} onClick={() => uploads.remove(`asset:${asset.id}`)}><X size={14} /></button>
+      </div>
+    </li>)}</ul>}
+    {preview ? <><Markdown content={content} /><LocalMediaGrid files={uploads.files} /></> : <label className={styles['field']}>{t('content')} / Markdown<AutoTextarea required minRows={14} disabled={busy} className={styles['editor-textarea']} value={content} onChange={e => { setContent(e.target.value); rememberSelection(e.currentTarget) }} onSelect={e => rememberSelection(e.currentTarget)} onBlur={e => rememberSelection(e.currentTarget)} /></label>}
+    {error && <p role="alert" className={styles['error']}>{error}</p>}
+    <div className={styles['form-actions']}>
+      <button className={styles['primary-button']} disabled={busy || uploads.isUploading || !title.trim() || !content.trim()}>{t(busy ? 'saving' : article ? 'save' : 'publish')}</button>
+      <Link href={article ? `/articles/${article._id}` : '/articles'} className={styles['secondary-button']} onNavigate={() => clearDraft()}>{t('cancel')}</Link>
+    </div>
+  </form>
 }
 export function ArticleEditor({ id }: { id?: string }) {
   const { session } = useBlog()
+  const draftKey = JSON.stringify([session?.uid, id || 'new'])
   const data = useBlogData<Envelope<Entry>>(id ? `knowledge/${id}` : null, { revalidateOnFocus: false, revalidateIfStale: false })
   const canEdit = !id || (data.data?.data.uid === session?.uid)
-  return <div className={styles['page']}><PageHeading title={id ? 'edit' : 'newArticle'} english="Compose" number="01" /><RequireLogin>{id ? <><State loading={data.isLoading} error={data.error} retry={() => data.mutate()} />{data.data && (canEdit ? <Editor article={data.data.data} /> : <p className={styles['error']}>403</p>)}</> : <Editor />}</RequireLogin></div>
+  return <div className={styles['page']}><PageHeading title={id ? 'edit' : 'newArticle'} english="Compose" number="01" /><RequireLogin>{id ? <><State loading={data.isLoading} error={data.error} retry={() => data.mutate()} />{data.data && (canEdit ? <Editor key={draftKey} draftKey={draftKey} article={data.data.data} /> : <p className={styles['error']}>403</p>)}</> : <Editor key={draftKey} draftKey={draftKey} />}</RequireLogin></div>
 }

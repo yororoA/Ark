@@ -1,0 +1,54 @@
+// Attribute specificity keeps the icon clear of surrounding text-link padding.
+.theme-link[href] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  color: var(--ark-ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  text-decoration: none;
+  line-height: 1;
+  cursor: pointer;
+  transition: color .2s ease-in-out, border-color .2s ease-in-out;
+
+  &:hover, &[aria-current='page'] {
+    color: var(--ark-accent);
+    border-color: var(--ark-line);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ark-accent);
+    outline-offset: 3px;
+  }
+
+  svg { flex: none; }
+}
+
+:global(html[data-design='rain']) .theme-link[href] {
+  color: var(--ark-accent);
+  border-color: var(--ark-line);
+}
+
+:global(html[data-design='p3r']) .theme-link[href] {
+  color: var(--ark-p3r-white);
+  background: var(--ark-p3r-deep);
+  border-color: var(--ark-p3r-cyan);
+  transform: skewX(-8deg);
+}
+
+:global(html[data-design='allotype']) .theme-link[href] {
+  border-color: var(--ark-line);
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-link[href] { transition: none; }
+}
