@@ -5,7 +5,7 @@ import { chromium, expect } from '@playwright/test'
 
 const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:10000'
 const shots = process.env.THEME_SCREENSHOT_DIR
-const designNames = { archive: '档案', rain: '青笺', p3r: 'P3R', prism: '月之暗面', allotype: '异相' }
+const designNames = { archive: '档案', rain: '青笺', p3r: 'P3R', prism: '月之暗面', allotype: '异相', fold: '折境' }
 const modeNames = { light: '浅色', dark: '深色', system: '跟随系统' }
 let browser
 
@@ -112,7 +112,7 @@ for (const width of [320, 390, 1440]) {
     assert.equal(url.pathname, '/theme')
     assert.equal(url.searchParams.get('returnTo'), source)
     const gallery = page.getByTestId('theme-page')
-    await expect(gallery.locator('input[type="radio"]')).toHaveCount(8)
+    await expect(gallery.locator('input[type="radio"]')).toHaveCount(Object.keys(designNames).length + Object.keys(modeNames).length)
     await noOverflow(page)
     for (const [value, name] of Object.entries({ ...designNames, ...modeNames })) {
       const radio = gallery.getByRole('radio', { name, exact: true })
@@ -144,7 +144,7 @@ for (const width of [320, 390, 1440]) {
   })
 }
 
-test('theme page: five themes, three modes, native radio keys and reload persistence', async t => {
+test('theme page: six themes, three modes, native radio keys and reload persistence', async t => {
   const { page } = await session(t)
   await page.goto(`${baseURL}/theme?returnTo=%2Fhome`)
   await ready(page)

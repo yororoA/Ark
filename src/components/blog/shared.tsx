@@ -32,7 +32,7 @@ export function PageHeading({ title, english, number, children }: { title: TextK
     <span className={styles['p3r-heading-word']} aria-hidden="true">{english}</span>
     <span className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>
-      <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span> / {number}</div>
+      <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span><span className={styles['fold-only']}>ARK / FOLD</span> / {number}</div>
       <h1><span className={styles['localized-title']}>{localizedTitle}</span>{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
     </div>
     {children && <div className={styles['heading-actions']}>{children}</div>}

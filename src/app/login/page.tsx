@@ -19,6 +19,7 @@ import P3RScene from '@/components/appearance/p3r-scene';
 import PrismScene from '@/components/appearance/prism-scene';
 import PrismStars from '@/components/appearance/prism-stars';
 import AllotypeArt from '@/components/appearance/allotype-art';
+import FoldArt from '@/components/appearance/fold-art';
 import { useAppearance } from '@/components/appearance/appearance-store';
 import { useRainConnection } from '@/components/appearance/rain-connection-store';
 import { QINGJIAN_COPY } from '@/lib/qingjian-copy';
@@ -45,6 +46,10 @@ function Login() {
   const destination = loginDestination(returnTo);
   const { design } = useAppearance();
   useEffect(() => {
+    if (design === 'fold') {
+      void import('@/components/appearance/fold-connection').catch(() => {});
+      return;
+    }
     if (design === 'allotype') {
       void import('@/components/appearance/allotype-connection-sequence').catch(() => {});
       return;
@@ -106,7 +111,7 @@ function Login() {
     setConnectionDesign(design);
     setConnection(initial);
     setIsDeclarationVisible(false);
-    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism' || design === 'allotype';
+    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism' || design === 'allotype' || design === 'fold';
     const rainId = themedConnection
       ? useRainConnection.getState().begin({ ...initial, design, destination, onDismiss: handleDismissConnection })
       : null;
@@ -182,6 +187,11 @@ function Login() {
         <main className={styles['login-main']}>
           <RainPlanes variant="identity" />
           <section className={styles['login-copy']}>
+            <div className={styles['login-fold']} aria-hidden="true">
+              <div className={styles['fold-plate-heading']}><span>ARK / FIELD NOTES</span><span>06 — FOLD</span></div>
+              <div className={styles['fold-portal']}>{design === 'fold' ? <FoldArt variant="portal" /> : null}</div>
+              <div className={styles['fold-plate-caption']}><strong><span>ENTER</span><span>THE STORY.</span></strong><span>每一次抵达，<br />都是新的开始。</span></div>
+            </div>
             <div className={styles['login-allotype']} aria-hidden="true"><span>HELLO,<br /><i>another you.</i></span>{design === 'allotype' ? <AllotypeArt index={3} /> : null}</div>
             <div className={styles['login-prism']} aria-hidden="true"><small>THE DARK SIDE OF THE MOON</small><span>THE OTHER<br />SIDE OF YOU.</span></div>
             <div className={styles['login-p3r']} aria-hidden="true"><span>CONTINUE</span><strong>YOUR STORY.</strong></div>
@@ -190,7 +200,7 @@ function Login() {
               <span>{QINGJIAN_COPY.zh.name}</span><small>YOROROICE / ARK</small>
             </div>
             <div className={styles['login-eyebrow']}>IDENTITY ACCESS / 01</div>
-            <h1>身份验证</h1>
+            <h1><span className={styles['fold-login-heading']}>走进故事</span><span className={styles['standard-login-heading']}>身份验证</span></h1>
             <p>登录已有账号、注册新身份，或以游客身份继续访问。</p>
             <div className={styles['access-notes']}><span><ShieldCheck size={15} />安全会话</span><span><BookOpen size={15} />保留原有内容</span></div>
             <dl className={styles['archive-register']}>

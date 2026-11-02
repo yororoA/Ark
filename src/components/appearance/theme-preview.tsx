@@ -3,13 +3,19 @@
 import type { Design } from '@/lib/appearance'
 import { PrismOptics } from './prism-scene'
 import AllotypeArt from './allotype-art'
+import FoldArt from './fold-art'
 import styles from './theme-preview.module.scss'
 
 // These are miniature compositions, sharing the actual optics and generated
 // artwork where a theme has its own renderer. They never run background motion.
 export default function ThemePreview({ design }: { design: Design }) {
   return <div className={styles.cover} data-preview={design} aria-hidden="true">
-    {design === 'prism' ? <>
+    {design === 'fold' ? <>
+      <div className={styles['fold-art']}><FoldArt animated={false} /></div>
+      <div className={styles['fold-heading']}><span>ARK / PAPER LANDSCAPES</span><span>NO. 06</span></div>
+      <div className={styles['fold-title']}>FOLD<span>折境</span></div>
+      <div className={styles['fold-caption']}>A SMALL LIFE.<br />AN OPEN WORLD.</div>
+    </> : design === 'prism' ? <>
       <div className={styles['prism-heading']}>THE DARK SIDE<span>OF THE EVERYDAY.</span></div>
       <PrismOptics className={styles.optics} animated={false} />
       <div className={styles['prism-signature']}>月之暗面<small>YOROROICE / ARK</small></div>

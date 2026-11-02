@@ -89,6 +89,7 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
         />
       )}
       <div ref={dialogRef} tabIndex={-1} className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }}>
+        <div className={styles['fold-ticket-rail']} aria-hidden="true"><span>ARK / PERSONAL ACCESS</span><span>FOLD</span></div>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
           {otherVisable && details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
           <h1>账号管理</h1>

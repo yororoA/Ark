@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useRef, useState, type ComponentProps } from 'react'
 import { requestP3RWipe } from './p3r-transition'
+import { requestFoldTransition } from './fold-transition'
 
 export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, prefetch, replace, scroll, transitionTypes, ...props }: ComponentProps<typeof Link>) {
   const router = useRouter()
@@ -42,13 +43,14 @@ export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, pr
       const destination = `${url.pathname}${url.search}${url.hash}`
       // The caller's handler and the route change wait until the page is
       // covered, so loading boundaries never flash beside the expanding edge.
-      const accepted = requestP3RWipe({ x, y, navigate: () => {
+      const request = { x, y, navigate: () => {
         let cancelled = false
         onNavigate?.({ preventDefault: () => { cancelled = true } })
         if (cancelled) return false
         router[replace ? 'replace' : 'push'](destination, { scroll, transitionTypes })
         return true
-      }, fallback: () => location.assign(destination) })
+      }, fallback: () => location.assign(destination) }
+      const accepted = requestFoldTransition(request) || requestP3RWipe(request)
       if (!accepted) { onNavigate?.(event); return }
       event.preventDefault()
       // The route changes under the cover; warm it now, including touch taps
