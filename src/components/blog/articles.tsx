@@ -49,7 +49,7 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
   const returnTo = listPath('articles', params)
   const list = useBlogData<Envelope<Entry[]>>(`knowledge?limit=10&page=${page}&keyword=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}&date=${encodeURIComponent(date)}`, {
     fallbackData: initialData,
-    revalidateOnMount: !initialData,
+    revalidateOnMount: initialData ? false : undefined,
   })
   const categories = useBlogReferenceData<Envelope<string[]>>('knowledge/meta/categories')
   const sitemap = useBlogReferenceData<Envelope<SitemapContent>>('archive/sitemap')

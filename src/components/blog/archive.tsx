@@ -21,11 +21,11 @@ export default function Archive({
   const [page, setPage] = useState(1)
   const archive = useBlogData<Envelope<ArchiveEntry[]>>(`archive/feed?type=${type}&year=${year}&page=${page}&limit=50`, {
     fallbackData: page === 1 && type === 'all' && year === 'all' ? initialData : undefined,
-    revalidateOnMount: !(page === 1 && type === 'all' && year === 'all' && initialData),
+    revalidateOnMount: page === 1 && type === 'all' && year === 'all' && initialData ? false : undefined,
   })
   const years = useBlogData<Envelope<string[]>>('archive/years', {
     fallbackData: initialYears,
-    revalidateOnMount: !initialYears,
+    revalidateOnMount: initialYears ? false : undefined,
   })
   const entries = archive.data?.data || []
   const groups = Map.groupBy(entries, entry => entry.createdAt.slice(0, 4))

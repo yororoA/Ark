@@ -45,10 +45,11 @@ function Transition({ connection }: { connection: RainConnection }) {
   // non-login route is what the umbrella must uncover.
   const routeCommitted = navigating && pathname !== '/login'
   const [foldContentReady, setFoldContentReady] = useState(false)
-  const pageReady = routeCommitted && (connection.design !== 'fold' || foldContentReady)
+  const waitsForContent = connection.design === 'fold' || connection.design === 'allotype'
+  const pageReady = routeCommitted && (!waitsForContent || foldContentReady)
 
   useEffect(() => {
-    if (connection.design !== 'fold' || !routeCommitted) return
+    if (!waitsForContent || !routeCommitted) return
     let frame = 0, stableSince = 0
     const ready = (now: number) => {
       const main = document.querySelector('#main-content')
@@ -63,7 +64,7 @@ function Transition({ connection }: { connection: RainConnection }) {
     }
     frame = requestAnimationFrame(ready)
     return () => cancelAnimationFrame(frame)
-  }, [connection.design, routeCommitted, pathname])
+  }, [waitsForContent, routeCommitted, pathname])
 
   const covered = useCallback(() => {
     if (connection.status !== 'success' || navigationStarted.current) return

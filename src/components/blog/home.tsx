@@ -112,11 +112,11 @@ export default function Home({
   const art = useRef<HTMLDivElement>(null)
   const articles = useBlogData<Envelope<Entry[]>>('knowledge?limit=4', {
     fallbackData: initialArticles,
-    revalidateOnMount: !initialArticles,
+    revalidateOnMount: initialArticles ? false : undefined,
   })
   const moments = useBlogData<Envelope<HomeMomentSummary>>('moments/summary?limit=8&days=84', {
     fallbackData: initialMoments,
-    revalidateOnMount: !initialMoments,
+    revalidateOnMount: initialMoments ? false : undefined,
   })
   const status = useBlogData<Envelope<{ online: boolean }>>('status/bines', { refreshInterval: 60000 })
   const github = useBlogData<Envelope<{ reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }>>('github/summary')

@@ -847,3 +847,11 @@
 }
 
 @include app-ui.layout;
+
+// Expanded chat is a viewport surface, independent of theme page gutters.
+:global(html[data-design]) .chat-page[data-expanded="true"] {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
