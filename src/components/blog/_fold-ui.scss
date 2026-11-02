@@ -1,3 +1,5 @@
+@use './fold-content';
+@use './fold-controls';
 // FOLD: a printed sheet, measured type, and a small red interruption.
 // All rules stay in this appearance scope; content and editor state are shared.
 @mixin personality {
@@ -192,6 +194,8 @@
       .article-card:is(:hover, :focus-visible) .article-cover img { transform: none; }
     }
   }
+  @include fold-content.personality;
+  @include fold-controls.personality;
 }
 
 @keyframes fold-type-cut {

@@ -388,3 +388,109 @@
     .accountManagement .form { gap: 12px; }
   }
 }
+
+.fold-ticket-rail { display: none; }
+
+:global(html[data-design="fold"]) {
+  .dialog-overlay { background: color-mix(in srgb, var(--ark-paper) 80%, transparent); backdrop-filter: blur(5px); }
+  .accountManagement, .declaration {
+    isolation: isolate; width: min(700px, 100%); padding-left: 46px; border: 0;
+    background: var(--ark-fold-panel); box-shadow: 12px 12px 0 color-mix(in srgb, var(--ink) 14%, transparent);
+    &::after { top: 0; right: 0; bottom: auto; width: 30px; height: 30px; border: 0; background: var(--ark-fold-slate); clip-path: polygon(0 0, 100% 100%, 0 100%); }
+  }
+  .fold-ticket-rail {
+    position: absolute; inset: 0 auto 0 0; display: flex; align-items: center; justify-content: space-between;
+    flex-direction: column; width: 46px; padding: 24px 0; background: var(--ink); color: var(--paper);
+    span:first-child { writing-mode: vertical-rl; font: 8px/1 var(--font-ibm-plex), sans-serif; letter-spacing: .2em; }
+    span:last-child { writing-mode: vertical-rl; rotate: 180deg; font: 700 24px/.9 var(--font-barlow-condensed), sans-serif; letter-spacing: .08em; }
+    &::after { content: ''; position: absolute; right: -1px; top: 68%; width: 16px; height: 40px; background: var(--accent); clip-path: polygon(0 0, 100% 10px, 100% 100%, 0 calc(100% - 10px)); }
+  }
+  .accountManagementTitle {
+    min-height: 112px; gap: 12px; padding: 24px 32px 24px 26px; border: 0; align-items: center;
+    h1 { font: 600 30px/1.25 var(--font-noto-sans), sans-serif; letter-spacing: -.04em; }
+    h1::after { display: block; content: 'PERSONAL / CREDENTIAL'; margin-top: 8px; color: var(--muted); font: 8px/1.4 var(--font-ibm-plex), sans-serif; letter-spacing: .15em; }
+    .icon-button { border: 0; border-radius: 0; background: var(--paper); }
+  }
+  .accountManagement .form, .account-body { padding: 0 26px 26px; }
+  .accountManagement .form { gap: 26px; }
+  .form > div:first-child {
+    gap: 8px; border-bottom: 1px dashed var(--line); padding-bottom: 20px;
+    > button { isolation: isolate; min-height: 46px; border: 0; padding-inline: 16px 24px; text-align: left; background: transparent; color: var(--muted); font-size: 12px;
+      &::before { color: inherit; font-size: 8px; margin-right: 8px; }
+      &::after { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--soft); clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%); }
+      &[aria-pressed='true'] { color: var(--paper); &::after { background: var(--ink); } }
+      &[aria-pressed='true']::before { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 4px; text-decoration-thickness: 2px; }
+      &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    }
+  }
+  .inputGroup {
+    gap: 20px; counter-reset: credential-field;
+    > div { position: relative; counter-increment: credential-field; }
+    label { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--muted); letter-spacing: .03em;
+      &::before { content: counter(credential-field, decimal-leading-zero); color: var(--muted); font: 9px/1 var(--font-ibm-plex), sans-serif; }
+    }
+    > div > div::after { content: ''; position: absolute; top: 0; left: 0; width: 0; height: 0; background: var(--accent); clip-path: polygon(0 0, 100% 0, 0 100%); pointer-events: none; transition: width .2s, height .2s; }
+    input { min-height: 52px; padding: 14px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: 0; box-shadow: none; font-size: 16px; }
+    input[type='password'], input:has(+ button[aria-label='隐藏密码']) { padding-right: 48px; }
+    input:focus { border-color: var(--accent); background: var(--paper); box-shadow: none; }
+    > div:focus-within { label { color: var(--ink); } > div::after { width: 12px; height: 12px; } }
+    button[aria-label='显示密码'], button[aria-label='隐藏密码'] { width: 44px; height: 44px; }
+  }
+  .accountManagement .loginBtn, .accountManagementFooter > button, .code-button {
+    position: relative; min-height: 48px; padding-inline: 18px; border: 0; border-radius: 0; font: 500 12px/1.4 var(--font-noto-sans), sans-serif;
+    &::after { right: 0; bottom: 0; width: 12px; height: 12px; border: 0; opacity: 1; background: var(--accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+    &:hover:not(:disabled)::after { background: var(--ink); }
+  }
+  .accountManagement .form > .loginBtn { flex: none; justify-content: space-between; margin-top: 0; }
+  .accountManagementFooter { margin-inline: 26px; padding: 18px 0; border-top: 1px dashed var(--line); gap: 18px; }
+  .accountManagementFooter > a { font-size: 10px; border: 0; }
+  .accountManagementFooter:last-child > button { background: var(--soft); color: var(--ink); border: 0; &:hover:not(:disabled) { background: var(--ink); color: var(--paper); } }
+  .account-list { gap: 12px; padding: 3px 3px 3px 8px; }
+  .account { min-height: 94px; padding: 18px 50px 18px 16px; border: 1px solid var(--line); background: var(--paper); gap: 5px 14px; }
+  .account .account-name { font: 600 19px/1.4 var(--font-noto-sans), sans-serif; }
+  .account .account-meta { font-size: 9px; }
+  .avatar { position: relative; isolation: isolate; border: 0; background: transparent; font: 700 28px/1 var(--font-barlow-condensed), sans-serif;
+    &::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--ink); clip-path: polygon(0 0, 75% 0, 100% 25%, 100% 100%, 0 100%); }
+  }
+  .recent-label { padding: 2px 5px; background: var(--soft); color: var(--muted); font-weight: 400; font-size: 8px; }
+  .account-record[data-selected] .account { background: var(--paper); border-color: var(--ink); box-shadow: none; }
+  .account-record[data-selected]::after { content: ''; position: absolute; top: 12px; left: -7px; width: 13px; height: 28px; background: var(--accent); clip-path: polygon(0 0, 100% 7px, 100% 100%, 0 calc(100% - 7px)); pointer-events: none; }
+  .delete-button { border: 0; background: transparent; }
+  .declaration { padding-left: 24px; background: linear-gradient(to right, var(--ink) 24px, var(--ark-fold-panel) 24px); }
+  .declarationContentWrapper { padding: 28px; h1 { font-family: var(--font-noto-sans), sans-serif; font-weight: 600; } }
+  .declarationBtn { min-height: 52px; border: 0; }
+  @media (max-width: 600px) {
+    .accountManagement { padding-left: 22px; }
+    .fold-ticket-rail { width: 22px; padding: 18px 0; span:first-child { font-size: 7px; } span:last-child { font-size: 16px; } &::after { width: 8px; height: 28px; } }
+    .accountManagementTitle { min-height: 88px; padding: 18px 18px 18px 16px; gap: 6px; h1 { font-size: 24px; } h1::after { font-size: 7px; letter-spacing: .07em; } }
+    .accountManagement .form, .account-body { padding: 0 16px 18px; }
+    .accountManagement .form { gap: 20px; }
+    .form > div:first-child { padding-bottom: 16px; }
+    .accountManagementFooter { margin-inline: 16px; padding: 12px 0; gap: 8px; }
+    .accountManagementFooter:last-child > button { min-height: 44px; padding-inline: 12px; font-size: 11px; }
+    .accountManagementFooter > a { font-size: 9px; }
+    .inputGroup { gap: 18px; }
+    .inputGroup input { padding-inline: 13px; }
+    .account { grid-template-columns: 32px minmax(0, 1fr); padding: 14px 42px 14px 10px; gap: 4px 10px; }
+    .avatar { width: 32px; height: 40px; font-size: 24px; }
+    .account .account-name { font-size: 16px; }
+    .recent-label { display: table; margin: 4px 0 0; }
+    .delete-button { right: 1px; width: 36px; }
+    .declaration { padding-left: 12px; background: linear-gradient(to right, var(--ink) 12px, var(--ark-fold-panel) 12px); }
+    .declarationContentWrapper { padding: 20px; }
+  }
+  @media (max-width: 360px) {
+    .accountManagementTitle { flex-wrap: wrap; h1 { font-size: 22px; } h1::after { font-size: 6px; } }
+    .accountManagementTitle > button { width: 36px; height: 44px; }
+    .accountManagementFooter:last-child > button { flex-basis: 100%; margin: 0; }
+    .accountManagement .loginBtn { padding-inline: 10px; font-size: 11px; }
+  }
+  @media (max-height: 500px) {
+    .accountManagementTitle { min-height: 62px; padding-block: 10px; h1::after { display: none; } }
+    .accountManagement .form { gap: 14px; }
+    .accountManagementFooter { padding-block: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .accountManagement *, .accountManagement *::before, .accountManagement *::after, .declaration * { transition: none !important; animation: none !important; }
+  }
+}

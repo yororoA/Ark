@@ -16,20 +16,26 @@
     .fold-plate-caption { position: absolute; z-index: 1; bottom: 7%; left: 6%; right: 6%; display: flex; align-items: end; justify-content: space-between; gap: 24px; }
     .fold-plate-caption strong { span { display: table; padding: 0 8px 2px 0; background: var(--ark-fold-paper); font: inherit; letter-spacing: inherit; } font: 700 clamp(40px, 4.8vw, 72px)/.87 var(--font-barlow-condensed), sans-serif; letter-spacing: -.025em; }
     .fold-plate-caption > span { background: var(--ark-fold-paper); padding: 4px; font: 500 9px/1.7 var(--font-noto-sans), sans-serif; letter-spacing: .08em; }
-    .access-panel { justify-self: stretch; width: 100%; max-width: 440px; padding: 32px 0; min-height: 0; background: transparent; border: 0; border-block: 3px solid var(--ink); border-radius: 0; box-shadow: none; animation: none; }
-    .access-panel::after { display: none; }
-    .panel-header { padding-bottom: 22px; border-bottom: 1px solid var(--line); }
-    .panel-index { color: var(--ink); font-size: 10px; letter-spacing: .12em; }
+    .access-panel { isolation: isolate; justify-self: stretch; width: 100%; max-width: 440px; padding: 30px; min-height: 0; background: linear-gradient(-135deg, transparent 27px, var(--ark-fold-panel) 27px); border: 0; border-radius: 0; box-shadow: none; animation: none; }
+    .access-panel::before { content: ''; position: absolute; inset: 12px -10px -10px 12px; z-index: -1; border-right: 10px solid var(--soft); border-bottom: 10px solid var(--soft); transform: rotate(1.2deg); pointer-events: none; }
+    .access-panel::after { display: block; position: absolute; top: 0; right: 0; width: 38px; height: 38px; border: 0; background: var(--ark-fold-slate); clip-path: polygon(0 0, 0 100%, 100% 100%); pointer-events: none; }
+    .panel-header { align-items: flex-start; padding: 0 24px 20px 0; border-bottom: 1px dashed var(--line); }
+    .panel-index { max-width: 115px; color: var(--ink); font-size: 10px; letter-spacing: .12em; &::before { content: 'PERSONAL / ACCESS'; display: block; margin-bottom: 8px; color: var(--muted); font: 8px/1.4 var(--font-ibm-plex), sans-serif; letter-spacing: .08em; } }
     .panel-signal { font-family: var(--font-ibm-plex), sans-serif; i { border-radius: 0; transform: rotate(45deg); } &[data-ready="true"] i { box-shadow: none; } }
-    .account-overview { margin: 34px 0 28px; }
-    .account-glyph { border: 0; border-left: 4px solid var(--accent); background: var(--soft); color: var(--ink); }
+    .account-overview { margin: 30px 0 28px; gap: 14px; }
+    .account-glyph { position: relative; isolation: isolate; border: 0; background: transparent; color: var(--paper); &::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--ink); clip-path: polygon(0 0, 75% 0, 100% 25%, 100% 100%, 0 100%); } &::after { content: ''; position: absolute; top: 0; right: 0; width: 14px; height: 14px; background: var(--accent); clip-path: polygon(0 0, 0 100%, 100% 100%); } }
     .active-account strong { font-family: var(--font-noto-sans), sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -.04em; }
-    .active-account small { font-weight: 600; }
-    .credential-status { border-top: 0; margin-bottom: 26px; }
+    .active-account small { align-self: flex-start; padding: 3px 6px; border: 1px solid var(--line); color: var(--muted); font-size: 8px; font-weight: 500; letter-spacing: .15em; }
+    .active-account span { margin-top: 5px; font-size: 10px; }
+    .credential-status { border-block: 1px dashed var(--line); margin-bottom: 24px; }
+    .credential-status div { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 16px 0; }
+    .credential-status div + div { padding-left: 16px; border-left-style: dashed; }
     .credential-status strong { font-family: var(--font-ibm-plex), sans-serif; }
-    .primary-action { min-height: 54px; padding: 14px 20px; border: 1px solid var(--ink); border-radius: 0; background: var(--ink); color: var(--paper) !important; font-weight: 600; box-shadow: none; }
+    .primary-action { position: relative; min-height: 54px; padding: 14px 22px 14px 16px; border: 0; border-radius: 0; background: var(--ink); color: var(--paper) !important; font-weight: 600; box-shadow: none; &::after { content: ''; position: absolute; right: 0; bottom: 0; width: 15px; height: 15px; background: var(--accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); transition: width .2s, height .2s; } svg { transition: transform .2s; } }
     .primary-action:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
-    .secondary-action { min-height: 44px; margin-top: 14px; font-size: 11px; letter-spacing: 0; }
+    .primary-action:hover:not(:disabled) svg { transform: translate(2px, -2px); }
+    .primary-action:hover:not(:disabled)::after { width: 22px; height: 22px; background: var(--ink); }
+    .secondary-action { align-self: stretch; justify-content: space-between; min-height: 44px; margin-top: 12px; padding-block: 10px 0; border: 0; font-size: 11px; letter-spacing: 0; }
     .login-footer { border-top: 1px solid var(--line); }
     @media (max-width: 1000px) {
       .login-main { grid-template-columns: minmax(0, 1fr) minmax(290px, .9fr); gap: 6%; }
@@ -49,9 +55,10 @@
       .fold-plate-caption > span { max-width: 75px; font-size: 7px; }
       .login-copy h1 { margin-top: 20px; font-size: 30px; }
       .login-copy > p { font-size: 11px; }
-      .access-panel { max-width: none; padding: 25px 0; }
+      .access-panel { max-width: none; padding: 26px 24px; }
       .account-overview { margin-block: 26px; }
     }
-    @media (prefers-reduced-motion: reduce) { .primary-action, .secondary-action { transition: none; } }
+    @media (max-width: 390px) { .access-panel { padding: 24px 20px; } .active-account strong { font-size: 24px; } .credential-status { grid-template-columns: 1fr 1fr; } .credential-status div + div { border-top: 0; border-left: 1px dashed var(--line); padding-left: 12px; } }
+    @media (prefers-reduced-motion: reduce) { .primary-action, .secondary-action, .primary-action::after, .primary-action svg { transition: none; } }
   }
 }

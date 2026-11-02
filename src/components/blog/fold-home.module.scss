@@ -96,3 +96,32 @@
   .sceneCurtain { display: none; }
   .home [data-fold-reveal][data-revealed='false'] { .sectionHead, .featuredImage, > span, > p, > a { clip-path: none; } .featured > :not(.featuredImage), .editorNote, .note, .fragment { opacity: 1; translate: none; } }
 }
+
+// The same binding, folded index and paper stock continue below the poster.
+.sectionNumber { position: relative; isolation: isolate; padding: 12px 22px 22px 12px; font-size: 64px; color: var(--ark-fold-stage-ink);
+  &::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--ark-fold-stage); clip-path: polygon(0 0,100% 0,100% 78%,76% 100%,0 100%); }
+  &::after { content: ''; position: absolute; width: 24%; height: 22%; bottom: 0; right: 0; background: var(--ark-fold-signal); clip-path: polygon(0 0,100% 0,0 100%); }
+}
+.sectionHead { border-bottom-width: 1px; }
+.featured { padding-bottom: 24px; border-bottom: 1px solid var(--ark-line); }
+.featuredImage { border-bottom: 5px solid var(--ark-fold-slate); > span { padding-right: 30px; clip-path: polygon(0 0,100% 0,calc(100% - 12px) 100%,0 100%); } }
+.notes { border-left: 1px solid var(--ark-line); padding-left: 24px; }
+.note { padding-block: 24px; }
+.fragmentList { gap: 24px; }
+.fragment, .fragment:first-child, .fragment:last-child { position: relative; isolation: isolate; padding: 24px 22px 24px 30px; border: 1px solid var(--ark-line); border-right: 0; border-top: 0; background: var(--ark-fold-panel); }
+.fragment time { margin-top: 0; }
+.fragmentStamp { position: absolute; inset: 0 auto 0 0; width: 12px; height: 100%; pointer-events: none;
+  i, &[data-shape] i { inset: 0; background: var(--ark-soft); clip-path: polygon(0 0,100% 14px,100% 100%,0 calc(100% - 14px)); }
+  i:last-child, &[data-shape] i:last-child { inset: 24px 0 auto 0; height: 38px; background: var(--ark-fold-signal); clip-path: polygon(0 0,100% 14%,100% 100%,0 86%); }
+}
+.fragment:hover .fragmentStamp i, .fragment:hover .fragmentStamp i:last-child { transform: none; }
+.scenePicker button { position: relative; padding-left: 21px;
+  &::before { content: ''; position: absolute; left: 7px; top: 12px; bottom: 12px; width: 3px; background: var(--ark-fold-signal); transform: skewY(-22deg); }
+}
+@media (max-width: 700px) {
+  .sectionNumber { font-size: 48px; padding: 10px 18px 20px 10px; }
+  .sectionHead { align-items: center; gap: 15px; h2 { font-size: 23px; } }
+  .notes { padding-left: 18px; }
+  .fragmentList { gap: 22px; }
+  .fragment, .fragment:first-child, .fragment:last-child { padding: 24px 20px 24px 30px !important; }
+}
