@@ -8,6 +8,7 @@ import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { P3R_COPY } from '@/lib/p3r-copy'
 import { PRISM_COPY } from '@/lib/prism-copy'
 import { ALLOTYPE_COPY } from '@/lib/allotype'
+import { FOLD_COPY } from '@/lib/fold'
 import { safeThemeReturn } from '@/lib/theme-navigation'
 import { useBlog } from '@/components/blog/blog-provider'
 import { useAppearance } from './appearance-store'
@@ -33,7 +34,7 @@ export default function ThemeGallery() {
   const themes = {
     archive: { name: copy.archive, description: copy.archiveNote },
     rain: QINGJIAN_COPY[locale], p3r: P3R_COPY[locale],
-    prism: PRISM_COPY[locale], allotype: ALLOTYPE_COPY[locale],
+    prism: PRISM_COPY[locale], allotype: ALLOTYPE_COPY[locale], fold: FOLD_COPY[locale],
   }
 
   return <div className={styles.page} data-testid="theme-page" lang={locale}>
@@ -56,7 +57,7 @@ export default function ThemeGallery() {
       <div className={styles['current-theme']}><span><CheckCircle2 size={16} /><span role="status">{copy.current} · {themes[design].name}</span></span><p>{copy.saved}</p></div>
     </div>
     <fieldset className={styles.catalog}>
-      <legend><span>{copy.design}</span><span>01 — 05</span></legend>
+      <legend><span>{copy.design}</span><span>01 — {String(DESIGNS.length).padStart(2, '0')}</span></legend>
       <div className={styles.grid}>{DESIGNS.map((option, index) => {
         const theme = themes[option]
         return <label key={option} className={styles.card} data-selected={design === option}>

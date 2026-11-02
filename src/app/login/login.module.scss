@@ -1,6 +1,7 @@
 @use '@/styles/appearance-tokens' as appearance;
 @use '@/styles/prism-motion';
 @use './allotype-login';
+@use './fold-login';
 
 .login-scene {
   @include appearance.surface;
@@ -494,3 +495,5 @@
   :global(html[data-design="p3r"]) { .primary-action { transition: none; } }
   :global(html[data-design="prism"]) { .login-scene *, .login-scene *::before, .login-scene *::after { animation: none !important; transition: none !important; } }
 }
+
+@include fold-login.personality;

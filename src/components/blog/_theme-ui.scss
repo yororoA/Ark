@@ -2,6 +2,7 @@
 @use './p3r-ui';
 @use './prism-ui';
 @use './allotype-ui';
+@use './fold-ui';
 
 // The first rain iteration remains in 3d601fb; the second pass is isolated in
 // rain-ui so theme rules have one owner, without remounting shared content.
@@ -82,4 +83,5 @@
   @include p3r-ui.personality;
   @include prism-ui.personality;
   @include allotype-ui.personality;
+  @include fold-ui.personality;
 }

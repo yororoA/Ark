@@ -7,8 +7,8 @@ import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { useRainConnection, type RainConnection } from './rain-connection-store'
 import styles from './rain-connection.module.scss'
 
-function LoadingCurtain({ label }: { label: string }) {
-  return <div className={styles['loading-curtain']} role="status">
+function LoadingCurtain({ label, paper = false }: { label: string; paper?: boolean }) {
+  return <div className={styles['loading-curtain']} role="status" style={paper ? { background: 'var(--ark-fold-paper, var(--ark-paper))', color: 'var(--ark-ink)' } : undefined}>
     <span className={styles['loading-label']}>{label}</span>
   </div>
 }
@@ -30,6 +30,11 @@ const AllotypeSequence = dynamic(() => import('./allotype-connection-sequence'),
   loading: () => <LoadingCurtain label="异相 · 正在接入" />,
 })
 
+const FoldSequence = dynamic(() => import('./fold-connection'), {
+  ssr: false,
+  loading: () => <LoadingCurtain label="折境 · 正在接入" paper />,
+})
+
 function Transition({ connection }: { connection: RainConnection }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -38,7 +43,27 @@ function Transition({ connection }: { connection: RainConnection }) {
   const completed = useRef(false)
   // A destination may redirect (for example an old bookmark). Its committed
   // non-login route is what the umbrella must uncover.
-  const pageReady = navigating && pathname !== '/login'
+  const routeCommitted = navigating && pathname !== '/login'
+  const [foldContentReady, setFoldContentReady] = useState(false)
+  const pageReady = routeCommitted && (connection.design !== 'fold' || foldContentReady)
+
+  useEffect(() => {
+    if (connection.design !== 'fold' || !routeCommitted) return
+    let frame = 0, stableSince = 0
+    const ready = (now: number) => {
+      const main = document.querySelector('#main-content')
+      const loading = document.querySelector('[data-route-loading]')
+      // A pathname can commit while its Suspense fallback is still on screen.
+      // Hold the paper until the real page is present for consecutive frames.
+      if (main?.children.length && !loading) {
+        stableSince ||= now
+        if (now - stableSince >= 65) { setFoldContentReady(true); return }
+      } else stableSince = 0
+      frame = requestAnimationFrame(ready)
+    }
+    frame = requestAnimationFrame(ready)
+    return () => cancelAnimationFrame(frame)
+  }, [connection.design, routeCommitted, pathname])
 
   const covered = useCallback(() => {
     if (connection.status !== 'success' || navigationStarted.current) return
@@ -68,7 +93,10 @@ function Transition({ connection }: { connection: RainConnection }) {
   const dismiss = useCallback(() => {
     useRainConnection.getState().clear(connection.id)
     connection.onDismiss()
-  }, [connection])
+    if (connection.design === 'fold' && navigationStarted.current) {
+      router.replace(`/login?returnTo=${encodeURIComponent(connection.destination)}`)
+    }
+  }, [connection, router])
 
   useEffect(() => {
     if (connection.status === 'success') router.prefetch(connection.destination)
@@ -90,7 +118,7 @@ function Transition({ connection }: { connection: RainConnection }) {
     return () => window.clearTimeout(timer)
   }, [navigating, pageReady])
 
-  const Sequence = connection.design === 'allotype' ? AllotypeSequence : connection.design === 'prism' ? PrismSequence : connection.design === 'p3r' ? P3RSequence : RainSequence
+  const Sequence = connection.design === 'fold' ? FoldSequence : connection.design === 'allotype' ? AllotypeSequence : connection.design === 'prism' ? PrismSequence : connection.design === 'p3r' ? P3RSequence : RainSequence
   return <Sequence
     {...connection}
     pageReady={pageReady}

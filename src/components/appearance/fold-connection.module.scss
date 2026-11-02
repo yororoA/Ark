@@ -1,0 +1,16 @@
+.sequence { position: fixed; inset: 0; overflow: hidden; isolation: isolate; color: var(--ark-ink); font: 12px/1.6 var(--font-ibm-plex), var(--font-noto-sans), sans-serif; outline: none; }
+.stage, .backdrop, .static, .canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.backdrop, .static { background: var(--ark-fold-paper); }
+.static { display: none; opacity: var(--fallback-opacity, 1); }
+.canvas { visibility: hidden; }
+.sequence[data-renderer='canvas'] .canvas { visibility: visible; }
+.sequence[data-renderer='static'] .static { display: block; }
+.sequence[data-reveal-started='true'] .backdrop { visibility: hidden; }
+.header { position: absolute; inset: max(28px, env(safe-area-inset-top)) max(32px, env(safe-area-inset-right)) auto max(32px, env(safe-area-inset-left)); display: flex; justify-content: space-between; gap: 20px; font-size: 9px; letter-spacing: .15em; pointer-events: none; span { background: var(--ark-fold-paper); padding: 4px 6px; } }
+.caption { position: absolute; left: max(32px, env(safe-area-inset-left)); bottom: max(24px, env(safe-area-inset-bottom)); margin: 0; padding: 8px 10px; background: var(--ark-fold-paper); font-size: 11px; }
+.skip { position: absolute; right: max(32px, env(safe-area-inset-right)); bottom: max(24px, env(safe-area-inset-bottom)); }
+.sequence button, .sequence a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px; border: 1px solid var(--ark-ink); background: var(--ark-fold-paper); color: var(--ark-ink); font: inherit; cursor: pointer; text-decoration: none; &:hover { background: var(--ark-ink); color: var(--ark-fold-paper); } &:focus-visible { outline: 2px solid var(--ark-accent); outline-offset: 5px; } }
+.sequence[data-phase='revealing'] { .header, .caption { visibility: hidden; } }
+.failure { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(450px, calc(100% - 48px)); padding: 30px; border-block: 3px solid var(--ark-ink); background: var(--ark-fold-paper); box-shadow: 0 0 0 16px var(--ark-fold-paper); span { font-size: 8px; letter-spacing: .15em; color: var(--ark-muted); } h1 { margin: 18px 0; font: 700 32px/1.3 var(--font-noto-sans), sans-serif; letter-spacing: -.04em; } p { margin: 18px 0 24px; color: var(--ark-muted); overflow-wrap: anywhere; } button, a { margin: 0 12px 8px 0; } }
+@media (max-width: 600px) { .header { inset-inline: 20px; font-size: 8px; } .caption { left: 14px; bottom: max(20px, env(safe-area-inset-bottom)); max-width: calc(100% - 140px); font-size: 10px; } .skip { right: 20px; bottom: max(20px, env(safe-area-inset-bottom)); } .failure { padding: 22px; box-shadow: 0 0 0 8px var(--ark-fold-paper); } }
+@media (prefers-reduced-motion: reduce) { .sequence *, .sequence *::before, .sequence *::after { animation: none !important; transition: none !important; } }

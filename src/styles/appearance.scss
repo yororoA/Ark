@@ -130,6 +130,44 @@
   --ark-allotype-panel: #30232d;
 }
 
+// FOLD has two printing plates: dark ink on paper by day, silver-blue planes
+// on charcoal by night. Illustration pigments are separate from readable ink.
+@mixin fold-day {
+  --ark-paper: #eeeee1;
+  --ark-ink: #172125;
+  --ark-muted: #596366;
+  --ark-line: #bdc3ba;
+  --ark-accent: #a83225;
+  --ark-soft: #dce0d5;
+  --ark-fold-carbon: #11191d;
+  --ark-fold-slate: #485c65;
+  --ark-fold-mist: #a9b9c9;
+  --ark-fold-paper: #eeeee1;
+  --ark-fold-signal: #b6392a;
+  --ark-fold-ochre: #bb851e;
+  --ark-fold-panel: #f5f4e9;
+  --ark-fold-stage: #11191d;
+  --ark-fold-stage-ink: #eeeee1;
+}
+
+@mixin fold-night {
+  --ark-paper: #131b1f;
+  --ark-ink: #e3e7de;
+  --ark-muted: #afbdc0;
+  --ark-line: #43545c;
+  --ark-accent: #f3947d;
+  --ark-soft: #24343d;
+  --ark-fold-paper: #131b1f;
+  --ark-fold-carbon: #8ea1a8;
+  --ark-fold-slate: #435d68;
+  --ark-fold-mist: #273c47;
+  --ark-fold-signal: #df7359;
+  --ark-fold-ochre: #856019;
+  --ark-fold-panel: #1c282e;
+  --ark-fold-stage: #0b1115;
+  --ark-fold-stage-ink: #d8ded8;
+}
+
 @mixin night {
   --ark-color-scheme: dark;
   --ark-white-logo-filter: none;
@@ -139,6 +177,7 @@
   &[data-design="p3r"] { @include p3r-night; }
   &[data-design="prism"] { @include prism-night; }
   &[data-design="allotype"] { @include allotype-night; }
+  &[data-design="fold"] { @include fold-night; }
 }
 
 :root {
@@ -165,6 +204,7 @@
   &[data-design="p3r"] { @include p3r-day; }
   &[data-design="prism"] { @include prism-day; }
   &[data-design="allotype"] { @include allotype-day; }
+  &[data-design="fold"] { @include fold-day; }
   &[data-theme="dark"] { @include night; }
   @media (prefers-color-scheme: dark) {
     &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }

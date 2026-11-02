@@ -1,0 +1,23 @@
+.art { display: block; width: 100%; height: auto; overflow: hidden; contain: style; }
+.carbon { fill: var(--ark-fold-carbon, #11191d); }
+.slate { fill: var(--ark-fold-slate, #485c65); }
+.mist { fill: var(--ark-fold-mist, #a9b9c9); }
+.paper { fill: var(--ark-fold-paper, #eeeee1); }
+.signal { fill: var(--ark-fold-signal, #b6392a); }
+.world { transform-origin: 58% 86%; animation: arrive 2.4s cubic-bezier(.16,.6,.2,1) both; }
+.ground { animation: ground-open 1.35s cubic-bezier(.2,.7,.2,1) both; }
+.far { animation: back-open 1.4s .1s cubic-bezier(.18,.7,.2,1) both; translate: calc(var(--fold-look-x, 0px) * -.25) calc(var(--fold-look-y, 0px) * -.2); }
+.left { transform-origin: 32% 0; animation: left-open 1.6s .18s cubic-bezier(.2,.7,.2,1) both; translate: calc(var(--fold-look-x, 0px) * .45) calc(var(--fold-look-y, 0px) * .3); }
+.right { transform-origin: 87% 0; animation: right-open 1.75s .27s cubic-bezier(.2,.7,.2,1) both; translate: calc(var(--fold-look-x, 0px) * .7) calc(var(--fold-look-y, 0px) * .4); }
+.structure { transform-origin: 65% 0; animation: mass-open 1.8s .4s cubic-bezier(.2,.7,.2,1) both; translate: calc(var(--fold-look-x, 0px) * .2) calc(var(--fold-look-y, 0px) * .15); }
+.visitor { animation: visitor-in .65s 1.35s ease-out both; }
+@keyframes arrive { from { transform: scale(1.13) translateY(18px); } to { transform: scale(1) translateY(0); } }
+@keyframes ground-open { from { clip-path: polygon(58% 84%,58% 84%,58% 100%,58% 100%); } to { clip-path: polygon(0 0,100% 0,100% 100%,0 100%); } }
+@keyframes back-open { from { opacity: 0; transform: translateY(-80px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes left-open { from { opacity: 0; transform: translate(-110px,-75px) rotate(-12deg) scaleX(.7); } to { opacity: 1; transform: none; } }
+@keyframes right-open { from { opacity: 0; transform: translate(120px,-100px) rotate(9deg) scaleX(.75); } to { opacity: 1; transform: none; } }
+@keyframes mass-open { from { opacity: 0; transform: translate(35px,-160px) skewY(-8deg); clip-path: inset(0 0 100%); } to { opacity: 1; transform: none; clip-path: inset(0); } }
+@keyframes visitor-in { from { opacity: 0; } to { opacity: 1; } }
+.art[data-animated='false'] { .world, .ground, .far, .left, .right, .structure, .visitor { animation: none; translate: none; } }
+:global(html[data-fold-connection]:not([data-fold-connection="revealing"])) .art, :global(html[data-fold-wipe="closing"]) .art, :global(html[data-fold-wipe="covered"]) .art { .world, .ground, .far, .left, .right, .structure, .visitor { animation-play-state: paused; } }
+@media (prefers-reduced-motion: reduce) { .world, .ground, .far, .left, .right, .structure, .visitor { animation: none !important; translate: none !important; } }
