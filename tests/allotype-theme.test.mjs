@@ -276,3 +276,47 @@ test('connection errors remain actionable; Escape restores login', async t => {
   await expect(page.getByTestId('allotype-connection')).toHaveCount(0)
   await expect(page.getByRole('dialog', { name: '账号管理', exact: true })).toBeVisible()
 })
+
+for (const authDelay of [0, 1600]) {
+  test(`connection finishes success plate before uncovering: auth delay ${authDelay}`, async t => {
+    const { page, context } = await session(t, { motion: 'no-preference', accounts: [account] })
+    await context.route('**/api/auth/**', async route => {
+      await new Promise(resolve => setTimeout(resolve, authDelay))
+      await route.fulfill({ json: { ...account, expiresAt: '2099-01-01T00:00:00Z' } })
+    })
+    await visit(page, '/login?returnTo=%2Fabout')
+    await page.evaluate(() => {
+      window.plateFrames = []
+      window.recordPlate = true
+      const sample = () => {
+        if (!window.recordPlate) return
+        const dialog = document.querySelector('[data-testid="allotype-connection"]')
+        const plate = dialog?.querySelector('[data-form="BLAKE2b"]')
+        if (plate) window.plateFrames.push({
+          revealing: dialog.dataset.revealing,
+          running: plate.getAnimations({ subtree: true }).filter(a => Number.isFinite(a.effect.getComputedTiming().endTime) && a.playState !== 'finished').length,
+        })
+        requestAnimationFrame(sample)
+      }
+      requestAnimationFrame(sample)
+    })
+    await page.getByRole('button', { name: '建立连接', exact: true }).click()
+    await expect(page).toHaveURL(/\/about$/, { timeout: 20000 })
+    await expect(page.getByTestId('allotype-connection')).toHaveCount(0)
+    const frames = await page.evaluate(() => { window.recordPlate = false; return window.plateFrames })
+    assert(frames.some(frame => frame.running > 0), 'Observe success plate being drawn')
+    assert(frames.some(frame => frame.revealing === 'true'), 'Observe the final uncover phase')
+    assert(frames.filter(frame => frame.revealing === 'true').every(frame => frame.running === 0), 'Never uncover an unfinished success drawing')
+  })
+}
+
+test('connection can skip drawing without waiting for decorative loops', async t => {
+  const { page } = await session(t, { motion: 'no-preference', accounts: [account] })
+  await visit(page, '/login?returnTo=%2Fabout')
+  await page.getByRole('button', { name: '建立连接', exact: true }).click()
+  const dialog = page.getByTestId('allotype-connection')
+  await dialog.getByRole('button', { name: '跳过动画 ↗', exact: true }).click()
+  await expect(page).toHaveURL(/\/about$/)
+  await expect(dialog).toHaveCount(0)
+  assert.equal(await page.locator('main').evaluate(el => el.closest('[inert]') !== null), false)
+})

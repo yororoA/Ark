@@ -14,9 +14,11 @@ interface Props extends RainConnection {
 
 export default function AllotypeConnection({ status, username, error, destination, pageReady, navigationSlow, onCovered, onComplete, onDismiss }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
+  const printRef = useRef<HTMLDivElement>(null)
   const [quick, setQuick] = useState(false)
-  const [printed, setPrinted] = useState(false)
-  const revealing = status === 'success' && pageReady
+  const [drawingComplete, setPrinted] = useState(false)
+  const printed = quick || drawingComplete
+  const revealing = printed && status === 'success' && pageReady
   useEffect(() => {
     const dialog = ref.current
     const opener = document.activeElement
@@ -24,14 +26,13 @@ export default function AllotypeConnection({ status, username, error, destinatio
     dialog?.showModal()
     document.body.style.overflow = 'hidden'
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
-    const finish = () => { setQuick(true); setPrinted(true) }
+    const finish = () => setQuick(true)
     const preference = () => { if (motion.matches) finish() }
     const visibility = () => { if (document.hidden) finish() }
-    const timer = window.setTimeout(() => { setPrinted(true); if (motion.matches) setQuick(true) }, motion.matches ? 0 : 1000)
+    if (motion.matches || document.hidden) finish()
     motion.addEventListener('change', preference)
     document.addEventListener('visibilitychange', visibility)
     return () => {
-      clearTimeout(timer)
       motion.removeEventListener('change', preference)
       document.removeEventListener('visibilitychange', visibility)
       dialog?.close()
@@ -39,17 +40,30 @@ export default function AllotypeConnection({ status, username, error, destinatio
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
     }
   }, [])
+  useEffect(() => {
+    if (status !== 'success' || quick) return
+    let cancelled = false
+    // Success replaces the plate and starts its strokes again. Wait for that
+    // plate's finite drawing animations, never the decorative infinite drift.
+    const animations = printRef.current?.getAnimations({ subtree: true }).filter(animation =>
+      Number.isFinite(animation.effect?.getComputedTiming().endTime ?? Infinity)
+    ) ?? []
+    void Promise.all(animations.map(animation => animation.finished.catch(() => {}))).then(() => {
+      if (!cancelled) setPrinted(true)
+    })
+    return () => { cancelled = true }
+  }, [status, quick])
   useEffect(() => { if (printed && status === 'success') onCovered() }, [printed, status, onCovered])
   useEffect(() => {
     if (!revealing) return
     const timer = window.setTimeout(onComplete, quick ? 0 : 650)
     return () => clearTimeout(timer)
   }, [revealing, quick, onComplete])
-  const skip = () => { setQuick(true); setPrinted(true) }
-  return <dialog ref={ref} className={styles.sequence} data-testid="allotype-connection" data-revealing={revealing} data-quick={quick}
+  const skip = () => setQuick(true)
+  return <dialog ref={ref} className={styles.sequence} data-testid="allotype-connection" data-printed={printed} data-revealing={revealing} data-quick={quick}
     aria-label="异相 · 接入" onCancel={event => { event.preventDefault(); if (status === 'success') skip(); else onDismiss() }}>
     <header><span>YOROROICE / ALLOTYPE</span><span>ANOTHER IMPRESSION</span></header>
-    <div className={styles.print}><AllotypeArt index={status === 'success' ? 4 : 0} /></div>
+    <div ref={printRef} className={styles.print}><AllotypeArt index={status === 'success' ? 4 : 0} /></div>
     <div className={styles.identity}><small>YOU ARE HERE.</small><strong>{username}</strong><p role="status">{status === 'error' ? '连接失败' : status === 'pending' ? '正在确认身份…' : '你好，另一个你。'}</p></div>
     {status === 'error' ? <div className={styles.actions}><p role="alert">{error || '暂时无法连接，请重试。'}</p><button onClick={onDismiss}>返回登录 ↗</button></div>
       : <div className={styles.actions}><button onClick={status === 'success' ? skip : onDismiss}>{status === 'success' ? '跳过动画 ↗' : '返回登录 ↗'}</button></div>}

@@ -47,7 +47,7 @@ export function MomentList({ initialData }: { initialData?: Envelope<Entry[]> })
   const returnTo = listPath('moments', params)
   const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry[]>>(`moments/get?isEditing=false&page=${page}&limit=12&date=${encodeURIComponent(date)}`, {
     fallbackData: initialData,
-    revalidateOnMount: !initialData,
+    revalidateOnMount: initialData ? false : undefined,
   })
   const sitemap = useBlogReferenceData<Envelope<SitemapContent>>('archive/sitemap')
   const entries = newestFirst(data?.data || [])

@@ -29,7 +29,13 @@ export function sendIdempotent<T>(path: string, body: unknown, idempotencyKey: s
   })
 }
 export function useBlogData<T>(path: string | null, options?: SWRConfiguration<T, Error>) {
-  return useSWR<T>(path ? `/api/blog/${path}` : null, request, options)
+  const result = useSWR<T>(path ? `/api/blog/${path}` : null, request, {
+    // Keep cached content visible while SWR refreshes it in the background.
+    dedupingInterval: path?.startsWith('chat/') ? 5000 : 60_000,
+    focusThrottleInterval: path?.startsWith('chat/') ? 5000 : 60_000,
+    ...options,
+  })
+  return { ...result, isLoading: result.isLoading && result.data === undefined }
 }
 export function useBlogReferenceData<T>(path: string) {
   return useSWR<T>(`/api/blog/${path}`, request, {
