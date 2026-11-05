@@ -16,8 +16,8 @@ const COPY = {
   de: { title: 'FOLD', tagline: 'Geschichten in den Falten der Welt.', first: 'Schwebend', second: 'Durchgang', scene: 'Ansicht wählen', read: 'Geschichten lesen', down: 'Eine Seite weiter', writings: 'Worte am Weg', fragments: 'Stücke des Alltags', note: 'Gedanken, ferne Orte\nund ein Leben, das weitergeht.', end: 'Eine weite Welt.\nEin Alltag, der zählt.', about: 'Über diese Ark', chapter: 'PERSÖNLICHE AUFZEICHNUNGEN / 06' },
 }
 
-export default function FoldHome({ locale, articles, moments, articleState, momentState }: {
-  locale: Locale; articles: Entry[]; moments: Entry[]; articleState: ReactNode; momentState: ReactNode
+export default function FoldHome({ locale, articles, moments, articleState, momentState, activity }: {
+  locale: Locale; articles: Entry[]; moments: Entry[]; articleState: ReactNode; momentState: ReactNode; activity?: ReactNode
 }) {
   const { design } = useAppearance()
   const [scene, setScene] = useState<'monument' | 'portal'>('monument')
@@ -133,6 +133,7 @@ export default function FoldHome({ locale, articles, moments, articleState, mome
       {momentState}
       <div className={styles.fragmentList}>{moments.slice(0, 3).map((entry, index) => <Link key={entry._id} href={`/moments/${entry._id}`} className={styles.fragment}><div className={styles.fragmentStamp} data-shape={index} aria-hidden="true"><i /><i /></div><time>{dateLabel(entry.createdAt, locale)}</time><h3>{entry.title}</h3><p>{excerpt(entry.content, 100)}</p><span className={styles.fragmentFoot}>FRAGMENT / 0{index + 1}<ArrowUpRight size={20} /></span></Link>)}</div>
     </section>
+    {activity}
     <aside className={styles.colophon} data-fold-reveal><span>SMALL STORIES.<br />VAST HORIZONS.</span><p>{copy.end}</p><Link href="/about">{copy.about}<ArrowUpRight size={24} /></Link><i aria-hidden="true" /></aside>
   </div>
 }

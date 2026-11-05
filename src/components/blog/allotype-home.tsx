@@ -9,8 +9,8 @@ import { ALLOTYPES, ALLOTYPE_COPY } from '@/lib/allotype'
 import { articlePreview, dateLabel, excerpt, translate, type Entry, type Locale } from '@/lib/blog'
 import styles from './allotype-home.module.scss'
 
-export default function AllotypeHome({ locale, articles, moments, articleState, momentState }: {
-  locale: Locale; articles: Entry[]; moments: Entry[]; articleState: ReactNode; momentState: ReactNode
+export default function AllotypeHome({ locale, articles, moments, articleState, momentState, activity }: {
+  locale: Locale; articles: Entry[]; moments: Entry[]; articleState: ReactNode; momentState: ReactNode; activity?: ReactNode
 }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -89,6 +89,7 @@ export default function AllotypeHome({ locale, articles, moments, articleState, 
           <time>{dateLabel(entry.createdAt, locale)}</time><h3>{entry.title}</h3><p>{excerpt(entry.content, 80)}</p><ArrowUpRight size={24} />
         </Link>)}</div>
     </section>
+    {activity}
     <div className={styles.colophon}><span>{copy.colophon}</span><strong>ALLOTYPE<span>®</span></strong><div>{ALLOTYPES.map(seed => <i key={seed.name} style={{ background: seed.color }} title={`${seed.name} ${seed.color}`} />)}</div></div>
   </div>
 }

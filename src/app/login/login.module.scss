@@ -1,3 +1,4 @@
+@use './voyage-login';
 @use '@/styles/appearance-tokens' as appearance;
 @use '@/styles/prism-motion';
 @use './allotype-login';
@@ -497,3 +498,5 @@
 }
 
 @include fold-login.personality;
+
+@include voyage-login.personality;

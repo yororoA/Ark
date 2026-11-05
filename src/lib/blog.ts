@@ -164,7 +164,7 @@ const words = {
   calendar: ['记录日历', 'Entry calendar', '記録カレンダー', 'Eintragskalender'],
   activity: ['代码与探索', 'Code & exploration', 'コードと探求', 'Code & Entdeckungen'],
   repositories: ['个仓库', 'repositories', 'リポジトリ', 'Repositories'],
-  commits: ['本月提交', 'commits this month', '今月のコミット', 'Commits diesen Monat'],
+  commits: ['近 30 天提交', 'commits in 30 days', '直近30日のコミット', 'Commits in 30 Tagen'],
   labTitle: ['让时间，以另一种速度流动。', 'Let time move at another pace.', '時間を、別の速度で。', 'Zeit in einem anderen Tempo.'],
   labBody: ['用数学公式、预设或手绘曲线控制音视频播放速率。', 'Control playback speed with formulas, presets or hand-drawn curves.', '数式や手描き曲線で再生速度を制御。', 'Wiedergabetempo mit Formeln oder Kurven steuern.'],
   openTool: ['打开变速播放器', 'Open speed player', 'プレイヤーを開く', 'Player öffnen'],

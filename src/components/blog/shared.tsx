@@ -32,7 +32,7 @@ export function PageHeading({ title, english, number, children }: { title: TextK
     <span className={styles['p3r-heading-word']} aria-hidden="true">{english}</span>
     <span className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>
-      <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span><span className={styles['fold-only']}>ARK / FOLD</span> / {number}</div>
+      <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span><span className={styles['fold-only']}>ARK / FOLD</span><span className={styles['voyage-only']}>ARK / SHIP’S LOG</span> / {number}</div>
       <h1><span className={styles['localized-title']}>{localizedTitle}</span>{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
     </div>
     {children && <div className={styles['heading-actions']}>{children}</div>}
@@ -50,8 +50,8 @@ const markdownComponents: Components = {
   h1: ({ children }) => <h2 data-source-heading="h1">{children}</h2>,
 }
 
-export function Markdown({ content }: { content: string }) {
-  return <div className={styles['markdown']}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown></div>
+export function Markdown({ content, readingGuide = false }: { content: string; readingGuide?: boolean }) {
+  return <div className={styles['markdown']} data-voyage-prose={readingGuide || undefined}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown></div>
 }
 export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
   const ref = useRef<HTMLTextAreaElement>(null)

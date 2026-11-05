@@ -13,6 +13,7 @@ import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Mar
 import { DateField } from './controls'
 import { shareContent } from '@/lib/share'
 import PrismRecord from './prism-record'
+import VoyageReader from './voyage-reader'
 import { detailPath, listPath, newestFirst, prepareListReturn, rememberListPosition, safeReturnPath, useRestoreListPosition } from './list-navigation'
 
 function ArticleListEntry({ entry, locale, read, returnTo }: { entry: Entry; locale: Parameters<typeof dateLabel>[1]; read: string; returnTo: string }) {
@@ -109,7 +110,26 @@ export function ArticleDetail({ id, initialArticle }: { id: string; initialArtic
     const url = URL.createObjectURL(new Blob([`# ${article.title}\n\n${article.content}`], { type: 'text/markdown;charset=utf-8' }))
     const link = document.createElement('a'); link.href = url; link.download = `${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`; link.click(); URL.revokeObjectURL(url)
   }
-  return <div className={styles['page']}><div className={styles['reader']}><Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { const result = await shareContent(article.title); if (result === 'copied') notify(t('copied')); else if (result !== 'shared' && result !== 'cancelled') notify(result) }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
+  return <div className={styles['page']}><div className={styles['reader']} data-voyage-reader>
+    <Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link>
+    <State loading={isLoading} error={error} retry={() => mutate()} />
+    {article && <VoyageReader key={article._id} articleId={article._id} contentKey={article.content} locale={locale}>
+      <header className={styles['reader-header']}>
+        <div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div>
+        <h1>{article.title}</h1>
+        <div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>
+        {!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
+      </header>
+      <Markdown content={article.content} readingGuide />
+      <div className={styles['reader-actions']}>
+        <LikeButton kind="article" id={id} count={article.likes} />
+        <button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button>
+        <button className={styles['secondary-button']} onClick={async () => { const result = await shareContent(article.title); if (result === 'copied') notify(t('copied')); else if (result !== 'shared' && result !== 'cancelled') notify(result) }}><Share2 size={15} />{t('share')}</button>
+        {isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}
+        {canDelete && <DeleteButton name={article.title} onDelete={remove} />}
+      </div>
+    </VoyageReader>}
+  </div></div>
 }
 
 type ArticleDraft = {

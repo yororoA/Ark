@@ -2,7 +2,7 @@
 // Node >= 24: node scripts/verify-blog.mjs [--serve]
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
-import { cp, mkdir, symlink, writeFile } from 'node:fs/promises'
+import { cp, mkdir, symlink, writeFile, readFile } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { resolve } from 'node:path'
@@ -21,10 +21,12 @@ let sequence = 0
 const users = new Map()
 const calls = []
 const controls = { rotateV1: false, rotateV2: false, fail: false }
+const readerFixture = process.env.ARK_VERIFY_READER === '1' ? await import('../tests/fixtures/voyage-reader.mjs') : null
+assert(!readerFixture || process.argv.includes('--serve'), 'The reader fixture is for --serve browser tests; omit ARK_VERIFY_READER for contract checks')
 const article = { _id: articleId, uid: 'test-admin', username: 'Tester', title: 'A small record of time', content: `![Archive specimen](${origin}/404.jpeg)\n\n# A small record\n\nWords, code, and quiet moments.\n\n- Read\n- Create\n- Remember`, category: 'Development', tags: ['Ark'], createdAt: '2026-10-01T12:00:00Z', updatedAt: '2026-10-01T12:00:00Z', likes: 2, views: 12, status: 'published' }
 const draftArticle = { ...article, _id: draftArticleId, title: 'Private draft', status: 'draft' }
 const moment = { ...article, _id: momentId, title: 'October, a beginning', comments: [commentId], published: true, filenames: {} }
-const articles = [article, draftArticle]
+const articles = readerFixture ? [...readerFixture.applyVoyageReaderFixture(article, backend), draftArticle] : [article, draftArticle]
 const moments = [moment]
 const historyMessages = Array.from({ length: 42 }, (_, index) => ({
   _id: `history-${String(index).padStart(2, '0')}`,
@@ -60,6 +62,10 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, backend)
     const path = url.pathname
+    if (readerFixture && path === '/reader-delayed.svg') {
+      res.writeHead(200, { 'content-type': 'image/svg+xml' })
+      return res.end(readerFixture.readerImageResponse)
+    }
     const buffers = []
     for await (const chunk of req) buffers.push(chunk)
     const buffer = Buffer.concat(buffers)
@@ -273,6 +279,12 @@ const server = createServer(async (req, res) => {
 await mkdir(work, { recursive: true })
 await cp(resolve(root, 'src'), resolve(work, 'src'), { recursive: true })
 for (const file of ['package.json', 'tsconfig.json', 'next.config.ts', 'next-env.d.ts', 'postcss.config.mjs']) await cp(resolve(root, file), resolve(work, file))
+if (readerFixture) {
+  // The development badge must not cover reading controls in narrow screenshots.
+  const configPath = resolve(work, 'next.config.ts')
+  const config = await readFile(configPath, 'utf8')
+  await writeFile(configPath, `${config}\nnextConfig.devIndicators = false\n`)
+}
 for (const dir of ['node_modules', 'public']) await symlink(resolve(root, dir), resolve(work, dir)).catch(error => { if (error.code !== 'EEXIST') throw error })
 server.listen(port + 1, '127.0.0.1')
 await once(server, 'listening')
@@ -314,8 +326,13 @@ async function check(name, run) {
   try { await run(); results.push({ name, ok: true }); console.log(`✓ ${name}`) }
   catch (error) { results.push({ name, ok: false, message: error.message }); console.log(`✗ ${name}: ${error.message.slice(0, 180)}`) }
 }
+async function verify() {
 try {
   await ready
+  if (readerFixture) {
+    console.log(`Isolated reader fixture: ${origin}/articles/${articleId} (contract checks are a separate run)`)
+    return
+  }
   const client = new Client(), anonymous = new Client()
   await check('public reads, private access and API allowlist', async () => {
     assert.equal((await anonymous.request('/api/blog/knowledge')).data.data[0]._id, articleId)
@@ -546,3 +563,5 @@ try {
   await writeFile(resolve(work, '../contract-next.log'), log)
   console.error(error.message); stop(); process.exitCode = 1
 }
+}
+await verify()

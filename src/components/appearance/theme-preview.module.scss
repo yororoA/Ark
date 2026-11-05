@@ -9,7 +9,13 @@
   &[data-preview='prism'] { --cover-paper: #0b0d0e; --cover-ink: #f0eee7; --ark-prism-ray: #f0eee7; --ark-prism-edge: #a4adab; }
   &[data-preview='fold'] { --cover-paper: #eeeee1; --cover-ink: #172125; --ark-fold-paper: #eeeee1; --ark-fold-carbon: #11191d; --ark-fold-slate: #485c65; --ark-fold-mist: #a9b9c9; --ark-fold-signal: #b6392a; }
   &[data-preview='allotype'] { --cover-paper: #e7d47b; --cover-ink: #492b38; }
+  &[data-preview='voyage'] { --cover-paper: #102cce; --cover-ink: #edf0e8; }
 }
+.voyage-heading { position: absolute; inset: 6% 6% auto; display: flex; justify-content: space-between; align-items: center; font: 1.55cqw/1.4 var(--font-ibm-plex),sans-serif; letter-spacing: .12em; color: #edf0e8; >span:last-child { display: grid; place-items: center; width: 6cqw; height: 6cqw; border: 1px solid #e6ff6280; border-radius: 50%; color: #e6ff62; font-size: 2cqw; } }
+.voyage-title { position: absolute; top: 27%; left: 7%; display: flex; flex-direction: column; font: 500 12cqw/1.15 var(--font-noto-serif),serif; letter-spacing: -.04em; color: #edf0e8; span { padding-left: .24em; } }
+.voyage-route { position: absolute; width: 100%; height: 100%; inset: 0; color: #e6ff62; }
+.voyage-station { position: absolute; left: 48%; top: 36%; width: 45%; color: #edf0e8; >span { display: block; font-size: 1.5cqw; letter-spacing: .12em; color: #e6ff62; } strong { display: block; margin: 6% 0 8%; font: 500 5.4cqw/1.3 var(--font-noto-serif),serif; letter-spacing: -.03em; } i { display: block; font-size: 1.1cqw; font-style: normal; letter-spacing: .07em; color: #bdc8f8; } }
+.voyage-caption { position: absolute; inset: auto 6% 6%; display: flex; justify-content: space-between; gap: 4%; font: 1.35cqw/1.4 var(--font-ibm-plex),sans-serif; letter-spacing: .11em; color: #edf0e8; border-top: 1px solid #edf0e850; padding-top: 3%; }
 .archive-top { position: absolute; inset: 6% 6% auto; display: flex; justify-content: space-between; padding-bottom: 3%; border-bottom: 1px solid color-mix(in srgb, var(--cover-ink) 30%, transparent); font-size: 1.7cqw; letter-spacing: .12em; }
 .archive-title { position: absolute; z-index: 1; left: 7%; top: 26%; font: 400 17cqw/1 var(--font-gowun-batang), serif; letter-spacing: -.09em; span { display: block; font: italic 2.6cqw/1.4 var(--font-noto-serif), serif; letter-spacing: 0; margin: 4% 0 0 4%; } }
 .archive-orbit { position: absolute; width: 57%; right: -4%; top: 5%; color: var(--cover-accent); }

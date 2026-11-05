@@ -10,7 +10,19 @@ import styles from './theme-preview.module.scss'
 // artwork where a theme has its own renderer. They never run background motion.
 export default function ThemePreview({ design }: { design: Design }) {
   return <div className={styles.cover} data-preview={design} aria-hidden="true">
-    {design === 'fold' ? <>
+    {design === 'voyage' ? <>
+      <div className={styles['voyage-heading']}><span>ARK / READING ATLAS</span><span>07</span></div>
+      <div className={styles['voyage-title']}>夜<span>航</span></div>
+      <svg className={styles['voyage-route']} viewBox="0 0 400 250" fill="none">
+        <path d="M-10 195H55Q90 195 112 168L178 86Q193 68 212 68H278Q301 68 318 88L365 143Q378 159 408 159" stroke="currentColor" strokeWidth="1.4" />
+        <path d="M112 168L178 86Q193 68 212 68H278" stroke="currentColor" strokeWidth="4" />
+        <circle cx="112" cy="168" r="5" fill="#102cce" stroke="currentColor" strokeWidth="2" />
+        <circle cx="230" cy="68" r="7" fill="currentColor" />
+        <circle cx="365" cy="143" r="5" fill="#102cce" stroke="currentColor" strokeWidth="2" />
+      </svg>
+      <div className={styles['voyage-station']}><span>01 / WRITINGS</span><strong>把日常<br />连成航路。</strong><i>WORDS, DAYS & EVERYTHING BETWEEN.</i></div>
+      <div className={styles['voyage-caption']}><span>NIGHT VOYAGE</span><span>READ / WANDER / RETURN ↗</span></div>
+    </> : design === 'fold' ? <>
       <div className={styles['fold-art']}><FoldArt animated={false} /></div>
       <div className={styles['fold-heading']}><span>ARK / PAPER LANDSCAPES</span><span>NO. 06</span></div>
       <div className={styles['fold-title']}>FOLD<span>折境</span></div>
