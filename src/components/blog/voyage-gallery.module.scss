@@ -1,9 +1,6 @@
 // Keep the shared viewer's pan, zoom, focus, and video controls. Only this
 // gallery's presentation changes; media opened in a conversation stays intact.
 :global(html[data-design='voyage']) .gallery {
-  figcaption > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  figcaption > time { flex: none; }
-
   dialog[data-variant='media'] {
     --paper: #080f26;
     --ink: #edf0e8;
@@ -22,6 +19,7 @@
     color: var(--ink);
     box-shadow: 0 28px 100px #0008;
     animation: viewer-arrive .2s ease-out both;
+    &[data-media-spatial-entry] { animation: none; }
 
     &::backdrop { background: #030717d9; backdrop-filter: blur(8px); }
     :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -44,8 +42,10 @@
       button { position: sticky; top: 0; width: 44px; height: 44px; border-color: transparent; }
     }
     [data-media-preview-stage] { min-height: 100px; display: block; background: var(--soft); }
-    [data-media-preview-canvas], [data-media-preview-canvas] img { background: transparent; }
+    [data-media-preview-canvas] { background: transparent; }
+    [data-media-preview-canvas] img { background: #73777f; }
     [data-media-preview-canvas] img[data-media-ready='true'] { animation: image-arrive .2s ease-out both; }
+    [data-media-preview-canvas] img[data-media-spatial-entry] { animation: none; }
     [data-media-preview-stage] > video { background: var(--soft); width: 100%; height: 100%; object-fit: contain; }
     [data-media-preview-footer] { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; margin: 10px 0 0; padding: 0; }
     [data-media-preview-navigation] { grid-area: auto; gap: 6px; button { padding: 8px 12px; font-size: 11px; } }
@@ -81,6 +81,17 @@
     dialog[data-variant='media'], [data-media-preview-canvas] img { animation: none; }
     dialog[data-variant='media'] * { transition: none; }
   }
+}
+
+.mediaFlight {
+  position: fixed;
+  z-index: 1;
+  pointer-events: none;
+  background-color: #73777f;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
 @keyframes viewer-arrive { from { opacity: .65; } to { opacity: 1; } }

@@ -15,6 +15,7 @@ import PrismScene from '@/components/appearance/prism-scene'
 import type { ManagedUploadItem } from './media-upload'
 import VoyageCodeBlock from './voyage-code-block'
 import VoyageHeadingArrival from './voyage-heading-arrival'
+import { useVoyageGalleryTransition, type VoyageMediaOrigin } from './voyage-gallery-transition'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
@@ -166,7 +167,7 @@ export function DeleteButton({ name, onDelete, iconOnly = false }: { name: strin
     </Modal>}
   </>
 }
-export function MediaPreview({ files, index, close, compact = false }: { files: Media[]; index: number; close: () => void; compact?: boolean }) {
+export function MediaPreview({ files, index, close, compact = false, voyageOrigin }: { files: Media[]; index: number; close: () => void; compact?: boolean; voyageOrigin?: VoyageMediaOrigin }) {
   const [active, setActive] = useState(index)
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -178,6 +179,7 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
   const { t, locale } = useBlog()
   const item = files[active]
   const isImage = !item.mime.startsWith('video')
+  useVoyageGalleryTransition({ origin: voyageOrigin, mediaRef, mediaUrl: item.url, isImage })
   const resetView = useCallback(() => {
     for (const id of pointersRef.current.keys()) {
       if (mediaRef.current?.hasPointerCapture(id)) mediaRef.current.releasePointerCapture(id)
