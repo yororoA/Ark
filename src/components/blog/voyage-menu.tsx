@@ -66,9 +66,19 @@ export default function VoyageMenu({ locale, close }: { locale: Locale; close: (
     ], { duration: 600, easing: 'cubic-bezier(.2,.75,.2,1)' })
     ;(dialog.querySelector<HTMLElement>('nav [aria-current="page"]') ?? dialog.querySelector<HTMLElement>('nav a'))?.focus({ preventScroll: true })
     const reduce = () => { if (motion.matches) { animation.current?.cancel(); if (closing.current) closeRef.current() } }
+    // Back/Forward may cancel a departure before its covered handoff calls
+    // dismiss. Release the dialog with that history choice, not a late close.
+    const historyNavigation = () => {
+      closing.current = true
+      animation.current?.cancel()
+      routeMotion.current?.stop()
+      closeRef.current()
+    }
     motion.addEventListener('change', reduce)
+    window.addEventListener('popstate', historyNavigation)
     return () => {
-      motion.removeEventListener('change', reduce); animation.current?.cancel(); dialog.close()
+      motion.removeEventListener('change', reduce); window.removeEventListener('popstate', historyNavigation)
+      animation.current?.cancel(); dialog.close()
       document.body.style.overflow = overflow
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true })
     }
@@ -189,7 +199,7 @@ export default function VoyageMenu({ locale, close }: { locale: Locale; close: (
     if (next !== null) { event.preventDefault(); setPointed(null); links[next].focus() }
   }
   return <dialog ref={ref} className={styles.dialog} data-testid="voyage-menu" aria-label={translate(locale, 'contents')} onKeyDown={keyboard} onCancel={event => { event.preventDefault(); dismiss() }}>
-    <header className={styles.top}><Link href="/home" onNavigate={dismiss} aria-label="YororoIce Ark"><ArchiveLogo /></Link><span>ARK / NIGHT PASSAGE</span><button onClick={dismiss} type="button" aria-label={translate(locale, 'close')}><X size={22} /></button></header>
+    <header className={styles.top}><Link href="/home" voyagePassage onNavigate={dismiss} aria-label="YororoIce Ark"><ArchiveLogo /></Link><span>ARK / NIGHT PASSAGE</span><button onClick={dismiss} type="button" aria-label={translate(locale, 'close')}><X size={22} /></button></header>
     <div className={styles.body}>
       <aside className={styles.spine} aria-hidden="true"><span>NIGHT VOYAGE</span><small>ARK / INDEX</small></aside>
       <div className={styles.contents}>
@@ -201,7 +211,7 @@ export default function VoyageMenu({ locale, close }: { locale: Locale; close: (
             <path ref={routeMeasure} className={styles.routeMeasure}/>
             <g ref={routeMarker} className={styles.routeMarker}><circle r="10"/><circle r="3"/></g>
           </svg>
-          {destinations.map(([key, number, english], index) => <Link key={key} href={`/${key}`} onNavigate={dismiss} aria-current={current === index ? 'page' : undefined} data-selected={selected === index} style={{ '--order': index } as CSSProperties} onMouseEnter={() => setPointed(index)} onMouseLeave={() => setPointed(null)} onFocus={() => { setFocused(index); setPointed(null) }} onBlur={() => setFocused(null)}>
+          {destinations.map(([key, number, english], index) => <Link key={key} href={`/${key}`} voyagePassage onNavigate={dismiss} aria-current={current === index ? 'page' : undefined} data-selected={selected === index} style={{ '--order': index } as CSSProperties} onMouseEnter={() => setPointed(index)} onMouseLeave={() => setPointed(null)} onFocus={() => { setFocused(index); setPointed(null) }} onBlur={() => setFocused(null)}>
             <span data-route-station className={styles.station} aria-hidden="true"/>
             <span className={styles.folio}><small>{number}</small><em>{english}</em></span>
             <span className={styles.destination}>{translate(locale, key)}</span><ArrowUpRight className={styles.arrow} size={28} strokeWidth={1.2} />
@@ -209,6 +219,6 @@ export default function VoyageMenu({ locale, close }: { locale: Locale; close: (
         </nav>
       </div>
     </div>
-    <footer className={styles.bottom}><p>{copy.note}</p><Link href={`/theme?returnTo=${encodeURIComponent(returnTo)}`} onNavigate={dismiss}>{copy.theme}<ArrowUpRight size={16} /></Link><Link href="/login" onNavigate={dismiss}>{translate(locale, 'login')}<ArrowUpRight size={16} /></Link></footer>
+    <footer className={styles.bottom}><p>{copy.note}</p><Link href={`/theme?returnTo=${encodeURIComponent(returnTo)}`} voyagePassage onNavigate={dismiss}>{copy.theme}<ArrowUpRight size={16} /></Link><Link href="/login" voyagePassage onNavigate={dismiss}>{translate(locale, 'login')}<ArrowUpRight size={16} /></Link></footer>
   </dialog>
 }

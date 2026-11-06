@@ -91,13 +91,20 @@ async function assertInteractive(page) {
   await expect(menu).toHaveCount(0)
 }
 
+async function takePassage(page, destination) {
+  await page.locator('[data-menu-toggle]').click()
+  const menu = page.getByTestId('voyage-menu')
+  await expect(menu).toBeVisible()
+  await menu.locator(`nav a[href="${destination}"]`).click()
+}
+
 test('Voyage route remains opaque until slow destination content is ready', async t => {
   const { context, page } = await session(t)
   const gate = await holdArticles(context, t)
   await page.goto(`${baseURL}/home`)
   await page.getByTestId('voyage-home').waitFor()
   await recordFrames(page)
-  await page.locator('header nav a[href="/articles"]').first().click()
+  await takePassage(page, '/articles')
   const curtain = page.getByTestId('voyage-wipe')
   await expect(curtain).toHaveAttribute('data-phase', 'covered')
   await page.waitForTimeout(700)
@@ -216,7 +223,7 @@ test('Voyage reduced motion navigates without moving route panels', async t => {
   await page.goto(`${baseURL}/home`)
   await page.getByTestId('voyage-home').waitFor()
   await recordFrames(page)
-  await page.locator('header nav a[href="/articles"]').first().click()
+  await takePassage(page, '/articles')
   await page.waitForURL('**/articles')
   await expect(page.locator('main h1')).toBeVisible()
   assert((await stopFrames(page)).every(frame => !frame.phase || frame.phase === 'idle'))
@@ -257,7 +264,7 @@ test('Voyage covered resize stays opaque and Escape releases the curtain', async
   const { context, page } = await session(t)
   const gate = await holdArticles(context, t)
   await page.goto(`${baseURL}/home`, { waitUntil: 'networkidle' })
-  await page.locator('header nav a[href="/articles"]').first().click()
+  await takePassage(page, '/articles')
   const curtain = page.getByTestId('voyage-wipe')
   await expect(curtain).toHaveAttribute('data-phase', 'covered')
   // Observe the same resize event after the renderer's registered handler,
@@ -286,7 +293,7 @@ test('Voyage holds a static opaque canvas while destination content is pending',
   const { context, page } = await session(t)
   const gate = await holdArticles(context, t)
   await page.goto(`${baseURL}/home`, { waitUntil: 'networkidle' })
-  await page.locator('header nav a[href="/articles"]').first().click()
+  await takePassage(page, '/articles')
   const curtain = page.getByTestId('voyage-wipe')
   await expect(curtain).toHaveAttribute('data-phase', 'covered')
   await curtain.locator('canvas').evaluate(canvas => {
@@ -324,10 +331,10 @@ for (const phase of ['closing', 'covered', 'opening']) {
     const destination = phase === 'covered' ? '/articles' : '/archive'
     const curtain = page.getByTestId('voyage-wipe')
     await page.goto(`${baseURL}/home`, { waitUntil: 'networkidle' })
-    await page.locator(`header nav a[href="${source}"]`).first().click()
+    await takePassage(page, source)
     await page.waitForURL(`**${source}`)
     await expect(curtain).toHaveAttribute('data-phase', 'idle')
-    await page.locator(`header nav a[href="${destination}"]`).first().click()
+    await takePassage(page, destination)
     await expect(curtain).toHaveAttribute('data-phase', phase)
     if (phase === 'closing') {
       await page.waitForTimeout(75)
@@ -342,6 +349,9 @@ for (const phase of ['closing', 'covered', 'opening']) {
     const backPath = phase === 'opening' ? source : '/home'
     await page.waitForURL(`**${backPath}`)
     await expect(curtain).toHaveAttribute('data-phase', 'idle')
+    await expect(page.getByTestId('voyage-menu')).toHaveCount(0)
+    await expect(page.locator('[data-menu-toggle]')).toHaveAttribute('aria-expanded', 'false')
+    if (phase === 'closing') await expect(page.locator('[data-menu-toggle]')).toBeFocused()
     gate?.release()
     await page.waitForTimeout(800)
     assert.equal(new URL(page.url()).pathname, backPath, 'A cancelled destination must not overwrite the history choice')
@@ -350,7 +360,7 @@ for (const phase of ['closing', 'covered', 'opening']) {
     // Forward history and subsequent uninterrupted transitions still work.
     await page.goForward()
     await page.waitForURL(`**${phase === 'opening' ? destination : source}`)
-    await page.locator('header nav a[href="/moments"]').first().click()
+    await takePassage(page, '/moments')
     await page.waitForURL('**/moments')
     await expect(curtain).toHaveAttribute('data-phase', 'idle')
     await assertInteractive(page)

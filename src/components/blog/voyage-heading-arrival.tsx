@@ -27,9 +27,11 @@ export default function VoyageHeadingArrival({ headingRef, indexRef, titleRef }:
     if (design !== 'voyage' || !svg || !heading || !index || !title || !rail || !trail || !terminal) return
 
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
-    let played = false, inView = false, geometry = ''
+    // The full menu passage already announces arrival. Ordinary links get
+    // this quiet mark instead; never stack two arrivals for one navigation.
+    let played = !!document.documentElement.dataset.voyageWipe, inView = false, geometry = ''
     let animations: Animation[] = []
-    svg.dataset.arrival = 'waiting'
+    svg.dataset.arrival = played ? 'settled' : 'waiting'
     const stop = () => {
       played = true
       svg.dataset.arrival = 'settled'
@@ -39,9 +41,7 @@ export default function VoyageHeadingArrival({ headingRef, indexRef, titleRef }:
     const start = () => {
       if (played || !geometry || !inView) return
       if (document.hidden || motion.matches) { stop(); return }
-      // A mounted destination can spend an arbitrary time under the cover.
-      // Observe its actual removal rather than guessing with a route timer.
-      if (document.documentElement.dataset.voyageWipe) return
+      if (document.documentElement.dataset.voyageWipe) { stop(); return }
       played = true
       svg.dataset.arrival = 'running'
       const stroke = trail.animate([

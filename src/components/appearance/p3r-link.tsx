@@ -6,7 +6,9 @@ import { useRef, useState, type ComponentProps } from 'react'
 import { requestP3RWipe } from './p3r-transition'
 import { requestFoldTransition } from './fold-transition'
 
-export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, prefetch, replace, scroll, transitionTypes, ...props }: ComponentProps<typeof Link>) {
+type P3RLinkProps = ComponentProps<typeof Link> & { voyagePassage?: boolean }
+
+export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, prefetch, replace, scroll, transitionTypes, voyagePassage = false, ...props }: P3RLinkProps) {
   const router = useRouter()
   const origin = useRef({ x: 0, y: 0, href: '' })
   const [prefetchOnIntent, setPrefetchOnIntent] = useState(false)
@@ -36,10 +38,17 @@ export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, pr
       if (!href) { onNavigate?.(event); return }
       const url = new URL(href, location.href)
       const changesPage = url.origin === location.origin && url.pathname !== location.pathname
-      // Only a new pathname gets the full-page wipe. Hashes and same-page
+      // Only a new pathname can get the full-page wipe. Hashes and same-page
       // filters keep their immediate behavior; modified clicks, downloads and
       // external links do not reach onNavigate.
       if (!changesPage) { onNavigate?.(event); return }
+      // Night Voyage reserves the complete passage for its spatial menu.
+      // Everyday links retain Next's native navigation, including loading,
+      // cancellation and history, instead of waiting for an authored cover.
+      if (document.documentElement.dataset.design === 'voyage' && !voyagePassage) {
+        onNavigate?.(event)
+        return
+      }
       const destination = `${url.pathname}${url.search}${url.hash}`
       // The caller's handler and the route change wait until the page is
       // covered, so loading boundaries never flash beside the expanding edge.
