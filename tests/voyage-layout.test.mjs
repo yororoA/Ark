@@ -94,7 +94,7 @@ for (const width of [320, 1440]) {
     await expect(panel.getByRole('heading')).toHaveText('October, a beginning')
     await expect(panel.getByRole('link', { name: '打开这一页' })).toHaveAttribute('href', '/moments/bbbbbbbbbbbbbbbbbbbbbbbb')
     await page.keyboard.press('End')
-    await expect(panel.getByRole('link', { name: '打开这一页' })).toHaveAttribute('href', '/archive')
+    await expect(panel.getByRole('link', { name: '打开这一页' })).toHaveAttribute('href', '/moments/bbbbbbbbbbbbbbbbbbbbbbbb')
     await page.keyboard.press('Home')
     if (width === 320) {
       await panel.dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true, clientX: 260, clientY: 300 })
@@ -131,7 +131,7 @@ for (const width of [320, 650]) {
     const panel = page.getByRole('tabpanel')
     await expect(panel.getByRole('heading')).toHaveText(title)
     const open = await panel.getByRole('link', { name: 'Open this page' }).boundingBox()
-    const next = await page.getByRole('button', { name: 'Next point', exact: true }).boundingBox()
+    const next = await page.getByRole('button', { name: 'Next record', exact: true }).boundingBox()
     assert(open && next && open.y + open.height <= next.y, 'Long content must not overlap route controls')
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
     assert.deepEqual(errors, [])
@@ -155,6 +155,10 @@ for (const width of [320, 1440]) {
     const panel = page.getByRole('tabpanel')
     await page.getByTestId('voyage-stop-0').focus()
     await page.keyboard.press('End')
+    const endpoints = await page.getByRole('tablist').evaluate(el => {
+      const surface = el.querySelector('svg').getBoundingClientRect()
+      return [...el.querySelectorAll('button > span:first-child')].map(point => { const r = point.getBoundingClientRect(); return { x: (r.x + r.width / 2 - surface.x) / surface.width, y: (r.y + r.height / 2 - surface.y) / surface.height } })
+    })
     const samples = await marker.evaluate(el => new Promise(resolve => {
       const start = performance.now(), samples = []
       const surface = el.parentElement.getBoundingClientRect()
@@ -168,7 +172,8 @@ for (const width of [320, 1440]) {
     }))
     assert(samples.filter(sample => sample.moving === 'true').length >= 3)
     assert(samples.at(-1).x > samples[0].x, 'The beacon travels rather than snapping')
-    assert(samples.some(sample => Math.abs(sample.y - (.730769 - (sample.x - .125) / .75 * .538461)) > .05), 'A trip follows the curved route rather than a straight shortcut')
+    const [first, last] = [endpoints[0], endpoints.at(-1)]
+    assert(samples.some(sample => Math.abs(sample.y - (first.y + (sample.x - first.x) / (last.x - first.x) * (last.y - first.y))) > .025), 'A trip follows the actual curved route rather than a straight shortcut')
     await page.keyboard.press('Home')
     await page.keyboard.press('ArrowRight')
     await expect(page.getByTestId('voyage-stop-1')).toHaveAttribute('aria-selected', 'true')
@@ -183,7 +188,7 @@ for (const width of [320, 1440]) {
     await page.keyboard.press('End')
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await expect(marker).toHaveAttribute('data-travelling', 'false')
-    await expect(panel.getByRole('link', { name: '打开这一页' })).toHaveAttribute('href', '/archive')
+    await expect(panel.getByRole('link', { name: '打开这一页' })).toHaveAttribute('href', '/moments/bbbbbbbbbbbbbbbbbbbbbbbb')
     assert.deepEqual(errors, [])
   })
 }

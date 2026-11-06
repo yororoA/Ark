@@ -1,6 +1,7 @@
 import { before, after, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { chromium, expect } from '@playwright/test'
+import { mockAtlas, showAtlas } from './fixtures/voyage-atlas.mjs'
 
 const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:10000'
 let browser
@@ -44,7 +45,7 @@ for (const width of [320, 390, 650]) for (const mode of ['light', 'dark']) {
       range.selectNodeContents(text)
       const lines = [...range.getClientRects()]
       return {
-        imageBottom: image.bottom, imageHeight: image.height, titleTop: title.top,
+        imageTop: image.top, imageHeight: image.height, titleTop: title.top,
         completeTitle: getComputedStyle(text).webkitLineClamp === 'none'
           && lines.every(line => line.bottom < open.top && line.left >= -1 && line.right <= innerWidth + 1),
         openBottom: open.bottom, panelBottom: element.getBoundingClientRect().bottom,
@@ -52,7 +53,7 @@ for (const width of [320, 390, 650]) for (const mode of ['light', 'dark']) {
       }
     })
     assert(geometry.imageHeight >= 150, 'The cover remains a useful image rather than a faint text backdrop')
-    assert(geometry.titleTop > geometry.imageBottom, 'The mobile headline must not overlap the cover')
+    assert(geometry.openBottom <= geometry.imageTop, 'The full mobile headline and reading action come before the cover')
     assert(geometry.completeTitle, 'A long title may grow the page instead of being clipped')
     assert(geometry.openBottom <= geometry.panelBottom + 1, 'The open action must remain in the panel flow')
     assert.equal(geometry.overflow, false)
@@ -61,11 +62,12 @@ for (const width of [320, 390, 650]) for (const mode of ['light', 'dark']) {
 }
 
 test('Voyage rapid preview changes remain readable and leave one interactive record', async t => {
-  const { page } = await session(t, { motion: 'no-preference' })
+  const { page, context } = await session(t, { motion: 'no-preference' })
+  await mockAtlas(context)
   const requests = []
   page.on('request', request => { if (/\/api\/blog\/(knowledge|moments)/.test(request.url())) requests.push(request.url()) })
-  await page.goto(`${baseURL}/home`, { waitUntil: 'networkidle' })
-  await page.evaluate(() => document.fonts.ready)
+  await showAtlas(page, baseURL)
+  await expect(page.getByRole('tabpanel').getByRole('heading')).toHaveText('The most recent page')
   await page.waitForTimeout(1000)
   const before = requests.length, panel = page.getByRole('tabpanel')
   await page.getByTestId('voyage-stop-0').focus()
@@ -84,7 +86,7 @@ test('Voyage rapid preview changes remain readable and leave one interactive rec
     assert(layers.ghosts <= 1 && layers.inert, 'Only the current preview can be focused or announced')
     await page.waitForTimeout(45)
   }
-  await expect(panel.getByRole('heading')).toHaveText('Where the light falls.')
+  await expect(panel.getByRole('heading')).toHaveText('A page from yesterday')
   await expect(panel.getByRole('link', { name: 'Open this page' })).toHaveCount(1)
   await expect(panel.locator('[data-preview-layer="outgoing"]')).toHaveCount(0)
   await expect(page.getByTestId('voyage-route-beacon')).toHaveAttribute('data-travelling', 'false')
@@ -92,7 +94,7 @@ test('Voyage rapid preview changes remain readable and leave one interactive rec
   assert.equal(requests.length, before)
 })
 
-test('Voyage reduced-motion changes settle preview and section entrances immediately', async t => {
+test('Voyage reduced-motion changes settle preview and keep the directory readable', async t => {
   const { page } = await session(t, { motion: 'no-preference', width: 390, mode: 'dark' })
   await page.goto(`${baseURL}/home`, { waitUntil: 'networkidle' })
   await page.getByTestId('voyage-stop-0').focus()
@@ -100,15 +102,15 @@ test('Voyage reduced-motion changes settle preview and section entrances immedia
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await expect(page.getByTestId('voyage-route-beacon')).toHaveAttribute('data-travelling', 'false')
   const heading = page.getByRole('tabpanel').getByRole('heading')
-  await expect(heading).toHaveText('Back through time.')
+  await expect(heading).toHaveText('October, a beginning')
   assert.equal(await heading.evaluate(element => getComputedStyle(element).animationName), 'none')
   const logbook = page.locator('#voyage-logbook')
   await logbook.scrollIntoViewIfNeeded()
-  const visible = await logbook.locator('h2').evaluate(element => {
+  const visible = await logbook.locator('a').first().evaluate(element => {
     for (let ancestor = element; ancestor && ancestor !== document.body; ancestor = ancestor.parentElement) {
       if (Number(getComputedStyle(ancestor).opacity) < 1) return false
     }
     return true
   })
-  assert(visible, 'Enabling reduced motion reveals a section even if its entrance has not started')
+  assert(visible, 'The directory stays readable when reduced motion is enabled')
 })
