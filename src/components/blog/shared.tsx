@@ -14,27 +14,32 @@ import P3RScene from '@/components/appearance/p3r-scene'
 import PrismScene from '@/components/appearance/prism-scene'
 import type { ManagedUploadItem } from './media-upload'
 import VoyageCodeBlock from './voyage-code-block'
+import VoyageHeadingArrival from './voyage-heading-arrival'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
 export { styles }
 export function PageHeading({ title, english, number, children }: { title: TextKey; english: string; number: string; children?: React.ReactNode }) {
   const { t, locale } = useBlog()
+  const headingRef = useRef<HTMLElement>(null)
+  const indexRef = useRef<HTMLSpanElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
   const localizedTitle = t(title)
   const repeatsEnglishTitle = localizedTitle.localeCompare(english, undefined, { sensitivity: 'base' }) === 0
   const verticalTitle = (locale === 'zh' || locale === 'ja') && localizedTitle.length <= 6
   const isChronological = title === 'moments' || title === 'archive' || title === 'gallery'
   const isPersonal = title === 'about' || title === 'chat'
   const scene = isChronological ? 'calendar' : isPersonal ? 'sheets' : 'curtain'
-  return <header className={styles['page-heading']} data-vertical={verticalTitle}>
+  return <header ref={headingRef} className={styles['page-heading']} data-vertical={verticalTitle}>
     <RainPlanes variant={scene} />
     <P3RScene variant="heading" />
     <PrismScene variant="heading" />
+    <VoyageHeadingArrival headingRef={headingRef} indexRef={indexRef} titleRef={titleRef} />
     <span className={styles['p3r-heading-word']} aria-hidden="true">{english}</span>
-    <span className={styles['heading-index']} aria-hidden="true">{number}</span>
+    <span ref={indexRef} className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>
       <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span><span className={styles['fold-only']}>ARK / FOLD</span><span className={styles['voyage-only']}>ARK / SHIP’S LOG</span> / {number}</div>
-      <h1><span className={styles['localized-title']}>{localizedTitle}</span>{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
+      <h1 ref={titleRef}><span className={styles['localized-title']}>{localizedTitle}</span>{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
     </div>
     {children && <div className={styles['heading-actions']}>{children}</div>}
   </header>

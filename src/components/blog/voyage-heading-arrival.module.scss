@@ -1,0 +1,24 @@
+.arrival {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  color: var(--accent);
+
+  path { stroke: currentColor; vector-effect: non-scaling-stroke; }
+}
+
+.rail { stroke-width: 1; opacity: .28; }
+.trail { stroke-width: 2; stroke-linecap: round; stroke-dasharray: .12 1; stroke-dashoffset: .12; opacity: 0; }
+.terminal { stroke-width: 1; opacity: .28; transform-box: fill-box; transform-origin: center bottom; }
+
+// This measured stem replaces the old fixed-height stub, including when a
+// translated title wraps. Keeping both would leave two adjacent hairlines.
+:global(html[data-design='voyage']) header:has(> .arrival)::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .trail { display: none; }
+}
