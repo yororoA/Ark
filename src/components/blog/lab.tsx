@@ -7,6 +7,8 @@ import { useBlog } from './blog-provider'
 import { PageHeading, styles } from './shared'
 import { LAB_WORKSPACE_COPY } from './lab-workspace-copy'
 import workspace from './lab-workspace.module.scss'
+import VoyageLabPoster from './voyage-lab-poster'
+import poster from './voyage-lab-poster.module.scss'
 
 const TOOL_URL = '/lab/function-speed-player.html'
 type ToolStatus = 'loading' | 'ready' | 'slow' | 'failed'
@@ -73,7 +75,8 @@ export default function Lab() {
   }, [colorMode, open, voyage])
 
   return <div className={styles['page']}><PageHeading title="lab" english="Small experiments" number="06" />
-    <section className={styles['lab-poster']}><div><div className={styles['eyebrow']}>EXPERIMENT 001 / f(t)</div><h2>{t('labTitle')}</h2><p>{t('labBody')}</p><button ref={opener} className={styles['primary-button']} onClick={toggle} aria-expanded={open} aria-controls="lab-workspace">{t(open ? 'close' : 'openTool')}{open ? <X size={16} /> : <ArrowUpRight size={16} />}</button></div>
+    <VoyageLabPoster locale={locale} active={voyage} open={open} toggle={toggle} buttonRef={voyage ? opener : undefined} actionLabel={t(open ? 'close' : 'openTool')} />
+    <section className={`${styles['lab-poster']} ${poster.legacy}`}><div><div className={styles['eyebrow']}>EXPERIMENT 001 / f(t)</div><h2>{t('labTitle')}</h2><p>{t('labBody')}</p><button ref={voyage ? undefined : opener} className={styles['primary-button']} onClick={toggle} aria-expanded={voyage ? undefined : open} aria-controls={voyage ? undefined : 'lab-workspace'}>{t(open ? 'close' : 'openTool')}{open ? <X size={16} /> : <ArrowUpRight size={16} />}</button></div>
       <svg viewBox="0 0 500 300" fill="none" aria-hidden="true"><path d="M0 150H500M250 0V300" stroke="currentColor" opacity=".2" /><circle cx="250" cy="150" r="120" stroke="currentColor" opacity=".3" /><path d="M0 150C60 -35 100 -35 160 150S260 335 320 150 420 -35 500 150" stroke="currentColor" strokeWidth="2" /><path d="M20 150C70 90 110 90 160 150S270 210 320 150 430 90 480 150" stroke="currentColor" strokeWidth=".5" /><text x="365" y="268" fill="currentColor" fontSize="28" fontFamily="Georgia" fontStyle="italic">f(t) = memory</text></svg>
     </section>
     {open && (voyage ? <section ref={panel} id="lab-workspace" className={workspace.workspace} data-testid="voyage-lab-workspace" data-status={status} aria-labelledby="lab-workspace-title">
