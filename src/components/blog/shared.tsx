@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Play, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
+import { dateLabel, mediaLabel, Envelope, Media, TextKey } from '@/lib/blog'
 import { observeVisualViewport } from '@/lib/visual-viewport'
 import RainPlanes from '@/components/appearance/rain-planes'
 import P3RScene from '@/components/appearance/p3r-scene'
@@ -276,7 +276,7 @@ export function MediaPreview({ files, index, close, compact = false, voyageOrigi
     window.addEventListener('keydown', navigate)
     return () => window.removeEventListener('keydown', navigate)
   }, [files.length, isImage, resetView])
-  return <Modal title={item.desc || t('preview')} close={close} variant="media">
+  return <Modal title={mediaLabel(item, t('preview'))} close={close} variant="media">
     <div
       ref={mediaRef}
       className={styles['preview-media']}
@@ -294,7 +294,7 @@ export function MediaPreview({ files, index, close, compact = false, voyageOrigi
       onLostPointerCapture={endPan}
     >
       {isImage
-        ? <div className={styles['preview-canvas']} data-media-preview-canvas style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={item.desc || item.filename} onLoad={event => { event.currentTarget.dataset.mediaReady = 'true' }} style={{ transform: `scale(${scale})` }} /></div>
+        ? <div className={styles['preview-canvas']} data-media-preview-canvas style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={mediaLabel(item)} onLoad={event => { event.currentTarget.dataset.mediaReady = 'true' }} style={{ transform: `scale(${scale})` }} /></div>
         : <video key={item.url} src={item.url} controls autoPlay playsInline />}
     </div>
     <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`} data-media-preview-footer>
@@ -317,7 +317,7 @@ export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Medi
   if (!files.length) return null
   const hasVideo = files.some(file => file.mime.startsWith('video'))
   const hasImage = files.some(file => !file.mime.startsWith('video'))
-  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
+  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={mediaLabel(file)}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={mediaLabel(file)}><img loading="lazy" src={file.url} alt={mediaLabel(file)} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
 export function LocalMediaGrid({ files, descriptions = [] }: { files: File[]; descriptions?: string[] }) {
   const [media, setMedia] = useState<Media[]>([])

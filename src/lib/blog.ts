@@ -9,7 +9,10 @@ export type Entry = {
   mediaAssets?: string[]
 }
 export type Comment = { _id: string; content: string; username: string; uid: string; createdAt: string; likes?: number; belong?: string }
-export type Media = { id?: string; filename: string; url: string; mime: string; username?: string; createdAt?: string; desc?: string }
+export type Media = { id?: string; filename: string; originalName?: string; url: string; mime: string; username?: string; createdAt?: string; desc?: string }
+export function mediaLabel(file: Pick<Media, 'desc' | 'originalName' | 'filename'>, fallback = '') {
+  return file.desc?.trim() || file.originalName?.trim() || file.filename?.trim() || fallback
+}
 export type BlogLink = { _id: string; name: string; url: string; description?: string; category: string; imgurl?: string }
 export type Envelope<T> = { data: T; pagination?: { page: number; pages: number; total: number; limit: number }; hasMore?: boolean }
 export type HomeMomentSummary = { entries: Entry[]; activeDates: string[] }
@@ -209,6 +212,6 @@ export function mediaFor(entry: Entry): Media[] {
     const url = safeUrl(detail?.secure_url || value)
     if (!url) return []
     const video = detail?.mime?.startsWith('video') || /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) || /\.(mp4|webm|mov|mkv|ogg)$/i.test(name)
-    return [{ id: detail?.assetId, filename: name, url, mime: detail?.mime || (video ? 'video/mp4' : 'image/jpeg'), desc: detail?.desc || detail?.origin || entry.title }]
+    return [{ id: detail?.assetId, filename: name, originalName: detail?.origin, url, mime: detail?.mime || (video ? 'video/mp4' : 'image/jpeg'), desc: detail?.desc }]
   })
 }

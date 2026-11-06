@@ -20,7 +20,10 @@ function useMomentMedia(entry: Entry) {
   const missing = Object.keys(entry.filenames || {}).filter(name => !resolved.has(name))
   const path = missing.length ? `moments/files?from=moments&filenames=${encodeURIComponent(missing.join(','))}` : null
   const result = useBlogData<Envelope<Media[]>>(path, { revalidateOnFocus: false })
-  const files = [...direct, ...(result.data?.data || []).filter(file => safeUrl(file.url))]
+  const files = [...direct, ...(result.data?.data || []).filter(file => safeUrl(file.url)).map(file => {
+    const detail = entry.filesDetail?.[file.filename]
+    return { ...file, originalName: detail?.origin || file.originalName, desc: detail?.desc ?? file.desc }
+  })]
   return { ...result, files }
 }
 

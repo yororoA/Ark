@@ -3,7 +3,7 @@
 
 import { useState, type MouseEvent } from 'react'
 import { ArrowUpRight, ImageOff, Play } from 'lucide-react'
-import { dateLabel, translate, type Locale, type Media } from '@/lib/blog'
+import { dateLabel, mediaLabel, translate, type Locale, type Media } from '@/lib/blog'
 import styles from './voyage-contact-sheet.module.scss'
 
 const COPY = {
@@ -19,7 +19,7 @@ function Frame({ file, index, locale, onSelect }: { file: Media; index: number; 
   const [failed, setFailed] = useState(false)
   const copy = COPY[locale]
   const video = file.mime.startsWith('video')
-  const caption = file.desc?.trim() || file.filename
+  const caption = mediaLabel(file)
   const dated = !!file.createdAt && !Number.isNaN(Date.parse(file.createdAt))
   const open = (event: MouseEvent<HTMLButtonElement>) => onSelect(index, event.currentTarget)
 
