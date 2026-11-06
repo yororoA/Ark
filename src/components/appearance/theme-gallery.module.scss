@@ -13,6 +13,7 @@
 .heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding: 36px 0 34px; }
 .eyebrow { color: var(--muted); font-size: 9px; letter-spacing: .18em; margin: 0 0 14px; }
 .heading h1 { font: 400 clamp(56px, 6.8vw, 92px)/1 var(--font-gowun-batang), serif; letter-spacing: -.065em; margin: 0; span { display: block; font: 400 17px/1.4 var(--font-noto-sans), sans-serif; letter-spacing: .1em; margin-top: 16px; } }
+.heading h1 .heading-english { display: block; font: inherit; letter-spacing: inherit; }
 .intro { max-width: 300px; color: var(--muted); font: 14px/1.9 var(--font-noto-serif), serif; margin: 0 0 4px; text-wrap: pretty; }
 .settings { display: flex; align-items: center; justify-content: space-between; gap: 30px; border-block: 1px solid var(--line); padding: 24px 0; margin-bottom: 38px; }
 .mode-field { padding: 0; border: 0; margin: 0; min-width: 0; legend { font-size: 10px; color: var(--muted); padding: 0; margin-bottom: 10px; } }
@@ -137,7 +138,8 @@
 // The catalogue is a route switchboard, with the chosen view marked at its edge.
 :global(html[data-design='voyage']) .page {
   .heading { position: relative; padding-block: 25px 28px; border-bottom: 1px solid var(--line); gap: 30px; }
-  .heading h1 { font: 500 clamp(42px,5vw,68px)/1 var(--font-noto-serif),serif; letter-spacing: -.035em; span { margin-top: 15px; font: 400 14px/1.5 var(--font-noto-sans),sans-serif; letter-spacing: .08em; } }
+  .heading h1 { display: flex; flex-direction: column-reverse; gap: 14px; font: 500 clamp(36px,4.2vw,60px)/1.25 var(--font-noto-serif),serif; letter-spacing: -.035em; span { margin: 0; font: inherit; letter-spacing: inherit; } }
+  .heading h1 .heading-english { font: 10px/1.5 var(--font-ibm-plex),monospace; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); }
   .eyebrow { color: var(--accent); font-size: 8px; letter-spacing: .15em; padding-left: 18px; position: relative; &::before { content: ''; position: absolute; left: 0; top: calc(50% - 3px); width: 6px; height: 6px; border: 1px solid currentColor; border-radius: 50%; } }
   .intro { max-width: 320px; font-size: 13px; }
   .settings { border-top: 0; padding-block: 20px; }
@@ -153,5 +155,5 @@
   .selected-mark { color: var(--voyage-night); background: var(--voyage-signal); box-shadow: none; border-radius: 0; top: 0; right: 0; width: 34px; height: 34px; }
   .card-action { min-height: 30px; }
   .bottom > a { border-bottom: 1px solid var(--accent); }
-  @media(max-width:700px) { .heading { padding-block: 22px; gap: 16px; } .heading h1 { font-size: 44px; } .heading h1 span { margin-top: 12px; } .intro { font-size: 12px; } .card-action { margin-top: 0; } }
+  @media(max-width:700px) { .heading { padding-block: 22px; gap: 16px; } .heading h1 { font-size: 32px; gap: 10px; } .heading h1 span { margin: 0; } .intro { font-size: 12px; } .card-action { margin-top: 0; } }
 }

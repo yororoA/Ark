@@ -14,9 +14,13 @@ import type { ConnectParams } from '../types';
 import ThemePicker from '@/components/appearance/theme-picker';
 import { usePortalDialog } from '@/hooks/use-portal-dialog';
 
+export type AccountFormIdentity = {
+  mode: 'register' | 'login';
+  username: string;
+  email?: string;
+};
 
-
-export default function AccountManagement(props: { onClose: () => void, onConnect: (params: ConnectParams) => void, details: AuthDetail[], preferredMode?: 'register' | 'login' }) {
+export default function AccountManagement(props: { onClose: () => void, onConnect: (params: ConnectParams) => void, onResetIdentity: () => void, details: AuthDetail[], preferredMode?: 'register' | 'login', initialIdentity?: AccountFormIdentity }) {
   const { sendCode } = useAuth();
   const { onClose, onConnect, details } = props;
 
@@ -26,8 +30,8 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
   const dialogRef = usePortalDialog(details.length ? onClose : undefined, !detailToDelete);
 
   // 表单
-  const [otherVisable, setOtherVisable] = useState(details.length === 0 || props.preferredMode === 'register');
-  const [activeTab, setActiveTab] = useState<'register' | 'login'>(props.preferredMode || 'login');
+  const [otherVisable, setOtherVisable] = useState(details.length === 0 || Boolean(props.initialIdentity) || props.preferredMode === 'register');
+  const [activeTab, setActiveTab] = useState<'register' | 'login'>(props.initialIdentity?.mode || props.preferredMode || 'login');
   const [formError, setFormError] = useState('');
   const [formBusy, setFormBusy] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
@@ -91,7 +95,13 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
       <div ref={dialogRef} tabIndex={-1} className={styles.accountManagement} role="dialog" aria-modal="true" aria-label="账号管理" inert={Boolean(detailToDelete)} style={{ visibility: detailToDelete ? 'hidden' : 'visible' }}>
         <div className={styles['fold-ticket-rail']} aria-hidden="true"><span>ARK / PERSONAL ACCESS</span><span>FOLD</span></div>
         <div className={cn(styles.accountManagementTitle, 'relative')}>
-          {otherVisable && details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => setOtherVisable(false)}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
+          {otherVisable && details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="返回账号列表" title="返回账号列表" onClick={() => {
+            props.onResetIdentity();
+            setActiveTab(props.preferredMode || 'login');
+            setFormError('');
+            setCodeSent(false);
+            setOtherVisable(false);
+          }}><ChevronLeft size={22} strokeWidth={1.3} /></button>}
           <h1>账号管理</h1>
           <ThemePicker />
           {details.length > 0 && <button type="button" className={styles['icon-button']} aria-label="关闭账号管理" title="关闭账号管理" onClick={onClose}><X size={22} strokeWidth={1.3} /></button>}
@@ -141,7 +151,10 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
           </>
           :
           <>
-            <div className={cn(styles.form)}>
+            <form className={cn(styles.form)} noValidate onSubmit={event => {
+              event.preventDefault()
+              void run(activeTab === 'register' ? handleRegister : handleLogin)
+            }}>
               <Tabs
                 items={[
                   { value: 'register', label: '注册' },
@@ -151,21 +164,21 @@ export default function AccountManagement(props: { onClose: () => void, onConnec
                 onValueChange={(v) => setActiveTab(v as 'register' | 'login')}
               />
               <div className={cn(styles.inputGroup)}>
-                <Input label="用户名" id="username" required placeholder="请输入用户名" ref={usernameRef} />
+                <Input label="用户名" id="username" required placeholder="请输入用户名" defaultValue={props.initialIdentity?.username || ''} ref={usernameRef} />
                 <Input label="密码" id="password" encrypt={true} required placeholder="请输入密码" ref={passwordRef} />
                 {activeTab === 'register' && (
                   <>
-                    <Input label="邮箱" id="email" required placeholder="请输入邮箱" ref={emailRef} />
+                    <Input label="邮箱" id="email" required placeholder="请输入邮箱" defaultValue={props.initialIdentity?.email || ''} ref={emailRef} />
                     <Input label="验证码" id="code" required placeholder="请输入验证码" ref={codeRef}>
-                      <Button className={styles['code-button']} size="small" disabled={formBusy} onClick={() => run(handleSendCode)}>{codeSent ? '重新发送' : '获取验证码'}</Button>
+                      <Button type="button" className={styles['code-button']} size="small" disabled={formBusy} onClick={() => run(handleSendCode)}>{codeSent ? '重新发送' : '获取验证码'}</Button>
                     </Input>
                   </>
                 )}
               </div>
               {formError && <p role="alert">{formError}</p>}
               {codeSent && activeTab === 'register' && <p role="status">验证码已发送，请查看邮箱。</p>}
-              <Button size="small" disabled={formBusy} className={cn(styles.loginBtn)} onClick={() => run(activeTab === 'register' ? handleRegister : handleLogin)}>{formBusy ? '正在连接…' : activeTab === 'register' ? '注册' : '登录'}</Button>
-            </div>
+              <Button type="submit" size="small" disabled={formBusy} className={cn(styles.loginBtn)}>{formBusy ? '正在连接…' : activeTab === 'register' ? '注册' : '登录'}</Button>
+            </form>
           </>}
         <div className={styles.accountManagementFooter}>
           <Link href="/home">浏览首页 ↗</Link>

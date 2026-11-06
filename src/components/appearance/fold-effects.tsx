@@ -201,7 +201,10 @@ export default function FoldEffects() {
         return true
       }
       const draw = (now: number) => {
-        paint.clearRect(0, 0, width, height)
+        // The voyage cover is static while content loads. Preserve those
+        // pixels; resize repaints synchronously and opening resumes drawing.
+        const retainVoyageCover = design === 'voyage' && !!coveredAt && !openedAt
+        if (!retainVoyageCover) paint.clearRect(0, 0, width, height)
         if (!coveredAt && now - began < COVER_MS) drawPanels((now - began) / COVER_MS, false)
         else {
           if (!coveredAt) {
@@ -214,10 +217,11 @@ export default function FoldEffects() {
             openedAt = now; clearTimeout(timer); phase('opening')
           }
           if (openedAt) {
+            if (retainVoyageCover) paint.clearRect(0, 0, width, height)
             const progress = Math.min(1, (now - openedAt) / REVEAL_MS)
             drawPanels(progress, true)
             if (progress === 1) { clear(); return }
-          } else drawPanels(1, false)
+          } else if (!retainVoyageCover) drawPanels(1, false)
         }
         frame = requestAnimationFrame(draw)
       }
@@ -231,6 +235,9 @@ export default function FoldEffects() {
       else if (pending && detail.navigate) pending = detail
     }
     const key = (event: KeyboardEvent) => { if (active && event.key === 'Escape') skip() }
+    // Browser Back/Forward supersedes a pending route. Unlike Escape, it must
+    // discard that route instead of handing it off after the curtain closes.
+    const historyNavigation = () => { if (active) clear() }
     const preference = () => { if (motion.matches) skip() }
     const visibility = () => { if (document.hidden) skip() }
     const unsubscribe = useRainConnection.subscribe(({ connection }) => { if (connection) clear() })
@@ -239,10 +246,12 @@ export default function FoldEffects() {
     document.addEventListener('visibilitychange', visibility)
     motion.addEventListener('change', preference)
     window.addEventListener('resize', resize)
+    window.addEventListener('popstate', historyNavigation)
     return () => {
       unsubscribe(); stopPalette(); document.removeEventListener(FOLD_TRANSITION_EVENT, request)
       document.removeEventListener('keydown', key); document.removeEventListener('visibilitychange', visibility)
       motion.removeEventListener('change', preference); window.removeEventListener('resize', resize)
+      window.removeEventListener('popstate', historyNavigation)
       skip()
     }
   }, [design])

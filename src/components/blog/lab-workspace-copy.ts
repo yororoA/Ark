@@ -1,0 +1,8 @@
+import type { Locale } from '@/lib/blog'
+
+export const LAB_WORKSPACE_COPY = {
+  zh: { workspace: '函数变速工作区', experiment: '实验 001', loading: '正在载入工具…', ready: '工具已就绪', slow: '工具还未确认就绪。可以继续等待，或重新载入。', failed: '工具未能完成载入。请重试或单独打开。', close: '关闭工作区', retry: '重新载入', external: '在新窗口打开工具', status: '工具状态' },
+  en: { workspace: 'Variable-speed workspace', experiment: 'Experiment 001', loading: 'Loading the tool…', ready: 'Tool ready', slow: 'The tool has not confirmed it is ready. Keep waiting or reload it.', failed: 'The tool could not finish loading. Retry or open it separately.', close: 'Close workspace', retry: 'Reload tool', external: 'Open tool in a new window', status: 'Tool status' },
+  ja: { workspace: '関数変速ワークスペース', experiment: '実験 001', loading: 'ツールを読み込み中…', ready: 'ツールの準備ができました', slow: '準備完了をまだ確認できません。お待ちいただくか、再読み込みしてください。', failed: 'ツールを読み込めませんでした。再試行するか、別のウィンドウで開いてください。', close: 'ワークスペースを閉じる', retry: '再読み込み', external: '新しいウィンドウでツールを開く', status: 'ツールの状態' },
+  de: { workspace: 'Arbeitsbereich für variable Geschwindigkeit', experiment: 'Experiment 001', loading: 'Werkzeug wird geladen…', ready: 'Werkzeug bereit', slow: 'Das Werkzeug hat seine Bereitschaft noch nicht bestätigt. Warte weiter oder lade es neu.', failed: 'Das Werkzeug konnte nicht vollständig geladen werden. Versuche es erneut oder öffne es separat.', close: 'Arbeitsbereich schließen', retry: 'Neu laden', external: 'Werkzeug in einem neuen Fenster öffnen', status: 'Werkzeugstatus' },
+} satisfies Record<Locale, Record<'workspace' | 'experiment' | 'loading' | 'ready' | 'slow' | 'failed' | 'close' | 'retry' | 'external' | 'status', string>>

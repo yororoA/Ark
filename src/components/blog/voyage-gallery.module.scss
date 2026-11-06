@@ -1,0 +1,87 @@
+// Keep the shared viewer's pan, zoom, focus, and video controls. Only this
+// gallery's presentation changes; media opened in a conversation stays intact.
+:global(html[data-design='voyage']) .gallery {
+  figcaption > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  figcaption > time { flex: none; }
+
+  dialog[data-variant='media'] {
+    --paper: #080f26;
+    --ink: #edf0e8;
+    --muted: #b9c4df;
+    --line: #edf0e833;
+    --accent: #e6ff62;
+    --soft: #050b20;
+    width: min(1240px, calc(100vw - 64px));
+    max-width: none;
+    height: min(940px, calc(var(--dialog-viewport-height, 100dvh) - 48px));
+    max-height: none;
+    padding: 16px 22px 12px;
+    gap: 0;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 28px 100px #0008;
+    animation: viewer-arrive .2s ease-out both;
+
+    &::backdrop { background: #030717d9; backdrop-filter: blur(8px); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    button { min-width: 44px; min-height: 44px; color: var(--ink); border-color: var(--line); border-radius: 0; background: transparent; }
+    button:not(:disabled):is(:hover,:focus-visible) { color: var(--accent); border-color: var(--accent); background: #edf0e80a; }
+    button:disabled { opacity: .4; }
+    [data-dialog-header] {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 44px;
+      align-items: start;
+      gap: 18px;
+      max-height: min(22svh, 160px);
+      margin: 0 0 12px;
+      padding: 0;
+      border: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      h2 { align-self: center; padding-block: 6px; margin: 0; font: 400 21px/1.45 var(--font-noto-serif),serif; letter-spacing: .01em; }
+      button { position: sticky; top: 0; width: 44px; height: 44px; border-color: transparent; }
+    }
+    [data-media-preview-stage] { min-height: 100px; display: block; background: var(--soft); }
+    [data-media-preview-canvas], [data-media-preview-canvas] img { background: transparent; }
+    [data-media-preview-canvas] img[data-media-ready='true'] { animation: image-arrive .2s ease-out both; }
+    [data-media-preview-stage] > video { background: var(--soft); width: 100%; height: 100%; object-fit: contain; }
+    [data-media-preview-footer] { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; margin: 10px 0 0; padding: 0; }
+    [data-media-preview-navigation] { grid-area: auto; gap: 6px; button { padding: 8px 12px; font-size: 11px; } }
+    [data-media-preview-counter] { grid-area: auto; color: var(--muted); font: 10px/1.5 var(--font-ibm-plex),sans-serif; letter-spacing: .04em; text-align: center; }
+    [data-media-preview-zoom] { grid-area: auto; justify-self: end; gap: 2px; button { width: 44px; height: 44px; border-color: transparent; } output { width: 42px; color: var(--muted); font-size: 11px; } }
+  }
+
+  @media(max-width:700px) {
+    dialog[data-variant='media'] {
+      width: 100%;
+      height: var(--dialog-viewport-height, 100dvh);
+      padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+      border: 0;
+      [data-dialog-header] { max-height: min(21svh, 130px); margin-bottom: 10px; gap: 12px; h2 { font-size: 17px; line-height: 1.55; } }
+      [data-media-preview-stage] { width: calc(100% + 24px); margin-inline: -12px; min-height: 90px; }
+      [data-media-preview-footer] { grid-template-columns: minmax(0,1fr) auto; gap: 4px 10px; margin-top: 8px; }
+      [data-media-preview-counter] { grid-column: 1 / -1; grid-row: 1; text-align: left; font-size: 10px; padding-block: 3px; }
+      [data-media-preview-navigation] { grid-column: 1; grid-row: 2; gap: 3px; button { width: 44px; padding: 0; gap: 0; font-size: 0; border-color: transparent; } svg { width: 19px; height: 19px; } }
+      [data-media-preview-zoom] { grid-column: 2; grid-row: 2; }
+    }
+  }
+  @media(max-height:500px) {
+    dialog[data-variant='media'] {
+      width: calc(100% - 16px);
+      height: calc(var(--dialog-viewport-height, 100dvh) - 16px);
+      padding: 8px 12px;
+      [data-dialog-header] { max-height: 66px; margin-bottom: 6px; h2 { font-size: 15px; } }
+      [data-media-preview-stage] { min-height: 76px; }
+      [data-media-preview-footer] { margin-top: 5px; }
+    }
+  }
+  @media(prefers-reduced-motion:reduce) {
+    dialog[data-variant='media'], [data-media-preview-canvas] img { animation: none; }
+    dialog[data-variant='media'] * { transition: none; }
+  }
+}
+
+@keyframes viewer-arrive { from { opacity: .65; } to { opacity: 1; } }
+@keyframes image-arrive { from { opacity: .6; } to { opacity: 1; } }

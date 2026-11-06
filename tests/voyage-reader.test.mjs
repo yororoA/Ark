@@ -58,6 +58,52 @@ function outlineLinks(page) {
   return page.getByTestId('voyage-reading-outline').locator('a[href*="-section-"]')
 }
 
+async function moveWithinChapter(page, index, fraction) {
+  await page.locator('[data-voyage-prose]').evaluate((prose, { index, fraction }) => {
+    const headings = Array.from(prose.querySelectorAll('h2, h3, h4'))
+    const header = document.querySelector('[data-blog-root] > header')
+    const guide = document.querySelector('[data-testid="voyage-reading-guide"]')
+    const offset = header.getBoundingClientRect().height + (innerWidth <= 980 ? guide.getBoundingClientRect().height : 0) + 24
+    const from = headings[index].getBoundingClientRect().top + scrollY - offset
+    const to = headings[index + 1].getBoundingClientRect().top + scrollY - offset
+    const navigation = document.querySelector('[data-blog-root] > nav')
+    const navRect = navigation.getBoundingClientRect()
+    const bottom = navRect.height > 0 && getComputedStyle(navigation).position === 'fixed' ? Math.min(innerHeight, navRect.top) : innerHeight
+    const height = Math.max(0, bottom - offset)
+    const start = prose.firstElementChild.getBoundingClientRect().top + scrollY - offset
+    const end = prose.lastElementChild.getBoundingClientRect().bottom + scrollY - bottom
+    const sweepStart = Math.max(start, end - height), sweepLength = end - sweepStart
+    const desired = from + (to - from) * fraction
+    const top = desired > sweepStart && sweepLength > 0 ? sweepStart + (desired - sweepStart) * sweepLength / (sweepLength + height) : desired
+    scrollTo({ top, behavior: 'instant' })
+  }, { index, fraction })
+}
+
+async function assertRoutePosition(page, index) {
+  await expect.poll(() => page.getByTestId('voyage-reading-route').evaluate((map, index) => {
+    const headings = document.querySelectorAll('[data-voyage-prose] h2, [data-voyage-prose] h3, [data-voyage-prose] h4')
+    const points = map.querySelectorAll('[data-route-station]')
+    const header = document.querySelector('[data-blog-root] > header')
+    const guide = document.querySelector('[data-testid="voyage-reading-guide"]')
+    const offset = header.getBoundingClientRect().height + (innerWidth <= 980 ? guide.getBoundingClientRect().height : 0) + 24
+    const prose = document.querySelector('[data-voyage-prose]')
+    const navigation = document.querySelector('[data-blog-root] > nav')
+    const navRect = navigation.getBoundingClientRect()
+    const bottom = navRect.height > 0 && getComputedStyle(navigation).position === 'fixed' ? Math.min(innerHeight, navRect.top) : innerHeight
+    const height = Math.max(0, bottom - offset)
+    const start = prose.firstElementChild.getBoundingClientRect().top + scrollY - offset
+    const end = prose.lastElementChild.getBoundingClientRect().bottom + scrollY - bottom
+    const sweepStart = Math.max(start, end - height), sweepLength = end - sweepStart
+    const readingLine = offset + (sweepLength > 0 ? height * Math.max(0, Math.min(1, (scrollY - sweepStart) / sweepLength)) : 0)
+    const from = headings[index].getBoundingClientRect().top, to = headings[index + 1].getBoundingClientRect().top
+    const ratio = Math.max(0, Math.min(1, (readingLine - from) / (to - from)))
+    const fromPoint = points[index].getBoundingClientRect(), toPoint = points[index + 1].getBoundingClientRect()
+    const expected = fromPoint.top + fromPoint.height / 2 + (toPoint.top + toPoint.height / 2 - fromPoint.top - fromPoint.height / 2) * ratio
+    const beacon = map.querySelector('[data-testid="voyage-reading-route-beacon"]').getBoundingClientRect()
+    return Math.abs(beacon.top + beacon.height / 2 - expected)
+  }, index)).toBeLessThan(1.5)
+}
+
 async function revealOutline(page) {
   const outline = page.getByTestId('voyage-reading-outline')
   if (!(await outline.evaluate(element => element.open))) await outline.locator('summary').click()
@@ -146,6 +192,100 @@ for (const width of [320, 1440]) for (const mode of ['light', 'dark']) {
     }
   })
 }
+
+for (const width of [1440, 320]) test(`Voyage chapter route follows real passage distance and the article end: ${width}px`, async t => {
+  const { page } = await session(t, width, width === 320 ? 'dark' : 'light')
+  await ready(page)
+  await revealOutline(page)
+  await moveWithinChapter(page, 0, .5)
+  await assertRoutePosition(page, 0)
+  await expect(outlineLinks(page).nth(0)).toHaveAttribute('aria-current', 'location')
+  const beacon = page.getByTestId('voyage-reading-route-beacon')
+  const before = await beacon.getAttribute('style')
+  const wholePercent = await progress(page)
+  await page.evaluate(() => scrollBy({ top: 4, behavior: 'instant' }))
+  await expect.poll(() => beacon.getAttribute('style')).not.toBe(before)
+  assert.equal(await progress(page), wholePercent, 'The route can move within a displayed whole percent')
+  await assertRoutePosition(page, 0)
+  await moveWithinChapter(page, 2, .7)
+  await assertRoutePosition(page, 2)
+  await expect(outlineLinks(page).nth(1)).toHaveAttribute('data-passed', 'true')
+  await expect(outlineLinks(page).nth(2)).toHaveAttribute('aria-current', 'location')
+  if (shots) await page.screenshot({ path: `${shots}/reader-route-${width}-midpoint.png` })
+  if (width === 320) {
+    await page.getByTestId('voyage-reading-outline').locator('summary').click()
+    const closed = await beacon.getAttribute('style')
+    await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }))
+    await expect.poll(() => progress(page)).toBe(0)
+    assert.equal(await beacon.getAttribute('style'), closed, 'A closed mobile route does not redraw unseen geometry')
+    await revealOutline(page)
+  }
+  await page.locator('[data-voyage-prose]').evaluate(prose => {
+    const navigation = document.querySelector('[data-blog-root] > nav')
+    const rect = navigation.getBoundingClientRect()
+    const bottom = rect.height > 0 && getComputedStyle(navigation).position === 'fixed' ? Math.min(innerHeight, rect.top) : innerHeight
+    scrollTo({ top: prose.lastElementChild.getBoundingClientRect().bottom + scrollY - bottom + 1, behavior: 'instant' })
+  })
+  await expect.poll(() => progress(page)).toBe(100)
+  await expect.poll(() => page.getByTestId('voyage-reading-route').evaluate(map => {
+    const beacon = map.querySelector('[data-testid="voyage-reading-route-beacon"]').getBoundingClientRect()
+    const end = map.querySelector('[data-route-end]').getBoundingClientRect()
+    return Math.abs(beacon.top + beacon.height / 2 - end.top - end.height / 2)
+  })).toBeLessThan(1.5)
+  if (shots) await page.screenshot({ path: `${shots}/reader-route-${width}-end.png` })
+})
+
+for (const width of [1440, 320]) test(`Voyage route reaches tightly spaced final headings continuously, with a scrollable long outline: ${width}px`, async t => {
+  const { page } = await session(t, width)
+  await ready(page, '/articles/ffffffffffffffffffffffff')
+  await revealOutline(page)
+  await expect(outlineLinks(page)).toHaveCount(28)
+  const end = await page.locator('[data-voyage-prose]').evaluate(prose => {
+    const navigation = document.querySelector('[data-blog-root] > nav'), rect = navigation.getBoundingClientRect()
+    const bottom = rect.height > 0 && getComputedStyle(navigation).position === 'fixed' ? Math.min(innerHeight, rect.top) : innerHeight
+    return prose.lastElementChild.getBoundingClientRect().bottom + scrollY - bottom
+  })
+  await page.evaluate(top => scrollTo({ top, behavior: 'instant' }), end - 2)
+  await expect.poll(() => progress(page)).toBe(99)
+  const currentParagraph = await page.locator('[data-voyage-prose]').evaluate(prose => {
+    const header = document.querySelector('[data-blog-root] > header'), guide = document.querySelector('[data-testid="voyage-reading-guide"]')
+    const line = header.getBoundingClientRect().height + (innerWidth <= 980 ? guide.getBoundingClientRect().height : 0) + 24
+    return Array.from(prose.querySelectorAll('h2, h3, h4')).findLastIndex(heading => heading.getBoundingClientRect().top <= line + 4)
+  })
+  assert(currentParagraph < 27, 'Several final notes are still visible below the current paragraph')
+  await expect(outlineLinks(page).nth(currentParagraph)).toHaveAttribute('aria-current', 'location')
+  await expect(outlineLinks(page).nth(27)).toHaveAttribute('data-passed', 'true')
+  const route = page.getByTestId('voyage-reading-route')
+  await page.evaluate(() => {
+    const container = document.querySelector(innerWidth <= 980 ? '[data-testid="voyage-reading-route"]' : '[data-testid="voyage-reading-guide"]')
+    container.scrollTop = container.scrollHeight
+  })
+  const distanceToEnd = () => route.evaluate(map => {
+    const beacon = map.querySelector('[data-testid="voyage-reading-route-beacon"]').getBoundingClientRect()
+    const end = map.querySelector('[data-route-end]').getBoundingClientRect()
+    return end.top + end.height / 2 - beacon.top - beacon.height / 2
+  })
+  await expect.poll(distanceToEnd).toBeGreaterThan(0)
+  const before = await distanceToEnd()
+  assert(before < 5, 'The beacon must already be near the terminal, not skip final stations at 100%')
+  const height = await route.evaluate(map => map.scrollHeight)
+  await page.evaluate(top => scrollTo({ top, behavior: 'instant' }), end + 1)
+  await expect.poll(() => progress(page)).toBe(100)
+  await expect.poll(async () => Math.abs(await distanceToEnd())).toBeLessThan(1.5)
+  await page.setViewportSize({ width: width + 1, height: width === 320 ? 720 : 1000 })
+  await expect.poll(async () => Math.abs(await distanceToEnd())).toBeLessThan(1.5)
+  assert.equal(await route.evaluate(map => map.scrollHeight), height, 'Route redraws do not enlarge their own scroll container')
+})
+
+test('Voyage keeps the anchored paragraph current while the final visible route advances', async t => {
+  const { page } = await session(t)
+  await ready(page)
+  await outlineLinks(page).nth(3).click()
+  await assertDestination(page, 3)
+  await expect(page.getByTestId('voyage-reading-guide').locator('p').first()).toHaveText(/Pocket note/)
+  await expect(outlineLinks(page).nth(4)).toHaveAttribute('data-passed', 'true')
+  assert((await progress(page)) < 100, 'The short final paragraph remains an ordinary 99% anchor destination')
+})
 
 test('Voyage reader honors initial deep links and browser Back without fetching again', async t => {
   const { page, context, contentRequests } = await session(t)

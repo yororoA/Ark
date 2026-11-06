@@ -54,6 +54,7 @@
   --code-ink: var(--voyage-light, #edf0e8);
   --code-accent: var(--voyage-signal, #e6ff62);
   border-top: 6px solid var(--voyage-sea, #102cce);
+  :is(a,button,[tabindex='0']):focus-visible { outline-color: var(--code-accent); }
   .period { display: inline-flex; align-items: center; gap: 9px; &::before { content: ''; width: 5px; height: 5px; background: var(--code-accent); border-radius: 50%; } }
   .repositoryValue { color: var(--code-ink); }
   .languageTrack { height: 2px; }

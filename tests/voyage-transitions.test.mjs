@@ -178,7 +178,8 @@ test('Voyage pending identity remains cancellable and ignores a late success', a
   await page.goto(`${baseURL}/login?returnTo=%2Farticles`)
   await page.getByRole('button', { name: '建立连接', exact: true }).click()
   const connection = page.getByTestId('voyage-connection')
-  await expect(connection).toHaveAttribute('data-phase', 'covered')
+  await expect(connection).toHaveAttribute('data-waiting', 'identity')
+  await expect(connection).toHaveAttribute('data-station', '1')
   await expect(connection).toHaveAttribute('data-status', 'pending')
   assert.equal(new URL(page.url()).pathname, '/login', 'A complete scene does not invent authentication success')
   for (let i = 0; i < 5; i++) {
@@ -280,3 +281,78 @@ test('Voyage covered resize stays opaque and Escape releases the curtain', async
   await page.waitForURL('**/articles')
   await expect(page.locator('main h1')).toBeVisible()
 })
+
+test('Voyage holds a static opaque canvas while destination content is pending', async t => {
+  const { context, page } = await session(t)
+  const gate = await holdArticles(context, t)
+  await page.goto(`${baseURL}/home`, { waitUntil: 'networkidle' })
+  await page.locator('header nav a[href="/articles"]').first().click()
+  const curtain = page.getByTestId('voyage-wipe')
+  await expect(curtain).toHaveAttribute('data-phase', 'covered')
+  await curtain.locator('canvas').evaluate(canvas => {
+    const context = canvas.getContext('2d')
+    window.voyageDrawCounts = { clearRect: 0, fillRect: 0 }
+    for (const method of ['clearRect', 'fillRect']) {
+      const original = context[method]
+      context[method] = function (...args) {
+        window.voyageDrawCounts[method]++
+        return original.apply(this, args)
+      }
+    }
+  })
+  await page.waitForTimeout(500)
+  await expect(curtain).toHaveAttribute('data-phase', 'covered')
+  assert.deepEqual(await page.evaluate(() => window.voyageDrawCounts), { clearRect: 0, fillRect: 0 }, 'An unchanged waiting screen does not repaint each frame')
+  const alpha = await curtain.locator('canvas').evaluate(canvas => {
+    const context = canvas.getContext('2d'), alpha = []
+    for (const x of [.01, .5, .99]) for (const y of [.01, .5, .99]) alpha.push(context.getImageData(Math.floor(canvas.width * x), Math.floor(canvas.height * y), 1, 1).data[3])
+    return alpha
+  })
+  assert(alpha.every(value => value === 255), 'Retaining the frame keeps every edge opaque')
+  gate.release()
+  await page.waitForURL('**/articles')
+  await expect(curtain).toHaveAttribute('data-phase', 'idle')
+  assert(await page.evaluate(() => window.voyageDrawCounts.clearRect > 0 && window.voyageDrawCounts.fillRect > 0), 'Ready content resumes the authored reveal')
+  await expect(page.locator('main h1')).toBeVisible()
+})
+
+for (const phase of ['closing', 'covered', 'opening']) {
+  test(`Voyage browser history supersedes an active ${phase} transition`, async t => {
+    const { context, page } = await session(t)
+    const gate = phase === 'covered' ? await holdArticles(context, t) : null
+    const source = phase === 'covered' ? '/archive' : '/articles'
+    const destination = phase === 'covered' ? '/articles' : '/archive'
+    const curtain = page.getByTestId('voyage-wipe')
+    await page.goto(`${baseURL}/home`, { waitUntil: 'networkidle' })
+    await page.locator(`header nav a[href="${source}"]`).first().click()
+    await page.waitForURL(`**${source}`)
+    await expect(curtain).toHaveAttribute('data-phase', 'idle')
+    await page.locator(`header nav a[href="${destination}"]`).first().click()
+    await expect(curtain).toHaveAttribute('data-phase', phase)
+    if (phase === 'closing') {
+      await page.waitForTimeout(75)
+      await expect(curtain).toHaveAttribute('data-phase', 'closing')
+    }
+    if (gate) {
+      await expect.poll(() => gate.requests).toBeGreaterThan(0)
+      await expect(curtain).toHaveAttribute('data-phase', 'covered')
+    }
+    // Use actual browser history, not a fabricated popstate or a routed link.
+    await page.goBack()
+    const backPath = phase === 'opening' ? source : '/home'
+    await page.waitForURL(`**${backPath}`)
+    await expect(curtain).toHaveAttribute('data-phase', 'idle')
+    gate?.release()
+    await page.waitForTimeout(800)
+    assert.equal(new URL(page.url()).pathname, backPath, 'A cancelled destination must not overwrite the history choice')
+    assert.equal(await page.locator('html').getAttribute('data-voyage-wipe'), null)
+    assert.equal(await curtain.evaluate(element => element.matches(':popover-open')), false)
+    // Forward history and subsequent uninterrupted transitions still work.
+    await page.goForward()
+    await page.waitForURL(`**${phase === 'opening' ? destination : source}`)
+    await page.locator('header nav a[href="/moments"]').first().click()
+    await page.waitForURL('**/moments')
+    await expect(curtain).toHaveAttribute('data-phase', 'idle')
+    await assertInteractive(page)
+  })
+}

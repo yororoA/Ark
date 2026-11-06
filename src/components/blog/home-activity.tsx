@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, ArrowUpRight } from 'lucide-react'
 import Link from '@/components/appearance/p3r-link'
 import { translate, type Locale } from '@/lib/blog'
 import HomeCodeActivity from './home-code-activity'
+import VoyageDial from './voyage-dial'
 import styles from './home-activity.module.scss'
 
 type ActivityDesign = 'voyage' | 'allotype' | 'fold'
@@ -79,24 +80,8 @@ function Calendar({ locale, design, activeDates }: { locale: Locale; design: Act
     selectDay(next, true)
   }
   return <div className={styles.calendarBody}>
-    <div className={styles.instrument} data-testid="calendar-overview" aria-hidden="true">
-      {design === 'voyage' ? <>
-        <span className={styles.chartNumber}>84<small>DAYS / 一段航迹</small></span>
-        <svg viewBox="0 0 520 520" className={styles.dial}>
-          <circle className={styles.orbit} cx="260" cy="260" r="234" />
-          <circle className={styles.orbit} cx="260" cy="260" r="174" strokeDasharray="1 8" />
-          <path className={styles.crosshair} d="M260 10V38M260 482V510M10 260H38M482 260H510" />
-          {days.map((day, index) => <g key={day} data-date={day} data-active={active.has(day)} data-week={Math.floor(index / 7) === week} className={styles.tick} transform={`rotate(${index / 84 * 360} 260 260)`}>
-            <path d={`M260 ${active.has(day) ? 55 : 72}V${index % 7 === 0 ? 104 : 93}`} />
-            {active.has(day) && <circle cx="260" cy="120" r="3" />}
-          </g>)}
-          <g className={styles.needle} style={{ transform: `rotate(${selected / 84 * 360}deg)` }}>
-            <path d="M260 49V139" /><circle cx="260" cy="49" r="8" /><circle className={styles.needleCore} cx="260" cy="49" r="3" />
-          </g>
-        </svg>
-        <div className={styles.dialDate}><span>{current.slice(0, 7).replace('-', ' / ')}</span><strong>{current.slice(-2)}</strong><span>{weekdayFormat.format(new Date(`${current}T00:00:00Z`))}</span><i data-active={recorded} /></div>
-        <div className={styles.chartEnds}><span>{copy.origin}<b>{days[0].slice(5).replace('-', '.')}</b></span><span>{copy.today}<b>{days[83].slice(5).replace('-', '.')}</b></span></div>
-      </> : <>
+    <div className={styles.instrument} data-testid="calendar-overview" aria-hidden={design !== 'voyage' || undefined}>
+      {design === 'voyage' ? <VoyageDial days={days} active={active} selected={selected} locale={locale} onSelect={selectDay}/> : <>
         <div className={styles.printHeading}><span>84 / {copy.period}</span><strong>{String(count).padStart(2, '0')}<small>{copy.days}</small></strong></div>
         <svg className={styles.print} viewBox="0 0 480 280">
           {days.map((day, index) => <g key={day} data-date={day} data-active={active.has(day)} data-week={Math.floor(index / 7) === week} data-selected={index === selected} className={styles.printDay} transform={`translate(${Math.floor(index / 7) * 40 + 20} ${(index % 7) * 40 + 20})`}>
@@ -123,7 +108,7 @@ function Calendar({ locale, design, activeDates }: { locale: Locale; design: Act
           <small>{weekdayFormat.format(new Date(`${day}T00:00:00Z`))}</small><strong>{day.slice(-2)}</strong><i />
         </button>)}
       </div>
-      <div className={styles.selectedDay} aria-live="polite" aria-atomic="true">
+      <div className={styles.selectedDay}>
         <time dateTime={current}>{current.replaceAll('-', ' / ')}</time>
         <p>{recorded ? copy.recorded : copy.quiet}</p>
       </div>

@@ -148,13 +148,13 @@ export default function VoyageHome({ locale, articles, moments, articleState, mo
     if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5) select(selected + (dx < 0 ? 1 : -1))
   }
   const renderPreview = (record: AtlasStop, index: number, ghost = false, key = `current-${index}`, pose: PreviewPose = {}, exitDirection = direction) => <div key={key} className={`${styles.previewInner}${ghost ? ` ${styles.previewGhost}` : ''}`} aria-hidden={ghost || undefined} inert={ghost || undefined} data-preview-layer={ghost ? 'outgoing' : 'current'} style={ghost ? { '--travel-direction': exitDirection } as CSSProperties : undefined}>
-    <div className={styles.previewImage} style={pose.image} aria-hidden="true">{record.image ? <img src={record.image} alt="" /> : <VoyageArt animated={false} compact/>}<span className={styles.imageIndex}>0{index + 1}</span></div>
+    <div className={styles.previewImage} style={pose.image} aria-hidden="true">{record.image ? <img src={record.image} alt="" /> : <VoyageArt animated={false} compact/>}<span className={styles.imageCaption}>0{index + 1} / {record.category}</span><span className={styles.imageIndex}>0{index + 1}</span></div>
     <div className={styles.previewMeta} style={pose.meta}><span><i/>{record.label}</span>{record.date ? <time dateTime={record.date}>{dateLabel(record.date, locale)}</time> : <span>YOROROICE / {record.category}</span>}</div>
     <div className={styles.previewText}><span className={styles.previewCategory} style={pose.category}>{record.category}</span><h2 style={pose.title}><Link href={record.href}>{record.title}</Link></h2><p style={pose.note}>{record.note}</p><Link style={pose.open} className={styles.openPage} href={record.href}><span>{atlas.open}</span><ArrowUpRight size={25} strokeWidth={1.3}/></Link></div>
     <span className={styles.previewRail} aria-hidden="true">WORDS BECOME PLACES. / 0{index + 1}</span>
   </div>
   return <div ref={home} className={styles.home} data-testid="voyage-home" lang={locale}>
-    <section className={styles.hero} aria-labelledby="voyage-title">
+    <section className={styles.hero} aria-labelledby="voyage-title" data-voyage-enter>
       <div className={styles.spine}>
         <div className={styles.topline}><span>YOROROICE / ARK</span><span>VOL. 07</span></div>
         <div className={styles.titleBlock}><h1 id="voyage-title" data-cjk={eastAsian} aria-label={copy.title}><span><b>{copy.words[0]}</b></span><span><b>{copy.words[1]}</b></span></h1><span className={styles.spineEnglish} aria-hidden="true">NIGHT<br/>VOYAGE</span></div>
@@ -191,7 +191,7 @@ export default function VoyageHome({ locale, articles, moments, articleState, mo
     </section>
     <section className={styles.moments} data-voyage-enter>
       <header className={styles.momentIntro}><span>02 / DISPATCHES</span><h2>{copy.moments}</h2><p>{copy.note}</p><Link href="/moments">{translate(locale, 'all')}<ArrowUpRight size={20}/></Link><div className={styles.signalBars} aria-hidden="true">{Array.from({length: 18}, (_, i) => <i key={i} style={{ height: `${12 + ((i * 17 + 9) % 47)}px` }}/>)}</div></header>
-      <div className={styles.momentList}>{momentState}{moments.slice(0, 3).map((entry, index) => <Link key={entry._id} href={`/moments/${entry._id}`} className={styles.moment}><div className={styles.momentDate}><span>0{index + 1}</span><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><ArrowUpRight size={20}/></div><h3>{entry.title}</h3><p>{excerpt(entry.content, 130)}</p></Link>)}</div>
+      <div className={styles.momentList}>{momentState}{moments.slice(0, 3).map((entry, index) => <Link key={entry._id} href={`/moments/${entry._id}`} className={styles.moment}><div className={styles.momentDate}><span>0{index + 1}</span><time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time><ArrowUpRight size={20}/></div><h3>{entry.title}</h3><p>{excerpt(articlePreview(entry.content).content, 130)}</p></Link>)}</div>
     </section>
     {activity}
     <aside className={styles.closing} data-voyage-enter><div className={styles.closingArt}><VoyageArt animated={false} compact/></div><span className={styles.closingLabel}>END OF PAGE / NOT THE JOURNEY</span><p>{copy.closing}</p><Link href="/about"><span>{copy.about}</span><ArrowUpRight strokeWidth={1}/></Link><span className={styles.closingEnglish} aria-hidden="true">ONWARD.</span></aside>

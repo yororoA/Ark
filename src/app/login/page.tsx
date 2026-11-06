@@ -8,7 +8,7 @@ import { syncAuthDetails, useAuthStore } from '@/store/auth';
 
 import styles from './login.module.scss';
 import Declaration from "./components/declaration";
-import AccountManagement from "./components/accountManagement";
+import AccountManagement, { type AccountFormIdentity } from "./components/accountManagement";
 import ConnectionSequence, { type ConnectionState } from "./components/connectionSequence";
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -91,6 +91,7 @@ function Login() {
 
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
   const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
+  const [formIdentity, setFormIdentity] = useState<AccountFormIdentity | undefined>();
   const [connection, setConnection] = useState<ConnectionState | null>(null);
   const [connectionDesign, setConnectionDesign] = useState<Design>('archive');
   const connectingRef = useRef(false);
@@ -105,6 +106,12 @@ function Login() {
   const handleConnect = async (params: ConnectParams) => {
     if (connectingRef.current) return;
     connectingRef.current = true;
+    // Retain only non-secret form fields for a failed attempt within this page.
+    setFormIdentity(params.action === 'login' || params.action === 'register' ? {
+      mode: params.action,
+      username: params.username,
+      ...(params.action === 'register' ? { email: params.email } : {}),
+    } : undefined);
     const requestId = ++requestIdRef.current;
     let uid = params.action === 'switch' ? params.uid || details[0]?.uid || '' : '';
     const username = params.action === 'switch'
@@ -140,6 +147,7 @@ function Login() {
     }
 
     if (requestId === requestIdRef.current) {
+      setFormIdentity(undefined);
       const authenticated = useAuthStore.getState().details.find(detail =>
         params.action === 'switch' || params.action === 'guest' ? detail.uid === uid : detail.username === username
       );
@@ -244,7 +252,10 @@ function Login() {
             </> : <button className={styles['primary-action']} onClick={() => setIsAccountManagementVisible(true)}>登录 / 注册<ArrowUpRight size={17} /></button>}
           </section>
         </main>
-        {showAccountManagement && <AccountManagement details={details} preferredMode={mode} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
+        {showAccountManagement && <AccountManagement details={details} preferredMode={mode} initialIdentity={formIdentity} onResetIdentity={() => setFormIdentity(undefined)} onClose={() => {
+          setFormIdentity(undefined);
+          setIsAccountManagementVisible(false);
+        }} onConnect={handleConnect} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
         <footer className={styles['login-footer']}>
           <span>© 2026 YOROROICE / PERSONAL ARCHIVE</span>

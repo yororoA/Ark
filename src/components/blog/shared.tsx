@@ -13,6 +13,7 @@ import RainPlanes from '@/components/appearance/rain-planes'
 import P3RScene from '@/components/appearance/p3r-scene'
 import PrismScene from '@/components/appearance/prism-scene'
 import type { ManagedUploadItem } from './media-upload'
+import VoyageCodeBlock from './voyage-code-block'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
@@ -46,6 +47,8 @@ export function State({ loading, error, empty, retry }: { loading?: boolean; err
 }
 
 const markdownComponents: Components = {
+  pre: VoyageCodeBlock,
+  table: ({ children }) => <table tabIndex={0}>{children}</table>,
   a: ({ children, ...props }) => <a {...props} target="_blank" rel="noreferrer">{children}</a>,
   h1: ({ children }) => <h2 data-source-heading="h1">{children}</h2>,
 }
@@ -125,7 +128,7 @@ export function Modal({ title, children, close, variant = 'default', description
   return <dialog ref={ref} className={styles['dialog']} data-variant={variant} role={variant === 'confirm' ? 'alertdialog' : undefined} aria-label={title} aria-describedby={descriptionId} onKeyDown={e => {
     const isNestedControl = e.target instanceof HTMLElement && !!e.target.closest('[data-blog-control-popup]')
     if (e.key === 'Escape' && !e.defaultPrevented && !isNestedControl) { e.preventDefault(); close() }
-  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button type="button" className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
+  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']} data-dialog-header><h2>{title}</h2><button type="button" className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
 }
 
 export function DeleteButton({ name, onDelete, iconOnly = false }: { name: string; onDelete: () => Promise<void>; iconOnly?: boolean }) {
@@ -270,6 +273,7 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
     <div
       ref={mediaRef}
       className={styles['preview-media']}
+      data-media-preview-stage
       data-compact={compact}
       data-image={isImage}
       data-panning={panning}
@@ -283,16 +287,16 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
       onLostPointerCapture={endPan}
     >
       {isImage
-        ? <div className={styles['preview-canvas']} style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={item.desc || item.filename} style={{ transform: `scale(${scale})` }} /></div>
+        ? <div className={styles['preview-canvas']} data-media-preview-canvas style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={item.desc || item.filename} onLoad={event => { event.currentTarget.dataset.mediaReady = 'true' }} style={{ transform: `scale(${scale})` }} /></div>
         : <video key={item.url} src={item.url} controls autoPlay playsInline />}
     </div>
-    <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`}>
-      <div className={styles['preview-navigation']}>
+    <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`} data-media-preview-footer>
+      <div className={styles['preview-navigation']} data-media-preview-navigation>
         <button type="button" className={styles['secondary-button']} disabled={active === 0} onClick={() => changeMedia(-1)}><ArrowLeft size={15} />{t('previous')}</button>
         <button type="button" className={styles['secondary-button']} disabled={active === files.length - 1} onClick={() => changeMedia(1)}>{t('next')}<ArrowRight size={15} /></button>
       </div>
-      <span className={styles['preview-counter']}>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span>
-      {isImage && <div className={styles['preview-zoom']} role="group" aria-label={t('preview')}>
+      <span className={styles['preview-counter']} data-media-preview-counter>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span>
+      {isImage && <div className={styles['preview-zoom']} data-media-preview-zoom role="group" aria-label={t('preview')}>
         <button type="button" className={styles['icon-button']} disabled={scale <= .5} onClick={() => changeScale(-.25)} aria-label={t('zoomOut')} title={t('zoomOut')}><ZoomOut size={17} /></button>
         <output aria-live="polite">{Math.round(scale * 100)}%</output>
         <button type="button" className={styles['icon-button']} disabled={scale === 1 && pan.x === 0 && pan.y === 0} onClick={resetView} aria-label={t('resetZoom')} title={t('resetZoom')}><RotateCcw size={16} /></button>

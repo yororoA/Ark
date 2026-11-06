@@ -48,6 +48,12 @@ function scrollToTarget(target: HTMLElement, body: HTMLElement, behavior: Scroll
 function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageReaderProps) {
   const bodyRef = useRef<HTMLDivElement>(null)
   const outlineRef = useRef<HTMLDetailsElement>(null)
+  const routeMapRef = useRef<HTMLDivElement>(null)
+  const routeSvgRef = useRef<SVGSVGElement>(null)
+  const routeTrackRef = useRef<SVGLineElement>(null)
+  const routeProgressRef = useRef<SVGLineElement>(null)
+  const routeBeaconRef = useRef<HTMLSpanElement>(null)
+  const refreshRouteRef = useRef<(() => void) | null>(null)
   const navigationFrame = useRef(0)
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [position, setPosition] = useState<ReadingPosition>({ percent: 0, chapter: -1 })
@@ -55,7 +61,7 @@ function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageR
   const copy = COPY[locale]
   const hasOutline = chapters.length >= 2
   const currentChapter = chapters[position.chapter]
-  const currentTitle = position.percent === 100 ? copy.end : currentChapter ? currentChapter.title || copy.untitled : copy.beginning
+  const currentTitle = currentChapter ? currentChapter.title || copy.untitled : !chapters.length && position.percent === 100 ? copy.end : copy.beginning
 
   useLayoutEffect(() => {
     const body = bodyRef.current
@@ -88,6 +94,58 @@ function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageR
     let frame = 0
     let anchorFrame = 0
     let disposed = false
+    let routeLayoutDirty = true
+    let passedStations = -1
+    let routePoints: { x: number; y: number }[] = []
+    const drawRoute = (stops: number[], readingPosition: number, end: number, complete: boolean) => {
+      // Closed mobile directories have no visible route to measure or update.
+      const map = routeMapRef.current
+      const svg = routeSvgRef.current
+      const track = routeTrackRef.current
+      const progress = routeProgressRef.current
+      const beacon = routeBeaconRef.current
+      if (!outlineRef.current?.open || !map || !svg || !track || !progress || !beacon) return
+      if (routeLayoutDirty || routePoints.length !== stops.length + 1) {
+        const rect = map.getBoundingClientRect()
+        routePoints = Array.from(map.querySelectorAll<HTMLElement>('[data-route-station], [data-route-end]')).map(node => {
+          const point = node.getBoundingClientRect()
+          return { x: point.left + point.width / 2 - rect.left - map.clientLeft + map.scrollLeft, y: point.top + point.height / 2 - rect.top - map.clientTop + map.scrollTop }
+        })
+        if (routePoints.length !== stops.length + 1) return
+        const first = routePoints[0], last = routePoints[routePoints.length - 1]
+        // Size to the final station, not scrollHeight: an absolute SVG must
+        // never enlarge the very scroll range used to measure itself.
+        const routeHeight = Math.ceil(last.y + 4)
+        svg.setAttribute('viewBox', `0 0 ${map.clientWidth} ${routeHeight}`)
+        svg.style.height = `${routeHeight}px`
+        for (const line of [track, progress]) {
+          line.setAttribute('x1', String(first.x)); line.setAttribute('x2', String(first.x))
+          line.setAttribute('y1', String(first.y))
+        }
+        track.setAttribute('y2', String(last.y))
+        routeLayoutDirty = false
+      }
+      const first = routePoints[0], last = routePoints[routePoints.length - 1]
+      const passed = complete ? stops.length : stops.filter(stop => stop < readingPosition).length
+      if (passed !== passedStations) {
+        map.querySelectorAll<HTMLElement>('a[data-depth]').forEach((link, index) => { link.dataset.passed = String(index < passed) })
+        passedStations = passed
+      }
+      let y = first.y
+      const started = readingPosition >= stops[0] || complete
+      if (complete) y = last.y
+      else if (started) {
+        let index = 0
+        while (index + 1 < stops.length && stops[index + 1] <= readingPosition) index++
+        const nextStop = stops[index + 1] ?? end
+        const distance = nextStop - stops[index]
+        const travelled = distance > 0 ? Math.max(0, Math.min(1, (readingPosition - stops[index]) / distance)) : 0
+        y = routePoints[index].y + (routePoints[index + 1].y - routePoints[index].y) * travelled
+      }
+      map.dataset.started = String(started)
+      progress.setAttribute('y2', String(y))
+      beacon.style.transform = `translate3d(${first.x}px, ${y}px, 0) translate(-50%, -50%)`
+    }
     const measure = () => {
       frame = 0
       if (disposed || !prose.isConnected) return
@@ -95,15 +153,31 @@ function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageR
       const last = prose.lastElementChild ?? prose
       const offset = headerOffset(body)
       const start = first.getBoundingClientRect().top + window.scrollY - offset
-      const end = last.getBoundingClientRect().bottom + window.scrollY - viewportBottom(body)
+      const visibleBottom = viewportBottom(body)
+      const contentBottom = last.getBoundingClientRect().bottom + window.scrollY
+      const end = contentBottom - visibleBottom
       const fraction = end <= start ? (window.scrollY >= end ? 1 : 0) : (window.scrollY - start) / (end - start)
       const percent = Math.floor(Math.max(0, Math.min(1, fraction)) * 100)
+      const stops = targets.map(target => target.getBoundingClientRect().top + window.scrollY - offset)
+      // During the final viewport of scroll travel, let the reading line move
+      // down through the visible text. It reaches the actual final element as
+      // progress reaches 100%, including short headings near the bottom.
+      const visibleHeight = Math.max(0, visibleBottom - offset)
+      const sweepStart = Math.max(start, end - visibleHeight)
+      const sweepLength = end - sweepStart
+      const sweep = sweepLength > 0 ? Math.max(0, Math.min(1, (window.scrollY - sweepStart) / sweepLength)) : 0
+      const routeEnd = contentBottom - offset
+      const readingPosition = end <= start && percent === 100 ? routeEnd : window.scrollY + visibleHeight * sweep
       let chapter = -1
-      targets.forEach((target, index) => { if (target.getBoundingClientRect().top <= offset + 4) chapter = index })
-      if (percent === 100 && targets.length) chapter = targets.length - 1
+      // The current paragraph remains tied to the header reading line, so an
+      // anchor never highlights a later short section that is also visible.
+      stops.forEach((stop, index) => { if (stop <= window.scrollY + 4) chapter = index })
+      if (targets.length >= 2) drawRoute(stops, readingPosition, routeEnd, percent === 100)
       setPosition(previous => previous.percent === percent && previous.chapter === chapter ? previous : { percent, chapter })
     }
     const queueMeasure = () => { if (!disposed && !frame) frame = requestAnimationFrame(measure) }
+    const queueLayoutMeasure = () => { routeLayoutDirty = true; queueMeasure() }
+    refreshRouteRef.current = queueLayoutMeasure
     const followHash = () => {
       const id = decodedHash()
       const target = restored.find(entry => entry.assignedId === id)?.node
@@ -130,7 +204,7 @@ function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageR
       measure()
       anchorFrame = requestAnimationFrame(followHash)
     })
-    const resize = new ResizeObserver(queueMeasure)
+    const resize = new ResizeObserver(queueLayoutMeasure)
     resize.observe(prose)
     resize.observe(body)
     const guide = body.parentElement?.querySelector<HTMLElement>('[data-testid="voyage-reading-guide"]')
@@ -138,27 +212,28 @@ function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageR
     const header = body.closest('[data-blog-root]')?.querySelector<HTMLElement>(':scope > header')
     if (header) resize.observe(header)
     window.addEventListener('scroll', queueMeasure, { passive: true })
-    window.addEventListener('resize', queueMeasure)
+    window.addEventListener('resize', queueLayoutMeasure)
     window.addEventListener('hashchange', followHash)
     window.addEventListener('popstate', followHistory)
-    window.visualViewport?.addEventListener('resize', queueMeasure)
-    prose.addEventListener('load', queueMeasure, true)
-    document.fonts.addEventListener('loadingdone', queueMeasure)
-    void document.fonts.ready.then(queueMeasure)
+    window.visualViewport?.addEventListener('resize', queueLayoutMeasure)
+    prose.addEventListener('load', queueLayoutMeasure, true)
+    document.fonts.addEventListener('loadingdone', queueLayoutMeasure)
+    void document.fonts.ready.then(queueLayoutMeasure)
 
     return () => {
       disposed = true
+      refreshRouteRef.current = null
       cancelAnimationFrame(frame)
       cancelAnimationFrame(anchorFrame)
       cancelAnimationFrame(navigationFrame.current)
       resize.disconnect()
       window.removeEventListener('scroll', queueMeasure)
-      window.removeEventListener('resize', queueMeasure)
+      window.removeEventListener('resize', queueLayoutMeasure)
       window.removeEventListener('hashchange', followHash)
       window.removeEventListener('popstate', followHistory)
-      window.visualViewport?.removeEventListener('resize', queueMeasure)
-      prose.removeEventListener('load', queueMeasure, true)
-      document.fonts.removeEventListener('loadingdone', queueMeasure)
+      window.visualViewport?.removeEventListener('resize', queueLayoutMeasure)
+      prose.removeEventListener('load', queueLayoutMeasure, true)
+      document.fonts.removeEventListener('loadingdone', queueLayoutMeasure)
       restored.forEach(({ node, id, tabIndex, assignedId }) => {
         if (node.id === assignedId) {
           if (id === null) node.removeAttribute('id')
@@ -173,11 +248,19 @@ function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageR
     const outline = outlineRef.current
     if (!outline) return
     const desktop = matchMedia(DESKTOP)
-    const update = () => { outline.open = desktop.matches }
+    const refresh = () => refreshRouteRef.current?.()
+    const update = () => { outline.open = desktop.matches; refresh() }
+    const resize = new ResizeObserver(refresh)
+    if (routeMapRef.current) resize.observe(routeMapRef.current)
     update()
+    outline.addEventListener('toggle', refresh)
     desktop.addEventListener('change', update)
-    return () => desktop.removeEventListener('change', update)
-  }, [hasOutline])
+    return () => {
+      resize.disconnect()
+      outline.removeEventListener('toggle', refresh)
+      desktop.removeEventListener('change', update)
+    }
+  }, [hasOutline, locale])
 
   function navigate(event: MouseEvent<HTMLAnchorElement>) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
@@ -214,11 +297,16 @@ function ActiveVoyageReader({ articleId, contentKey, locale, children }: VoyageR
       <p className={styles.position}><span className={styles.positionLabel}>{copy.position}</span><strong className={styles.positionTitle}>{currentTitle}</strong></p>
       {hasOutline && <details ref={outlineRef} className={styles.outline} data-testid="voyage-reading-outline">
         <summary className={styles.outlineSummary}><span className={styles.outlineLabel}>{copy.outline}</span><span className={styles.outlineCurrent}>{currentTitle}</span><ChevronDown className={styles.outlineChevron} size={16} aria-hidden="true" /></summary>
-        <ol className={styles.chapterList}>{chapters.map((chapter, index) => <li key={chapter.id}>
-          <a className={styles.chapter} href={`#${encodeURIComponent(chapter.id)}`} data-depth={chapter.depth} aria-current={position.chapter === index ? 'location' : undefined} onClick={navigate}>
-            <span className={styles.chapterNumber} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span className={styles.chapterTitle}>{chapter.title || copy.untitled}</span>
-          </a>
-        </li>)}</ol>
+        <div ref={routeMapRef} className={styles.routeMap} data-testid="voyage-reading-route">
+          <svg ref={routeSvgRef} className={styles.routeLine} aria-hidden="true"><line ref={routeTrackRef} className={styles.routeTrack} /><line ref={routeProgressRef} className={styles.routeProgress} data-testid="voyage-reading-route-progress" /></svg>
+          <span ref={routeBeaconRef} className={styles.routeBeacon} aria-hidden="true" data-testid="voyage-reading-route-beacon" />
+          <ol className={styles.chapterList}>{chapters.map((chapter, index) => <li key={chapter.id}>
+            <a className={styles.chapter} href={`#${encodeURIComponent(chapter.id)}`} data-depth={chapter.depth} aria-current={position.chapter === index ? 'location' : undefined} onClick={navigate}>
+              <span className={styles.chapterDot} data-route-station aria-hidden="true" /><span className={styles.chapterNumber} aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span className={styles.chapterTitle}>{chapter.title || copy.untitled}</span>
+            </a>
+          </li>)}</ol>
+          <div className={styles.routeEnd} aria-hidden="true"><span data-route-end /><span>{copy.end}</span></div>
+        </div>
       </details>}
       <div className={styles.guideBottom}><a className={styles.backToStart} href={`#${encodeURIComponent(startId)}`} onClick={navigate}><span>{copy.back}</span><ArrowUp size={15} aria-hidden="true" /></a></div>
     </aside>

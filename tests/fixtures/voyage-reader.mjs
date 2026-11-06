@@ -20,5 +20,23 @@ export function applyVoyageReaderFixture(article, backend) {
       ...article, _id: 'eeeeeeeeeeeeeeeeeeeeeeee', title: 'One short dispatch',
       content: 'A short dispatch without section headings. Its complete thought fits on a single screen.',
     },
+    {
+      ...article, _id: 'ffffffffffffffffffffffff', title: 'Twenty-eight stations, a close-set ending',
+      content: [
+        ...Array.from({ length: 20 }, (_, index) => `## Station ${index + 1}\n\n${paragraph}`),
+        ...Array.from({ length: 8 }, (_, index) => `#### Closing note ${index + 1}\n\nA small detail worth keeping.`),
+      ].join('\n\n'),
+    },
+    {
+      ...article, _id: 'abababababababababababab', title: 'Code, without losing a line',
+      content: [
+        '## Code notes',
+        '```ts\nfunction hello(name: string) {\n\tconst message = "你好, " + name\n\treturn message\n}\n\nconsole.log(hello("Ark"))\n```',
+        '```中文\n记录：\n  保留缩进与换行。\n```',
+        `\`\`\`\n<literal> & "quotes"\n\t${'wide_code_segment_'.repeat(22)}\n\`\`\``,
+        '```\n```',
+        '## A plain ending', 'The surrounding text and its anchors stay in place while code is copied.',
+      ].join('\n\n'),
+    },
   ]
 }

@@ -41,7 +41,7 @@ export default function ThemeGallery() {
   return <div className={styles.page} data-testid="theme-page" lang={locale}>
     <div className={styles.topline}><Link href={returnTo}><ArrowLeft size={17} />{copy.back}</Link><span>ARK / PERSONAL APPEARANCE</span></div>
     <header className={styles.heading}>
-      <div><p className={styles.eyebrow}>A CHANGE OF SCENERY</p><h1>Theme<span>{copy.title}</span></h1></div>
+      <div><p className={styles.eyebrow}>A CHANGE OF SCENERY</p><h1><b className={styles['heading-english']}>Theme</b><span>{copy.title}</span></h1></div>
       <p className={styles.intro}>{copy.intro}</p>
     </header>
     <div className={styles.settings}>
