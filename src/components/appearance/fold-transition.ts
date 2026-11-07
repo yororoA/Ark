@@ -7,10 +7,10 @@ export interface FoldTransitionRequest {
   fallback?: () => void
 }
 
-// A request is accepted only by the mounted Fold renderer. Native links remain
+// A request is accepted only by the mounted Fold/Voyage renderer. Native links remain
 // available during hydration, reduced motion and other appearance modes.
 export function requestFoldTransition(request: FoldTransitionRequest) {
-  if (document.documentElement.dataset.design !== 'fold') return false
+  if (!['fold', 'voyage'].includes(document.documentElement.dataset.design || '')) return false
   const event = new CustomEvent<FoldTransitionRequest>(FOLD_TRANSITION_EVENT, { detail: request, cancelable: true })
   document.dispatchEvent(event)
   return event.defaultPrevented

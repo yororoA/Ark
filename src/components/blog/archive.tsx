@@ -31,7 +31,7 @@ export default function Archive({
   const groups = Map.groupBy(entries, entry => entry.createdAt.slice(0, 4))
   const changeType = (value: 'all' | 'articles' | 'moments') => { setType(value); setPage(1) }
   const changeYear = (value: string) => { setYear(value); setPage(1) }
-  return <div className={styles['page']}>
+  return <div className={styles['page']} data-blog-view="archive">
     <PageHeading title="archive" english="Traces of time" number="04"><span className={styles['form-note']}>{archive.data?.pagination?.total ?? '—'} {t('entries')}</span></PageHeading>
     <div className={styles['toolbar']}><div className={styles['filters']}>{(['all', 'articles', 'moments'] as const).map(value => <button key={value} aria-pressed={value === type} onClick={() => changeType(value)}>{t(value)}</button>)}</div><BlogSelect label={t('year')} value={year} onChange={changeYear} compact options={[{ value: 'all', label: t('all') }, ...(years.data?.data || []).map(value => ({ value, label: value }))]} /></div>
     <State loading={archive.isLoading || years.isLoading} error={archive.error || years.error} empty={!!archive.data && !entries.length} retry={() => { void archive.mutate(); void years.mutate() }} />

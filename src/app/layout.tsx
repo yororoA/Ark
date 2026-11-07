@@ -29,6 +29,16 @@ const barlowCondensed = Barlow_Condensed({
   preload: false,
 });
 
+// Upright display cuts belong to Voyage; the existing italic face stays intact.
+const voyageDisplay = Barlow_Condensed({
+  weight: '700',
+  style: 'normal',
+  subsets: ['latin'],
+  variable: '--font-voyage-display',
+  display: 'swap',
+  preload: false,
+});
+
 // Batang - 登录页黑条 tag
 const gowunBatang = Gowun_Batang({
   weight: ['400', '700'],
@@ -155,7 +165,7 @@ export default function RootLayout({
       lang="zh-CN"
       data-design="archive"
       data-theme="system"
-      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable, barlowCondensed.variable, "font-sans")}
+      className={cn(gowunBatang.variable, ibmPlexSans.variable, notoSerifSC.variable, notoSansSC.variable, orbitron.variable, barlowCondensed.variable, voyageDisplay.variable, "font-sans")}
       suppressHydrationWarning
     >
       <head>

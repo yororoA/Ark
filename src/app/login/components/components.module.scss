@@ -494,3 +494,11 @@
     .accountManagement *, .accountManagement *::before, .accountManagement *::after, .declaration * { transition: none !important; animation: none !important; }
   }
 }
+
+:global(html[data-design="voyage"]) {
+  .dialog-overlay { background: #080f43cc; backdrop-filter: blur(8px); }
+  .accountManagement, .declaration { border: 1px solid var(--line); border-top: 2px solid var(--accent); border-radius: 0; box-shadow: 0 30px 110px #0008; }
+  .accountManagementTitle { min-height: 80px; background: var(--soft); h1 { font-family: var(--font-noto-serif), serif; font-size: 27px; letter-spacing: .05em; } h1::after { content: ' / YOUR IDENTITY'; font-size: 10px; letter-spacing: .1em; } }
+  .icon-button { border-radius: 0; }
+  @media (max-width: 540px) { .accountManagementTitle h1 { font-size: 22px; } .accountManagementTitle h1::after { font-size: 8px; } }
+}

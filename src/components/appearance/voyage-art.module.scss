@@ -1,0 +1,21 @@
+.art {
+  position: relative; isolation: isolate; width: 100%; height: 100%; overflow: hidden;
+  --engraving-x: 65%; --engraving-y: 50%;
+  background: #081117;
+}
+.drift { position: absolute; inset: 0; transform-origin: 82% 66%; animation: ocean-drift 28s ease-in-out infinite alternate; animation-play-state: paused; }
+.plate { position: absolute; inset: 0; background-size: cover; background-repeat: no-repeat; background-position: var(--voyage-art-position, center); }
+// Inactive themes do not fetch the full engraving. Miniatures use a separate
+// small plate and never run the camera or pointer-light effects.
+:global(html[data-design='voyage']) .plate { background-image: url('/themes/voyage/ocean-engraving.webp'); }
+.art[data-awake='true'] .drift { animation-play-state: running; }
+.art[data-compact='true'] .plate { background-image: url('/themes/voyage/ocean-engraving-520.webp'); }
+.art[data-compact='true'] .drift, .art[data-animated='false'] .drift { animation: none; }
+.light { opacity: 0; filter: brightness(1.9); mask-image: radial-gradient(ellipse 21% 28% at var(--engraving-x) var(--engraving-y), #000 0%, #0009 30%, transparent 100%); transition: opacity .7s; pointer-events: none; }
+.art[data-aiming='true'] .light { opacity: .68; }
+@keyframes ocean-drift { from { transform: scale(1); } to { transform: scale(1.045); } }
+@media (max-width: 700px) {
+  :global(html[data-design='voyage']) .plate { background-image: url('/themes/voyage/ocean-engraving-900.webp'); background-position: var(--voyage-art-position, 100% center); }
+  .art[data-compact='true'] .plate { background-image: url('/themes/voyage/ocean-engraving-520.webp'); }
+}
+@media (prefers-reduced-motion: reduce) { .drift { animation: none; } .light { display: none; transition: none; } }

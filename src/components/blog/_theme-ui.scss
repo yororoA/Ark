@@ -3,11 +3,12 @@
 @use './prism-ui';
 @use './allotype-ui';
 @use './fold-ui';
+@use './voyage-ui';
 
 // The first rain iteration remains in 3d601fb; the second pass is isolated in
 // rain-ui so theme rules have one owner, without remounting shared content.
 @mixin personalities {
-  .rain-only { display: none; }
+  .rain-only, .voyage-only { display: none; }
   .nav-index { color: var(--muted); font-size: 8px; letter-spacing: 1px; }
   .desktop-nav {
     gap: clamp(16px, 2vw, 30px);
@@ -84,4 +85,5 @@
   @include prism-ui.personality;
   @include allotype-ui.personality;
   @include fold-ui.personality;
+  @include voyage-ui.personality;
 }

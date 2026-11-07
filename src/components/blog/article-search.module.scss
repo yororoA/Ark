@@ -1,0 +1,23 @@
+.field {
+  min-width: 0;
+  input { flex: 1; min-width: 0; width: 0; &::-webkit-search-cancel-button { display: none; } }
+  > .clear, > .submit { flex: none; width: 44px; min-width: 44px; min-height: 44px; }
+  > .clear { border-left: 0; }
+  &[data-pending='true'] { border-color: var(--accent); }
+}
+.feedback {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; min-height: 44px; margin: 0 0 14px;
+  color: var(--muted); font: 11px/1.6 var(--font-ibm-plex),var(--font-noto-sans),sans-serif;
+  p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+  &[data-pending='true'] p { color: var(--accent); }
+  button { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 7px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; cursor: pointer; }
+  button:hover { color: var(--accent); border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+}
+:global(html[data-design='voyage']) {
+  .feedback p { position: relative; padding-left: 19px; &:not(:empty)::before { content: ''; position: absolute; top: .55em; left: 0; width: 5px; height: 5px; border: 1px solid var(--line); border-radius: 50%; } }
+  .feedback[data-pending='true'] p::before { border-color: var(--accent); background: var(--accent); animation: signal 1s ease-in-out infinite alternate; }
+}
+@keyframes signal { from { opacity: .35; } to { opacity: 1; } }
+@media(max-width:640px) { .feedback { gap: 0 16px; margin-bottom: 10px; font-size: 11px; } }
+@media(prefers-reduced-motion:reduce) { .feedback[data-pending='true'] p::before { animation: none !important; } }

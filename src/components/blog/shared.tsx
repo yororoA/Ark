@@ -7,33 +7,40 @@ import { usePathname } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Play, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { dateLabel, Envelope, Media, TextKey } from '@/lib/blog'
+import { dateLabel, mediaLabel, Envelope, Media, TextKey } from '@/lib/blog'
 import { observeVisualViewport } from '@/lib/visual-viewport'
 import RainPlanes from '@/components/appearance/rain-planes'
 import P3RScene from '@/components/appearance/p3r-scene'
 import PrismScene from '@/components/appearance/prism-scene'
 import type { ManagedUploadItem } from './media-upload'
+import VoyageCodeBlock from './voyage-code-block'
+import VoyageHeadingArrival from './voyage-heading-arrival'
+import { useVoyageGalleryTransition, type VoyageMediaOrigin } from './voyage-gallery-transition'
 import { send, useBlog, useBlogData } from './blog-provider'
 import styles from './blog.module.scss'
 
 export { styles }
 export function PageHeading({ title, english, number, children }: { title: TextKey; english: string; number: string; children?: React.ReactNode }) {
   const { t, locale } = useBlog()
+  const headingRef = useRef<HTMLElement>(null)
+  const indexRef = useRef<HTMLSpanElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
   const localizedTitle = t(title)
   const repeatsEnglishTitle = localizedTitle.localeCompare(english, undefined, { sensitivity: 'base' }) === 0
   const verticalTitle = (locale === 'zh' || locale === 'ja') && localizedTitle.length <= 6
   const isChronological = title === 'moments' || title === 'archive' || title === 'gallery'
   const isPersonal = title === 'about' || title === 'chat'
   const scene = isChronological ? 'calendar' : isPersonal ? 'sheets' : 'curtain'
-  return <header className={styles['page-heading']} data-vertical={verticalTitle}>
+  return <header ref={headingRef} className={styles['page-heading']} data-vertical={verticalTitle}>
     <RainPlanes variant={scene} />
     <P3RScene variant="heading" />
     <PrismScene variant="heading" />
+    <VoyageHeadingArrival headingRef={headingRef} indexRef={indexRef} titleRef={titleRef} />
     <span className={styles['p3r-heading-word']} aria-hidden="true">{english}</span>
-    <span className={styles['heading-index']} aria-hidden="true">{number}</span>
+    <span ref={indexRef} className={styles['heading-index']} aria-hidden="true">{number}</span>
     <div className={styles['heading-title']}>
-      <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span><span className={styles['fold-only']}>ARK / FOLD</span> / {number}</div>
-      <h1><span className={styles['localized-title']}>{localizedTitle}</span>{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
+      <div className={styles['eyebrow']}><span className={styles['archive-only']}>YOROROICE ARCHIVE</span><span className={styles['rain-only']}>YOROROICE / JOURNAL</span><span className={styles['fold-only']}>ARK / FOLD</span><span className={styles['voyage-only']}>ARK / SHIP’S LOG</span> / {number}</div>
+      <h1 ref={titleRef}><span className={styles['localized-title']}>{localizedTitle}</span>{!repeatsEnglishTitle && <span className={styles['english-title']}>{english}</span>}</h1>
     </div>
     {children && <div className={styles['heading-actions']}>{children}</div>}
   </header>
@@ -46,12 +53,14 @@ export function State({ loading, error, empty, retry }: { loading?: boolean; err
 }
 
 const markdownComponents: Components = {
+  pre: VoyageCodeBlock,
+  table: ({ children }) => <table tabIndex={0}>{children}</table>,
   a: ({ children, ...props }) => <a {...props} target="_blank" rel="noreferrer">{children}</a>,
   h1: ({ children }) => <h2 data-source-heading="h1">{children}</h2>,
 }
 
-export function Markdown({ content }: { content: string }) {
-  return <div className={styles['markdown']}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown></div>
+export function Markdown({ content, readingGuide = false }: { content: string; readingGuide?: boolean }) {
+  return <div className={styles['markdown']} data-voyage-prose={readingGuide || undefined}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown></div>
 }
 export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -125,7 +134,7 @@ export function Modal({ title, children, close, variant = 'default', description
   return <dialog ref={ref} className={styles['dialog']} data-variant={variant} role={variant === 'confirm' ? 'alertdialog' : undefined} aria-label={title} aria-describedby={descriptionId} onKeyDown={e => {
     const isNestedControl = e.target instanceof HTMLElement && !!e.target.closest('[data-blog-control-popup]')
     if (e.key === 'Escape' && !e.defaultPrevented && !isNestedControl) { e.preventDefault(); close() }
-  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']}><h2>{title}</h2><button type="button" className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
+  }} onCancel={e => { e.preventDefault(); close() }} onClick={e => { if (e.target === e.currentTarget) close() }}><div className={styles['dialog-header']} data-dialog-header><h2>{title}</h2><button type="button" className={styles['icon-button']} onClick={close} aria-label={t('close')}><X size={20} /></button></div>{children}</dialog>
 }
 
 export function DeleteButton({ name, onDelete, iconOnly = false }: { name: string; onDelete: () => Promise<void>; iconOnly?: boolean }) {
@@ -158,7 +167,7 @@ export function DeleteButton({ name, onDelete, iconOnly = false }: { name: strin
     </Modal>}
   </>
 }
-export function MediaPreview({ files, index, close, compact = false }: { files: Media[]; index: number; close: () => void; compact?: boolean }) {
+export function MediaPreview({ files, index, close, compact = false, voyageOrigin }: { files: Media[]; index: number; close: () => void; compact?: boolean; voyageOrigin?: VoyageMediaOrigin }) {
   const [active, setActive] = useState(index)
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
@@ -170,6 +179,7 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
   const { t, locale } = useBlog()
   const item = files[active]
   const isImage = !item.mime.startsWith('video')
+  useVoyageGalleryTransition({ origin: voyageOrigin, mediaRef, mediaUrl: item.url, isImage })
   const resetView = useCallback(() => {
     for (const id of pointersRef.current.keys()) {
       if (mediaRef.current?.hasPointerCapture(id)) mediaRef.current.releasePointerCapture(id)
@@ -266,10 +276,11 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
     window.addEventListener('keydown', navigate)
     return () => window.removeEventListener('keydown', navigate)
   }, [files.length, isImage, resetView])
-  return <Modal title={item.desc || t('preview')} close={close} variant="media">
+  return <Modal title={mediaLabel(item, t('preview'))} close={close} variant="media">
     <div
       ref={mediaRef}
       className={styles['preview-media']}
+      data-media-preview-stage
       data-compact={compact}
       data-image={isImage}
       data-panning={panning}
@@ -283,16 +294,16 @@ export function MediaPreview({ files, index, close, compact = false }: { files: 
       onLostPointerCapture={endPan}
     >
       {isImage
-        ? <div className={styles['preview-canvas']} style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={item.desc || item.filename} style={{ transform: `scale(${scale})` }} /></div>
+        ? <div className={styles['preview-canvas']} data-media-preview-canvas style={{ transform: `translate3d(${pan.x}px, ${pan.y}px, 0)` }}><img draggable={false} key={item.url} src={item.url} alt={mediaLabel(item)} onLoad={event => { event.currentTarget.dataset.mediaReady = 'true' }} style={{ transform: `scale(${scale})` }} /></div>
         : <video key={item.url} src={item.url} controls autoPlay playsInline />}
     </div>
-    <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`}>
-      <div className={styles['preview-navigation']}>
+    <div className={`${styles['dialog-footer']} ${styles['preview-footer']}`} data-media-preview-footer>
+      <div className={styles['preview-navigation']} data-media-preview-navigation>
         <button type="button" className={styles['secondary-button']} disabled={active === 0} onClick={() => changeMedia(-1)}><ArrowLeft size={15} />{t('previous')}</button>
         <button type="button" className={styles['secondary-button']} disabled={active === files.length - 1} onClick={() => changeMedia(1)}>{t('next')}<ArrowRight size={15} /></button>
       </div>
-      <span className={styles['preview-counter']}>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span>
-      {isImage && <div className={styles['preview-zoom']} role="group" aria-label={t('preview')}>
+      <span className={styles['preview-counter']} data-media-preview-counter>{active + 1} / {files.length}{item.createdAt ? ` · ${dateLabel(item.createdAt, locale)}` : ''}</span>
+      {isImage && <div className={styles['preview-zoom']} data-media-preview-zoom role="group" aria-label={t('preview')}>
         <button type="button" className={styles['icon-button']} disabled={scale <= .5} onClick={() => changeScale(-.25)} aria-label={t('zoomOut')} title={t('zoomOut')}><ZoomOut size={17} /></button>
         <output aria-live="polite">{Math.round(scale * 100)}%</output>
         <button type="button" className={styles['icon-button']} disabled={scale === 1 && pan.x === 0 && pan.y === 0} onClick={resetView} aria-label={t('resetZoom')} title={t('resetZoom')}><RotateCcw size={16} /></button>
@@ -306,7 +317,7 @@ export function MediaGrid({ files, compact = false, onMediaLoad }: { files: Medi
   if (!files.length) return null
   const hasVideo = files.some(file => file.mime.startsWith('video'))
   const hasImage = files.some(file => !file.mime.startsWith('video'))
-  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={file.desc || file.filename}><img loading="lazy" src={file.url} alt={file.desc || file.filename} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
+  return <><div className={styles['media-grid']} data-compact={compact} data-count={Math.min(files.length, 4)} data-mixed={hasVideo && hasImage}>{files.map((file, index) => file.mime.startsWith('video') ? <button type="button" className={styles['media-item']} data-kind="video" key={file.url} onClick={() => setPreview(index)} aria-label={mediaLabel(file)}><video src={file.url} muted playsInline preload="metadata" onLoadedMetadata={event => { const video = event.currentTarget; if (video.duration > 0) video.currentTime = Math.min(.1, Math.max(0, video.duration - .01)) }} onLoadedData={onMediaLoad} onSeeked={onMediaLoad} /><span className={styles['media-play']} aria-hidden="true"><Play size={18} fill="currentColor" /></span></button> : <button type="button" className={styles['media-item']} data-kind="image" key={file.url} onClick={() => setPreview(index)} aria-label={mediaLabel(file)}><img loading="lazy" src={file.url} alt={mediaLabel(file)} onLoad={onMediaLoad} /></button>)}</div>{preview !== null && <MediaPreview files={files} index={preview} close={() => setPreview(null)} compact={compact} />}</>
 }
 export function LocalMediaGrid({ files, descriptions = [] }: { files: File[]; descriptions?: string[] }) {
   const [media, setMedia] = useState<Media[]>([])

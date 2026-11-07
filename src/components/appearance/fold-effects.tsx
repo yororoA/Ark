@@ -24,29 +24,33 @@ export default function FoldEffects() {
 
   useEffect(() => {
     const layer = layerRef.current, canvas = canvasRef.current
-    if (design !== 'fold' || !layer || !canvas) return
+    if ((design !== 'fold' && design !== 'voyage') || !layer || !canvas) return
     const paint = canvas.getContext('2d')
     if (!paint) return
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
     let frame = 0, timer = 0, width = 0, height = 0
     let active = false
+    let repaintVoyage: (() => void) | null = null
     let palette = readFoldPalette()
-    const stopPalette = observeFoldPalette(next => { palette = next })
+    const stopPalette = design === 'fold' ? observeFoldPalette(next => { palette = next }) : () => {}
+    const phaseKey = design === 'voyage' ? 'voyageWipe' : 'foldWipe'
     let pending: FoldTransitionRequest | null = null
     const phase = (value: 'idle' | 'closing' | 'covered' | 'opening') => {
       layer.dataset.phase = value
-      if (value === 'idle') delete document.documentElement.dataset.foldWipe
-      else document.documentElement.dataset.foldWipe = value
+      if (value === 'idle') delete document.documentElement.dataset[phaseKey]
+      else document.documentElement.dataset[phaseKey] = value
     }
     const resize = () => {
       width = innerWidth; height = innerHeight
       const dpr = Math.min(devicePixelRatio || 1, 1.75)
       canvas.width = Math.ceil(width * dpr); canvas.height = Math.ceil(height * dpr)
       paint.setTransform(dpr, 0, 0, dpr, 0, 0)
+      // A covered route must stay opaque even in the frame of a resize.
+      if (active) repaintVoyage?.()
     }
     const clear = () => {
       cancelAnimationFrame(frame); clearTimeout(timer)
-      pending = null; active = false; committed.current = null
+      pending = null; active = false; committed.current = null; repaintVoyage = null
       phase('idle')
       paint.clearRect(0, 0, width, height)
       if (layer.hidePopover && layer.matches(':popover-open')) layer.hidePopover()
@@ -68,11 +72,87 @@ export default function FoldEffects() {
       try { layer.showPopover?.() } catch { /* Fixed layer remains usable. */ }
       const began = performance.now()
       const direction = detail.x < width * .5 ? 1 : -1
+      // Keep the source relative to the viewport while an active scene resizes.
+      const origin = {
+        x: Number.isFinite(detail.x) ? clamp(detail.x / width) : .5,
+        y: Number.isFinite(detail.y) ? clamp(detail.y / height) : .5,
+      }
+      let lastVoyageProgress = 0, lastVoyageOpening = false
       let coveredAt = 0, ready = false, openedAt = 0
 
-      // The four adjoining sloped panels tile the viewport. One-pixel overlaps
-      // prevent antialiasing seams; no navigation occurs until all are closed.
+      // Both visual systems cover every pixel before navigation. The reveal
+      // remains gated by the destination content, independently of the artwork.
       const drawPanels = (progress: number, opening: boolean) => {
+        if (design === 'voyage') {
+          lastVoyageProgress = progress; lastVoyageOpening = opening
+          const center = height * .5, middle = width * .5
+          const sourceX = width * origin.x, sourceY = height * origin.y
+          const unfolding = ease(clamp((progress - .34) / .66))
+          const retreat = opening ? ease(progress) : 0
+          const depth = opening ? center : center * unfolding
+          const top = center - depth - center * retreat
+          const lineProgress = opening ? 1 : ease(clamp((progress - .22) / .4))
+          // Two adjoining sheets grow from the route, then part along it.
+          // Overlap the seam so the fully covered frame is entirely opaque.
+          if (depth > 0) {
+            paint.fillStyle = '#102cce'
+            paint.fillRect(0, Math.floor(top), width, Math.ceil(depth) + 1)
+            paint.fillStyle = '#080f43'
+            paint.fillRect(0, Math.floor(center + center * retreat), width, Math.ceil(depth) + 1)
+          }
+          paint.save()
+          paint.globalAlpha = opening ? 1 - retreat : 1
+          paint.strokeStyle = '#e6ff62'; paint.lineWidth = 1.5
+          // The seam grows out from the arrival coordinate, after its route
+          // has led the eye away from the element that was actually activated.
+          const from = middle * (1 - lineProgress)
+          const to = middle + middle * lineProgress
+          paint.beginPath(); paint.moveTo(from, center - center * retreat); paint.lineTo(to, center - center * retreat); paint.stroke()
+          if (opening) {
+            paint.beginPath(); paint.moveTo(0, center + center * retreat); paint.lineTo(width, center + center * retreat); paint.stroke()
+          }
+          paint.fillStyle = '#e6ff62'
+          paint.beginPath(); paint.arc(middle, center - center * retreat, 5 * (opening ? 1 : lineProgress), 0, Math.PI * 2); paint.fill()
+          paint.restore()
+          if (!opening && progress < .65) {
+            // A short quadratic route links the source coordinate to the seam.
+            // The end follows that same curve rather than cutting across it.
+            const travel = 1 - (1 - clamp(progress / .36)) ** 3
+            const endX = sourceX + (middle - sourceX) * travel * travel
+            const endY = center + (sourceY - center) * (1 - travel) ** 2
+            paint.save()
+            paint.globalAlpha = 1 - clamp((progress - .36) / .29)
+            paint.strokeStyle = '#e6ff62'; paint.fillStyle = '#e6ff62'; paint.lineWidth = 1.25
+            paint.beginPath(); paint.moveTo(sourceX, sourceY)
+            paint.quadraticCurveTo(sourceX, sourceY + (center - sourceY) * travel, endX, endY)
+            paint.stroke()
+            paint.beginPath(); paint.arc(sourceX, sourceY, 8, 0, Math.PI * 2); paint.stroke()
+            paint.beginPath(); paint.arc(sourceX, sourceY, 2.5, 0, Math.PI * 2); paint.fill()
+            paint.beginPath(); paint.arc(endX, endY, 4, 0, Math.PI * 2); paint.fill()
+            paint.restore()
+          }
+          if (unfolding > .5 || opening) {
+            paint.save()
+            paint.globalAlpha = opening ? 1 - retreat : clamp((unfolding - .5) * 2)
+            paint.fillStyle = '#edf0e8'; paint.font = '10px monospace'; paint.textAlign = 'left'; paint.textBaseline = 'middle'
+            paint.fillText('ARK / NIGHT VOYAGE', width * .06, center - 35 - center * retreat)
+            paint.textAlign = 'right'; paint.fillStyle = '#e6ff62'
+            paint.fillText('THE NEXT CHAPTER  →', width * .94, center + 35 + center * retreat)
+            paint.restore()
+          }
+          // Explicit coverage also protects odd pixel heights and viewport resizes.
+          if (!opening && progress === 1) {
+            paint.fillStyle = '#102cce'; paint.fillRect(0, 0, width, Math.ceil(center))
+            paint.fillStyle = '#080f43'; paint.fillRect(0, Math.floor(center), width, height - Math.floor(center))
+            paint.strokeStyle = '#e6ff62'; paint.lineWidth = 1
+            paint.beginPath(); paint.moveTo(0, center); paint.lineTo(width, center); paint.stroke()
+            paint.fillStyle = '#e6ff62'; paint.beginPath(); paint.arc(width * .5, center, 5, 0, Math.PI * 2); paint.fill()
+            paint.fillStyle = '#edf0e8'; paint.font = '10px monospace'; paint.textAlign = 'left'; paint.textBaseline = 'middle'
+            paint.fillText('ARK / NIGHT VOYAGE', width * .06, center - 35)
+            paint.textAlign = 'right'; paint.fillText('THE NEXT CHAPTER  →', width * .94, center + 35)
+          }
+          return
+        }
         const colors = [palette.carbon, palette.slate, palette.paper, palette.mist]
         const creases = [palette.slate, palette.mist, palette.line, palette.carbon]
         const skew = width * .16 * direction
@@ -105,6 +185,7 @@ export default function FoldEffects() {
           paint.restore()
         }
       }
+      if (design === 'voyage') repaintVoyage = () => drawPanels(lastVoyageProgress, lastVoyageOpening)
       const handoff = () => {
         const request = pending
         pending = null
@@ -120,7 +201,10 @@ export default function FoldEffects() {
         return true
       }
       const draw = (now: number) => {
-        paint.clearRect(0, 0, width, height)
+        // The voyage cover is static while content loads. Preserve those
+        // pixels; resize repaints synchronously and opening resumes drawing.
+        const retainVoyageCover = design === 'voyage' && !!coveredAt && !openedAt
+        if (!retainVoyageCover) paint.clearRect(0, 0, width, height)
         if (!coveredAt && now - began < COVER_MS) drawPanels((now - began) / COVER_MS, false)
         else {
           if (!coveredAt) {
@@ -133,10 +217,11 @@ export default function FoldEffects() {
             openedAt = now; clearTimeout(timer); phase('opening')
           }
           if (openedAt) {
+            if (retainVoyageCover) paint.clearRect(0, 0, width, height)
             const progress = Math.min(1, (now - openedAt) / REVEAL_MS)
             drawPanels(progress, true)
             if (progress === 1) { clear(); return }
-          } else drawPanels(1, false)
+          } else if (!retainVoyageCover) drawPanels(1, false)
         }
         frame = requestAnimationFrame(draw)
       }
@@ -150,6 +235,9 @@ export default function FoldEffects() {
       else if (pending && detail.navigate) pending = detail
     }
     const key = (event: KeyboardEvent) => { if (active && event.key === 'Escape') skip() }
+    // Browser Back/Forward supersedes a pending route. Unlike Escape, it must
+    // discard that route instead of handing it off after the curtain closes.
+    const historyNavigation = () => { if (active) clear() }
     const preference = () => { if (motion.matches) skip() }
     const visibility = () => { if (document.hidden) skip() }
     const unsubscribe = useRainConnection.subscribe(({ connection }) => { if (connection) clear() })
@@ -158,13 +246,15 @@ export default function FoldEffects() {
     document.addEventListener('visibilitychange', visibility)
     motion.addEventListener('change', preference)
     window.addEventListener('resize', resize)
+    window.addEventListener('popstate', historyNavigation)
     return () => {
       unsubscribe(); stopPalette(); document.removeEventListener(FOLD_TRANSITION_EVENT, request)
       document.removeEventListener('keydown', key); document.removeEventListener('visibilitychange', visibility)
       motion.removeEventListener('change', preference); window.removeEventListener('resize', resize)
+      window.removeEventListener('popstate', historyNavigation)
       skip()
     }
   }, [design])
 
-  return design === 'fold' ? <div ref={layerRef} className={styles.layer} popover="manual" data-testid="fold-wipe" data-phase="idle" aria-hidden="true"><canvas ref={canvasRef} /></div> : null
+  return design === 'fold' || design === 'voyage' ? <div ref={layerRef} className={styles.layer} popover="manual" data-testid={`${design}-wipe`} data-phase="idle" aria-hidden="true"><canvas ref={canvasRef} /></div> : null
 }

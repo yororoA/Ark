@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import useSWR, { useSWRConfig } from 'swr'
 import { ArrowLeft, ArrowUpRight, MessageSquare, Plus, Reply, Share2, X } from 'lucide-react'
 import { Comment, dateLabel, Entry, Envelope, excerpt, Media, mediaFor, safeUrl, SitemapContent } from '@/lib/blog'
-import { send, sendIdempotent, useBlog, useBlogData, useBlogReferenceData } from './blog-provider'
+import { request, send, sendIdempotent, useBlog, useBlogData, useBlogReferenceData } from './blog-provider'
 import { useManagedUploads, type UploadedAsset } from './media-upload'
 import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Markdown, MediaGrid, PageHeading, Pagination, RequireLogin, State, styles } from './shared'
 import { DateField } from './controls'
@@ -20,7 +20,10 @@ function useMomentMedia(entry: Entry) {
   const missing = Object.keys(entry.filenames || {}).filter(name => !resolved.has(name))
   const path = missing.length ? `moments/files?from=moments&filenames=${encodeURIComponent(missing.join(','))}` : null
   const result = useBlogData<Envelope<Media[]>>(path, { revalidateOnFocus: false })
-  const files = [...direct, ...(result.data?.data || []).filter(file => safeUrl(file.url))]
+  const files = [...direct, ...(result.data?.data || []).filter(file => safeUrl(file.url)).map(file => {
+    const detail = entry.filesDetail?.[file.filename]
+    return { ...file, originalName: detail?.origin || file.originalName, desc: detail?.desc ?? file.desc }
+  })]
   return { ...result, files }
 }
 
@@ -75,32 +78,54 @@ function Comments({ entry, refresh }: { entry: Entry; refresh: () => Promise<unk
   const [busy, setBusy] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const input = useRef<HTMLTextAreaElement>(null)
+  const draftRevision = useRef(0)
+  const [receipt, setReceipt] = useState<{ id?: string; refreshFailed: boolean } | null>(null)
   const ids = entry.comments || []
   const key = ids.length ? ['/api/blog/moments/comment/get', ids.join(',')] : null
-  const { data, error, isLoading, mutate } = useSWR<Envelope<Comment[]>>(key, () => send<Envelope<Comment[]>>('moments/comment/get', { commentIds: ids }))
+  const { data, error, isLoading, mutate } = useSWR<Envelope<Comment[]>>(key, () => send<Envelope<Comment[]>>('moments/comment/get', { commentIds: ids }), {
+    // A refreshed ID set is populated together with its comments below. Keep
+    // that snapshot instead of immediately requesting the same list again.
+    revalidateIfStale: false,
+  })
   const comments = [...(data?.data || [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   const byId = new Map(comments.map(comment => [comment._id, comment]))
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!content.trim() || busy) return
-    setBusy(true); setSubmitError('')
+    const submittedRevision = draftRevision.current
+    setBusy(true); setSubmitError(''); setReceipt(null)
     try {
-      await send('moments/comment/post', { momentId: entry._id, comment: content.trim(), belong: reply?._id })
-      setContent(''); setReply(null)
-      await refresh()
+      const result = await send<Envelope<Comment>>('moments/comment/post', { momentId: entry._id, comment: content.trim(), belong: reply?._id })
+      // A successful request owns its submitted draft, not anything typed or
+      // selected while the request was in flight.
+      if (draftRevision.current === submittedRevision) { setContent(''); setReply(null) }
+      setReceipt({ id: result?.data?._id, refreshFailed: false })
+      try { await refresh() } catch { setReceipt(previous => previous && { ...previous, refreshFailed: true }) }
     } catch (error) { setSubmitError((error as Error).message) } finally { setBusy(false) }
+  }
+  async function refreshReceipt() {
+    if (busy) return
+    setBusy(true)
+    try { await refresh(); setReceipt(previous => previous && { ...previous, refreshFailed: false }) }
+    catch { setReceipt(previous => previous && { ...previous, refreshFailed: true }) }
+    finally { setBusy(false) }
   }
   return <section className={styles['comments']} id="comments"><h2>{t('comments')} <span className={styles['form-note']}>{ids.length}</span></h2>
     <State loading={isLoading} error={error} retry={() => mutate()} />
     {comments.map(comment => {
       const parent = comment.belong ? byId.get(comment.belong) : undefined
-      return <article className={styles['comment']} key={comment._id} id={`comment-${comment._id}`}><div className={styles['entry-meta']}><strong>{comment.username}</strong><time>{dateLabel(comment.createdAt, locale)}</time></div>{parent && <blockquote><a href={`#comment-${parent._id}`}>{t('reply')} {parent.username}: {excerpt(parent.content, 120)}</a></blockquote>}<p>{comment.content}</p><div className={styles['form-actions']}><LikeButton kind="comment" id={comment._id} count={comment.likes} />{session && !session.isGuest && <button className={styles['secondary-button']} onClick={() => { setReply(comment); input.current?.focus() }}><Reply size={14} />{t('reply')}</button>}</div></article>
+      return <article className={styles['comment']} key={comment._id} id={`comment-${comment._id}`} tabIndex={-1}><div className={styles['entry-meta']}><strong>{comment.username}</strong><time>{dateLabel(comment.createdAt, locale)}</time></div>{parent && <blockquote><a href={`#comment-${parent._id}`}>{t('reply')} {parent.username}: {excerpt(parent.content, 120)}</a></blockquote>}<p>{comment.content}</p><div className={styles['form-actions']}><LikeButton kind="comment" id={comment._id} count={comment.likes} />{session && !session.isGuest && <button className={styles['secondary-button']} onClick={() => { draftRevision.current++; setReply(comment); input.current?.focus() }}><Reply size={14} />{t('reply')}</button>}</div></article>
     })}
     <RequireLogin><form className={styles['form']} onSubmit={submit}>
-      {reply && <div className={styles['reply-target']}><span>{t('reply')} {reply.username}: {excerpt(reply.content, 80)}</span><button type="button" className={styles['icon-button']} onClick={() => setReply(null)} aria-label={t('cancel')}><X size={16} /></button></div>}
-      <label className={styles['field']}>{t('comments')}<textarea ref={input} required rows={4} maxLength={10000} value={content} onChange={e => setContent(e.target.value)} /></label>
+      {reply && <div className={styles['reply-target']}><span>{t('reply')} {reply.username}: {excerpt(reply.content, 80)}</span><button type="button" className={styles['icon-button']} onClick={() => { draftRevision.current++; setReply(null) }} aria-label={t('cancel')}><X size={16} /></button></div>}
+      <label className={styles['field']}>{t('comments')}<textarea ref={input} required rows={4} maxLength={10000} value={content} onChange={e => { draftRevision.current++; setContent(e.target.value) }} /></label>
+      {receipt && <div className={styles['comment-receipt']} data-testid="comment-receipt">
+        <p role="status">{t(receipt.refreshFailed ? 'commentRefreshFailed' : 'commentSent')}</p>
+        {receipt.refreshFailed ? <button type="button" className={styles['text-link']} disabled={busy} onClick={() => void refreshReceipt()}>{t(busy ? 'refreshingComments' : 'refreshComments')}</button>
+          : receipt.id && comments.some(comment => comment._id === receipt.id) && <a className={styles['text-link']} href={`#comment-${encodeURIComponent(receipt.id)}`}>{t('viewComment')}<ArrowUpRight size={14} aria-hidden="true" /></a>}
+      </div>}
       {submitError && <p className={styles['error']} role="alert">{submitError}</p>}
-      <div><button className={styles['primary-button']} disabled={busy || !content.trim()}>{t(busy ? 'sending' : 'send')}</button></div>
+      <div><button className={styles['primary-button']} disabled={busy || !content.trim()}>{t(busy ? receipt ? 'refreshingComments' : 'sending' : 'send')}</button></div>
     </form></RequireLogin>
   </section>
 }
@@ -137,6 +162,7 @@ function MomentReader({ entry, refresh }: { entry: Entry; refresh: () => Promise
 
 export function MomentDetail({ id, initialEntry }: { id: string; initialEntry: Entry }) {
   const { t } = useBlog()
+  const { mutate: mutateCache } = useSWRConfig()
   const params = useSearchParams()
   const returnTo = safeReturnPath(params.get('returnTo'), 'moments')
   const { data, error, isLoading, mutate } = useBlogData<Envelope<Entry>>(`moments/${id}`, {
@@ -144,7 +170,18 @@ export function MomentDetail({ id, initialEntry }: { id: string; initialEntry: E
     revalidateOnMount: false,
   })
   const entry = data?.data
-  return <div className={styles['page']}><div className={styles['reader']}><Link className={styles['text-link']} href={returnTo} scroll={false} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('moments')}</Link><State loading={isLoading} error={error} empty={!!data && !entry} retry={() => mutate()} />{entry && <MomentReader key={id} entry={entry} refresh={mutate} />}</div></div>
+  async function refreshComments() {
+    // Await both reads explicitly: SWR's no-argument revalidation stores errors
+    // in its cache rather than rejecting, and the comment IDs use a separate key.
+    const next = await request<Envelope<Entry>>(`moments/${id}`)
+    const ids = next.data.comments || []
+    if (ids.length) {
+      const comments = await send<Envelope<Comment[]>>('moments/comment/get', { commentIds: ids })
+      await mutateCache(['/api/blog/moments/comment/get', ids.join(',')], comments, { revalidate: false })
+    }
+    await mutate(next, { revalidate: false })
+  }
+  return <div className={styles['page']}><div className={styles['reader']}><Link className={styles['text-link']} href={returnTo} scroll={false} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('moments')}</Link><State loading={isLoading} error={error} empty={!!data && !entry} retry={() => mutate()} />{entry && <MomentReader key={id} entry={entry} refresh={refreshComments} />}</div></div>
 }
 
 function requestKey(prefix: string) {

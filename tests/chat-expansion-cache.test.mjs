@@ -22,7 +22,7 @@ async function session(t, design, width) {
   page.setDefaultTimeout(10000)
   return page
 }
-for (const design of ['allotype', 'fold']) for (const width of [1440, 2048]) {
+for (const design of ['allotype', 'fold', 'voyage']) for (const width of [1440, 2048]) {
   test(`expanded chat fills viewport without theme gutters: ${design} ${width}`, async t => {
     const page = await session(t, design, width)
     await page.goto(`${baseURL}/chat`)

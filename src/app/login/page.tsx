@@ -8,7 +8,7 @@ import { syncAuthDetails, useAuthStore } from '@/store/auth';
 
 import styles from './login.module.scss';
 import Declaration from "./components/declaration";
-import AccountManagement from "./components/accountManagement";
+import AccountManagement, { type AccountFormIdentity } from "./components/accountManagement";
 import ConnectionSequence, { type ConnectionState } from "./components/connectionSequence";
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -46,6 +46,10 @@ function Login() {
   const destination = loginDestination(returnTo);
   const { design } = useAppearance();
   useEffect(() => {
+    if (design === 'voyage') {
+      void import('@/components/appearance/voyage-connection').catch(() => {});
+      return;
+    }
     if (design === 'fold') {
       void import('@/components/appearance/fold-connection').catch(() => {});
       return;
@@ -87,6 +91,7 @@ function Login() {
 
   const [isDeclarationVisible, setIsDeclarationVisible] = useState(false);
   const [isAccountManagementVisible, setIsAccountManagementVisible] = useState(false);
+  const [formIdentity, setFormIdentity] = useState<AccountFormIdentity | undefined>();
   const [connection, setConnection] = useState<ConnectionState | null>(null);
   const [connectionDesign, setConnectionDesign] = useState<Design>('archive');
   const connectingRef = useRef(false);
@@ -101,6 +106,12 @@ function Login() {
   const handleConnect = async (params: ConnectParams) => {
     if (connectingRef.current) return;
     connectingRef.current = true;
+    // Retain only non-secret form fields for a failed attempt within this page.
+    setFormIdentity(params.action === 'login' || params.action === 'register' ? {
+      mode: params.action,
+      username: params.username,
+      ...(params.action === 'register' ? { email: params.email } : {}),
+    } : undefined);
     const requestId = ++requestIdRef.current;
     let uid = params.action === 'switch' ? params.uid || details[0]?.uid || '' : '';
     const username = params.action === 'switch'
@@ -111,7 +122,7 @@ function Login() {
     setConnectionDesign(design);
     setConnection(initial);
     setIsDeclarationVisible(false);
-    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism' || design === 'allotype' || design === 'fold';
+    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism' || design === 'allotype' || design === 'fold' || design === 'voyage';
     const rainId = themedConnection
       ? useRainConnection.getState().begin({ ...initial, design, destination, onDismiss: handleDismissConnection })
       : null;
@@ -136,6 +147,7 @@ function Login() {
     }
 
     if (requestId === requestIdRef.current) {
+      setFormIdentity(undefined);
       const authenticated = useAuthStore.getState().details.find(detail =>
         params.action === 'switch' || params.action === 'guest' ? detail.uid === uid : detail.username === username
       );
@@ -187,6 +199,17 @@ function Login() {
         <main className={styles['login-main']}>
           <RainPlanes variant="identity" />
           <section className={styles['login-copy']}>
+            <div className={styles['login-voyage']} aria-hidden="true">
+              <div className={styles['voyage-plate-heading']}><span>ARK / NIGHT VOYAGE</span><span>继续阅读 ↗</span></div>
+              <strong className={styles['voyage-plate-title']}>THE NEXT<br /><i>CHAPTER.</i></strong>
+              <svg className={styles['voyage-plate-route']} viewBox="0 0 600 600" fill="none" preserveAspectRatio="none">
+                <path d="M0 440H100C125 440 145 420 145 395V320C145 295 165 275 190 275H370C395 275 415 295 415 320V415C415 440 435 460 460 460H600" />
+                <circle cx="145" cy="365" r="5" /><circle cx="310" cy="275" r="5" /><circle cx="500" cy="460" r="5" />
+              </svg>
+              <span className={styles['voyage-plate-origin']}>01 / 出发</span>
+              <span className={styles['voyage-plate-caption']}>下一章，<br />从你开始。</span>
+              <span className={styles['voyage-plate-reader']}>{activeAccount?.username || 'YOU ARE HERE'}<i>↗</i></span>
+            </div>
             <div className={styles['login-fold']} aria-hidden="true">
               <div className={styles['fold-plate-heading']}><span>ARK / FIELD NOTES</span><span>06 — FOLD</span></div>
               <div className={styles['fold-portal']}>{design === 'fold' ? <FoldArt variant="portal" /> : null}</div>
@@ -229,7 +252,10 @@ function Login() {
             </> : <button className={styles['primary-action']} onClick={() => setIsAccountManagementVisible(true)}>登录 / 注册<ArrowUpRight size={17} /></button>}
           </section>
         </main>
-        {showAccountManagement && <AccountManagement details={details} preferredMode={mode} onClose={() => setIsAccountManagementVisible(false)} onConnect={handleConnect} />}
+        {showAccountManagement && <AccountManagement details={details} preferredMode={mode} initialIdentity={formIdentity} onResetIdentity={() => setFormIdentity(undefined)} onClose={() => {
+          setFormIdentity(undefined);
+          setIsAccountManagementVisible(false);
+        }} onConnect={handleConnect} />}
         {isDeclarationVisible && <Declaration onClose={() => setIsDeclarationVisible(false)} />}
         <footer className={styles['login-footer']}>
           <span>© 2026 YOROROICE / PERSONAL ARCHIVE</span>

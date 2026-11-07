@@ -168,6 +168,29 @@
   --ark-fold-stage-ink: #d8ded8;
 }
 
+// A cobalt route and a phosphor signal stay recognizable in either color mode.
+@mixin voyage-day {
+  --ark-paper: #edf0e8;
+  --ark-ink: #101b43;
+  --ark-muted: #515d73;
+  --ark-line: #b8c1ce;
+  --ark-accent: #2547df;
+  --ark-soft: #dfe5e4;
+  --voyage-night: #080f43;
+  --voyage-light: #edf0e8;
+  --voyage-signal: #e6ff62;
+  --voyage-sea: #102cce;
+}
+
+@mixin voyage-night {
+  --ark-paper: #080f23;
+  --ark-ink: #edf0e8;
+  --ark-muted: #aab6ce;
+  --ark-line: #354362;
+  --ark-accent: #e6ff62;
+  --ark-soft: #14203a;
+}
+
 @mixin night {
   --ark-color-scheme: dark;
   --ark-white-logo-filter: none;
@@ -178,6 +201,7 @@
   &[data-design="prism"] { @include prism-night; }
   &[data-design="allotype"] { @include allotype-night; }
   &[data-design="fold"] { @include fold-night; }
+  &[data-design="voyage"] { @include voyage-night; }
 }
 
 :root {
@@ -205,6 +229,7 @@
   &[data-design="prism"] { @include prism-day; }
   &[data-design="allotype"] { @include allotype-day; }
   &[data-design="fold"] { @include fold-day; }
+  &[data-design="voyage"] { @include voyage-day; }
   &[data-theme="dark"] { @include night; }
   @media (prefers-color-scheme: dark) {
     &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }

@@ -1,0 +1,60 @@
+.block {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--ark-line);
+  background: color-mix(in srgb, var(--ark-paper) 94%, var(--ark-accent));
+  color: var(--ark-ink);
+  font-family: var(--font-ibm-plex), var(--font-noto-sans), sans-serif;
+}
+.header { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 44px; padding-left: 20px; border-bottom: 1px solid var(--ark-line); }
+.language { min-width: 0; padding-block: 8px; font: 11px/1.5 'SFMono-Regular', Consolas, monospace; color: var(--ark-accent); overflow-wrap: anywhere; }
+.copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 88px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 9px 16px;
+  border: 0;
+  border-left: 1px solid var(--ark-line);
+  background: transparent;
+  color: var(--ark-ink);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  svg { flex-shrink: 0; color: var(--ark-accent); }
+  &:hover:not(:disabled) { background: var(--ark-ink); color: var(--ark-paper); svg { color: inherit; } }
+  &:focus-visible { outline: 2px solid var(--ark-accent); outline-offset: -4px; }
+  &:disabled { cursor: default; }
+}
+.header .copy { font-size: 11px; }
+:global(html[data-design='voyage']) .block[data-voyage-code] .pre {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 58px;
+  margin: 0;
+  padding: 18px 20px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ark-muted) transparent;
+  white-space: pre;
+  font: 13px/1.8 'SFMono-Regular', Consolas, monospace;
+  tab-size: 4;
+  &:focus-visible { outline: 2px solid var(--ark-accent); outline-offset: -4px; }
+  code { display: block; width: max-content; min-width: 100%; padding: 0; background: none; color: inherit; font: inherit; white-space: pre; }
+}
+.failure { display: block; padding: 12px 20px; border-top: 1px solid var(--ark-line); color: var(--ark-ink); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 520px) {
+  .header { padding-left: 14px; gap: 12px; }
+  .copy { min-width: 80px; padding-inline: 12px; }
+  :global(html[data-design='voyage']) .block[data-voyage-code] .pre { padding: 15px 14px; font-size: 12px; }
+  .failure { padding: 12px 14px; }
+}
+@media (prefers-reduced-motion: reduce) { .copy { transition: none; } }

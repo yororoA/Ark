@@ -8,6 +8,7 @@ import { QINGJIAN_COPY } from '@/lib/qingjian-copy'
 import { P3R_COPY } from '@/lib/p3r-copy'
 import { PRISM_COPY } from '@/lib/prism-copy'
 import { ALLOTYPE_COPY } from '@/lib/allotype'
+import { VOYAGE_COPY } from '@/lib/voyage'
 import { FOLD_COPY } from '@/lib/fold'
 import { safeThemeReturn } from '@/lib/theme-navigation'
 import { useBlog } from '@/components/blog/blog-provider'
@@ -34,13 +35,13 @@ export default function ThemeGallery() {
   const themes = {
     archive: { name: copy.archive, description: copy.archiveNote },
     rain: QINGJIAN_COPY[locale], p3r: P3R_COPY[locale],
-    prism: PRISM_COPY[locale], allotype: ALLOTYPE_COPY[locale], fold: FOLD_COPY[locale],
+    prism: PRISM_COPY[locale], allotype: ALLOTYPE_COPY[locale], fold: FOLD_COPY[locale], voyage: VOYAGE_COPY[locale],
   }
 
   return <div className={styles.page} data-testid="theme-page" lang={locale}>
     <div className={styles.topline}><Link href={returnTo}><ArrowLeft size={17} />{copy.back}</Link><span>ARK / PERSONAL APPEARANCE</span></div>
     <header className={styles.heading}>
-      <div><p className={styles.eyebrow}>A CHANGE OF SCENERY</p><h1>Theme<span>{copy.title}</span></h1></div>
+      <div><p className={styles.eyebrow}>A CHANGE OF SCENERY</p><h1><b className={styles['heading-english']}>Theme</b><span>{copy.title}</span></h1></div>
       <p className={styles.intro}>{copy.intro}</p>
     </header>
     <div className={styles.settings}>

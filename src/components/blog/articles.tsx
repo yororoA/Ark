@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Article covers are stored as arbitrary external Markdown URLs. */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useSWRConfig } from 'swr'
 import Link from '@/components/appearance/p3r-link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -13,7 +13,9 @@ import { AutoTextarea, DeleteButton, FilePicker, LikeButton, LocalMediaGrid, Mar
 import { DateField } from './controls'
 import { shareContent } from '@/lib/share'
 import PrismRecord from './prism-record'
+import VoyageReader from './voyage-reader'
 import { detailPath, listPath, newestFirst, prepareListReturn, rememberListPosition, safeReturnPath, useRestoreListPosition } from './list-navigation'
+import searchStyles from './article-search.module.scss'
 
 function ArticleListEntry({ entry, locale, read, returnTo }: { entry: Entry; locale: Parameters<typeof dateLabel>[1]; read: string; returnTo: string }) {
   const preview = articlePreview(entry.content)
@@ -26,23 +28,53 @@ function ArticleListEntry({ entry, locale, read, returnTo }: { entry: Entry; loc
   </Link>
 }
 
-function ArticleSearch({ keyword, search }: { keyword: string; search: (value: string) => void }) {
+function ArticleSearch({ keyword, resetVersion, search, pending }: { keyword: string; resetVersion: number; search: (value: string) => void; pending: boolean }) {
   const { t } = useBlog()
-  const [query, setQuery] = useState(keyword)
-  return <form className={styles['search-field']} role="search" onSubmit={e => {
+  const [draft, setDraft] = useState({ keyword, resetVersion, value: keyword, submitted: null as string | null })
+  if (draft.resetVersion !== resetVersion) {
+    setDraft({ keyword, resetVersion, value: '', submitted: '' })
+  } else if (draft.keyword !== keyword) {
+    // An arriving response owns the submitted keyword, not a new draft typed
+    // while it was loading. Other URL changes (such as Back) restore the URL.
+    setDraft({ keyword, resetVersion, value: draft.submitted === keyword ? draft.value : keyword, submitted: null })
+  }
+  function submit(value: string) {
+    setDraft(previous => ({ ...previous, value, submitted: value }))
+    search(value)
+  }
+  return <form className={`${styles['search-field']} ${searchStyles.field}`} role="search" data-pending={pending} onSubmit={e => {
     e.preventDefault()
-    search(query.trim())
+    submit(draft.value.trim())
     // A submitted phone search should reveal its results and bottom navigation.
     // WebKit keeps the input focused when tapping non-interactive page content.
     if (matchMedia('(max-width: 640px)').matches) e.currentTarget.querySelector('input')?.blur()
-  }}><Search size={16} /><input type="search" enterKeyHint="search" aria-label={t('search')} placeholder={t('search')} value={query} onChange={e => setQuery(e.target.value)} /><button aria-label={t('search')} className={styles['icon-button']}><ArrowUpRight size={16} /></button></form>
+  }}><Search size={16} /><input type="search" enterKeyHint="search" aria-label={t('search')} placeholder={t('search')} value={draft.value} onChange={e => { const value = e.target.value; setDraft(previous => ({ ...previous, value })) }} />
+    {(draft.value || keyword || pending) && <button type="button" aria-label={t('clearArticleSearch')} className={`${styles['icon-button']} ${searchStyles.clear}`} onClick={() => submit('')}><X size={15} /></button>}
+    <button aria-label={t('search')} className={`${styles['icon-button']} ${searchStyles.submit}`}><ArrowUpRight size={16} /></button></form>
+}
+
+function revealFilterItem(strip: HTMLElement, item: Element | null) {
+  if (!item || !strip.clientWidth || strip.scrollWidth <= strip.clientWidth) return
+  const viewport = strip.getBoundingClientRect()
+  const target = item.getBoundingClientRect()
+  const left = viewport.left + strip.clientLeft
+  const right = left + strip.clientWidth
+  // Reveal only the horizontal filter strip; never move the reading position.
+  if (target.left < left) strip.scrollLeft += target.left - left
+  else if (target.right > right) strip.scrollLeft += target.right - right
 }
 
 export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }) {
   const { t, locale, session } = useBlog()
   const router = useRouter()
   const params = useSearchParams()
+  const [isPending, startTransition] = useTransition()
+  const [hasSearched, setHasSearched] = useState(false)
+  const committedQuery = params.toString()
+  const requestedQuery = useRef(committedQuery)
+  useEffect(() => { requestedQuery.current = committedQuery }, [committedQuery])
   const keyword = params.get('keyword') || ''
+  const [searchResetVersion, setSearchResetVersion] = useState(0)
   const category = params.get('category') || ''
   const date = params.get('date') || ''
   const page = Math.max(1, Number(params.get('page')) || 1)
@@ -52,22 +84,57 @@ export function ArticleList({ initialData }: { initialData?: Envelope<Entry[]> }
     revalidateOnMount: initialData ? false : undefined,
   })
   const categories = useBlogReferenceData<Envelope<string[]>>('knowledge/meta/categories')
+  const categoryStrip = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const strip = categoryStrip.current
+    if (!strip) return
+    const reveal = () => revealFilterItem(strip, strip.querySelector('button[aria-pressed="true"]'))
+    reveal()
+    const resize = new ResizeObserver(reveal)
+    resize.observe(strip)
+    return () => resize.disconnect()
+  }, [category, categories.data])
   const sitemap = useBlogReferenceData<Envelope<SitemapContent>>('archive/sitemap')
   const entries = newestFirst(list.data?.data || [])
   const availableDates = sitemap.data ? new Set(sitemap.data.data.articles.map(entry => entry.createdAt.slice(0, 10))) : undefined
+  const busy = isPending || list.isLoading
+  const hasFilters = Boolean(keyword || category || date)
+  const resultCount = (list.data?.pagination?.total ?? entries.length).toLocaleString(locale)
   useRestoreListPosition(returnTo, !!list.data)
+  function navigate(next: URLSearchParams) {
+    setHasSearched(true)
+    requestedQuery.current = next.toString()
+    const destination = requestedQuery.current ? `/articles?${requestedQuery.current}` : '/articles'
+    startTransition(() => router.push(destination))
+  }
   function filter(key: string, value: string) {
-    const next = new URLSearchParams(params)
+    // Rapid search/category changes compose against the latest requested
+    // conditions, even while the previously committed list remains on screen.
+    const next = new URLSearchParams(requestedQuery.current)
     next.delete('page')
     if (value) next.set(key, value); else next.delete(key)
-    router.push(`/articles?${next}`)
+    navigate(next)
   }
-  return <div className={styles['page']}><PageHeading title="articles" english="Writings" number="01">{session && !session.isGuest && <Link href="/articles/new" className={styles['primary-button']}><Plus size={16} />{t('newArticle')}</Link>}</PageHeading>
-    <div className={styles['toolbar']}><DateField value={date} availableDates={availableDates} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
-    <div className={styles['toolbar']}><div className={styles['filters']}><button aria-pressed={!category} onClick={() => filter('category', '')}>{t('all')}</button>{categories.data?.data.map(item => <button key={item} aria-pressed={category === item} onClick={() => filter('category', item)}>{item}</button>)}</div><ArticleSearch key={keyword} keyword={keyword} search={value => filter('keyword', value)} /></div>
+  function clearFilters() {
+    setSearchResetVersion(value => value + 1)
+    const next = new URLSearchParams(requestedQuery.current)
+    for (const key of ['keyword', 'category', 'date', 'page']) next.delete(key)
+    navigate(next)
+  }
+  return <div className={styles['page']} data-blog-view="articles"><PageHeading title="articles" english="Writings" number="01">{session && !session.isGuest && <Link href="/articles/new" className={styles['primary-button']}><Plus size={16} />{t('newArticle')}</Link>}</PageHeading>
+    <div className={styles['article-tools']} data-date-active={!!date}>
+      <div className={styles['toolbar']} data-tool-group="date"><DateField value={date} availableDates={availableDates} onChange={value => filter('date', value)} />{date && <button className={styles['secondary-button']} onClick={() => filter('date', '')}>{t('reset')}</button>}</div>
+      <div className={styles['toolbar']} data-tool-group="query"><div ref={categoryStrip} className={styles['filters']} onFocusCapture={event => { if (event.target instanceof HTMLElement) revealFilterItem(event.currentTarget, event.target.closest('button')) }}><button aria-pressed={!category} onClick={() => filter('category', '')}><span>{t('all')}</span></button>{categories.data?.data.map(item => <button key={item} title={item} aria-pressed={category === item} onClick={() => filter('category', item)}><span>{item}</span></button>)}</div><ArticleSearch keyword={keyword} resetVersion={searchResetVersion} pending={busy} search={value => filter('keyword', value)} /></div>
+    </div>
+    {(hasSearched || hasFilters || busy || list.data?.data.length === 0) && <div className={searchStyles.feedback} data-article-search-feedback data-pending={busy}>
+      <p role="status" aria-live="polite" aria-atomic="true">{busy ? t('articleSearchUpdating') : list.error ? '' : list.data ? t('articleSearchResults').replace('{count}', resultCount) : ''}</p>
+      {!busy && !list.error && list.data?.data.length === 0 && hasFilters && <button type="button" onClick={clearFilters}>{t('clearArticleFilters')}<X size={14} /></button>}
+    </div>}
+    <section aria-label={t('articleSearchRegion')} aria-busy={busy} data-article-search-results>
     <State loading={list.isLoading} error={list.error} empty={list.data?.data.length === 0} retry={() => { void list.mutate() }} />
     <div className={styles['article-list']}>{entries.map(entry => <ArticleListEntry key={entry._id} entry={entry} locale={locale} read={t('read')} returnTo={returnTo} />)}</div>
     <Pagination page={page} pages={list.data?.pagination?.pages || 1} change={value => filter('page', String(value))} />
+    </section>
   </div>
 }
 
@@ -109,7 +176,26 @@ export function ArticleDetail({ id, initialArticle }: { id: string; initialArtic
     const url = URL.createObjectURL(new Blob([`# ${article.title}\n\n${article.content}`], { type: 'text/markdown;charset=utf-8' }))
     const link = document.createElement('a'); link.href = url; link.download = `${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`; link.click(); URL.revokeObjectURL(url)
   }
-  return <div className={styles['page']}><div className={styles['reader']}><Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link><State loading={isLoading} error={error} retry={() => mutate()} />{article && <><header className={styles['reader-header']}><div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div><h1>{article.title}</h1><div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>{!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}</header><Markdown content={article.content} /><div className={styles['reader-actions']}><LikeButton kind="article" id={id} count={article.likes} /><button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button><button className={styles['secondary-button']} onClick={async () => { const result = await shareContent(article.title); if (result === 'copied') notify(t('copied')); else if (result !== 'shared' && result !== 'cancelled') notify(result) }}><Share2 size={15} />{t('share')}</button>{isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}{canDelete && <DeleteButton name={article.title} onDelete={remove} />}</div></>}</div></div>
+  return <div className={styles['page']}><div className={styles['reader']} data-voyage-reader>
+    <Link href={returnTo} scroll={false} className={styles['text-link']} onNavigate={() => prepareListReturn(returnTo)}><ArrowLeft size={16} />{t('articles')}</Link>
+    <State loading={isLoading} error={error} retry={() => mutate()} />
+    {article && <VoyageReader key={article._id} articleId={article._id} contentKey={article.content} locale={locale}>
+      <header className={styles['reader-header']}>
+        <div className={styles['eyebrow']}>01 / {article.category || 'WRITINGS'}</div>
+        <h1>{article.title}</h1>
+        <div className={styles['entry-meta']}><span>{article.username || 'YororoIce'}</span><time dateTime={article.createdAt}>{dateLabel(article.createdAt, locale)}</time><span>{Math.max(1, Math.ceil(article.content.length / 650))} {t('readTime')}</span><span>↗ {views}</span></div>
+        {!!article.tags?.length && <div className={styles['tags']}>{article.tags.map(tag => <span key={tag}>{tag}</span>)}</div>}
+      </header>
+      <Markdown content={article.content} readingGuide />
+      <div className={styles['reader-actions']}>
+        <LikeButton kind="article" id={id} count={article.likes} />
+        <button className={styles['secondary-button']} onClick={exportMarkdown}><Download size={15} />{t('export')}</button>
+        <button className={styles['secondary-button']} onClick={async () => { const result = await shareContent(article.title); if (result === 'copied') notify(t('copied')); else if (result !== 'shared' && result !== 'cancelled') notify(result) }}><Share2 size={15} />{t('share')}</button>
+        {isOwner && <Link href={`/articles/${id}/edit`} className={styles['secondary-button']}><Pencil size={15} />{t('edit')}</Link>}
+        {canDelete && <DeleteButton name={article.title} onDelete={remove} />}
+      </div>
+    </VoyageReader>}
+  </div></div>
 }
 
 type ArticleDraft = {

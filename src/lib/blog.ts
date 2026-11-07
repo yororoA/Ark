@@ -9,7 +9,10 @@ export type Entry = {
   mediaAssets?: string[]
 }
 export type Comment = { _id: string; content: string; username: string; uid: string; createdAt: string; likes?: number; belong?: string }
-export type Media = { id?: string; filename: string; url: string; mime: string; username?: string; createdAt?: string; desc?: string }
+export type Media = { id?: string; filename: string; originalName?: string; url: string; mime: string; username?: string; createdAt?: string; desc?: string }
+export function mediaLabel(file: Pick<Media, 'desc' | 'originalName' | 'filename'>, fallback = '') {
+  return file.desc?.trim() || file.originalName?.trim() || file.filename?.trim() || fallback
+}
 export type BlogLink = { _id: string; name: string; url: string; description?: string; category: string; imgurl?: string }
 export type Envelope<T> = { data: T; pagination?: { page: number; pages: number; total: number; limit: number }; hasMore?: boolean }
 export type HomeMomentSummary = { entries: Entry[]; activeDates: string[] }
@@ -70,6 +73,11 @@ const words = {
   notFound: ['这一页已经走远了，回到序章继续翻阅吧。', 'This page could not be found. Return to the prologue to continue.', 'このページは見つかりません。序章に戻って続けましょう。', 'Diese Seite wurde nicht gefunden. Kehre zum Prolog zurück.'],
   noResults: ['没有找到符合条件的记录。', 'No matching entries.', '一致する記録がありません。', 'Keine passenden Einträge.'],
   search: ['搜索文章', 'Search writings', '記事を検索', 'Texte suchen'],
+  articleSearchUpdating: ['正在查找文章…', 'Finding articles…', '記事を検索中…', 'Artikel werden gesucht…'],
+  articleSearchResults: ['找到 {count} 篇文章', 'Articles found: {count}', '{count} 件の記事が見つかりました', '{count} Artikel gefunden'],
+  articleSearchRegion: ['文章搜索结果', 'Article search results', '記事の検索結果', 'Artikelsuchergebnisse'],
+  clearArticleSearch: ['清除搜索', 'Clear search', '検索をクリア', 'Suche löschen'],
+  clearArticleFilters: ['重置所有条件', 'Clear all filters', '条件をすべて解除', 'Alle Filter zurücksetzen'],
   category: ['分类', 'Category', 'カテゴリー', 'Kategorie'],
   previous: ['上一页', 'Previous', '前へ', 'Zurück'],
   next: ['下一页', 'Next', '次へ', 'Weiter'],
@@ -129,6 +137,11 @@ const words = {
   reply: ['回复', 'Reply', '返信', 'Antworten'],
   send: ['发送', 'Send', '送信', 'Senden'],
   sending: ['发送中…', 'Sending…', '送信中…', 'Wird gesendet…'],
+  commentSent: ['评论已发送。', 'Comment sent.', 'コメントを送信しました。', 'Kommentar gesendet.'],
+  viewComment: ['查看评论', 'View comment', 'コメントを見る', 'Kommentar ansehen'],
+  commentRefreshFailed: ['评论已发送，列表暂未更新。', 'Comment sent. The list could not be updated yet.', 'コメントは送信済みですが、一覧をまだ更新できません。', 'Kommentar gesendet. Die Liste konnte noch nicht aktualisiert werden.'],
+  refreshComments: ['刷新评论', 'Refresh comments', 'コメントを更新', 'Kommentare aktualisieren'],
+  refreshingComments: ['更新评论…', 'Updating comments…', 'コメントを更新中…', 'Kommentare werden aktualisiert…'],
   signInToWrite: ['登录后参与评论、发布与点赞。', 'Sign in to comment, publish and like.', 'ログインして投稿やいいねに参加。', 'Zum Kommentieren und Veröffentlichen anmelden.'],
   guestReadOnly: ['游客可留言与聊天；发布和点赞需要注册账号。', 'Guests can use the guestbook and chat. Register to publish and like.', 'ゲストは伝言とチャットを利用できます。', 'Gäste können chatten. Zum Veröffentlichen registrieren.'],
   date: ['日期', 'Date', '日付', 'Datum'],
@@ -164,7 +177,7 @@ const words = {
   calendar: ['记录日历', 'Entry calendar', '記録カレンダー', 'Eintragskalender'],
   activity: ['代码与探索', 'Code & exploration', 'コードと探求', 'Code & Entdeckungen'],
   repositories: ['个仓库', 'repositories', 'リポジトリ', 'Repositories'],
-  commits: ['本月提交', 'commits this month', '今月のコミット', 'Commits diesen Monat'],
+  commits: ['近 30 天提交', 'commits in 30 days', '直近30日のコミット', 'Commits in 30 Tagen'],
   labTitle: ['让时间，以另一种速度流动。', 'Let time move at another pace.', '時間を、別の速度で。', 'Zeit in einem anderen Tempo.'],
   labBody: ['用数学公式、预设或手绘曲线控制音视频播放速率。', 'Control playback speed with formulas, presets or hand-drawn curves.', '数式や手描き曲線で再生速度を制御。', 'Wiedergabetempo mit Formeln oder Kurven steuern.'],
   openTool: ['打开变速播放器', 'Open speed player', 'プレイヤーを開く', 'Player öffnen'],
@@ -199,6 +212,6 @@ export function mediaFor(entry: Entry): Media[] {
     const url = safeUrl(detail?.secure_url || value)
     if (!url) return []
     const video = detail?.mime?.startsWith('video') || /\.(mp4|webm|mov|mkv|ogg)(?:\?|$)/i.test(url) || /\.(mp4|webm|mov|mkv|ogg)$/i.test(name)
-    return [{ id: detail?.assetId, filename: name, url, mime: detail?.mime || (video ? 'video/mp4' : 'image/jpeg'), desc: detail?.desc || detail?.origin || entry.title }]
+    return [{ id: detail?.assetId, filename: name, originalName: detail?.origin, url, mime: detail?.mime || (video ? 'video/mp4' : 'image/jpeg'), desc: detail?.desc }]
   })
 }
