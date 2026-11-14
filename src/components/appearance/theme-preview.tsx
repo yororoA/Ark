@@ -12,7 +12,7 @@ export default function ThemePreview({ design }: { design: Design }) {
   return <div className={styles.cover} data-preview={design} aria-hidden="true">
     {design === 'offset' ? <>
       <div className={styles['offset-heading']}><span>ARK / NOTES IN MOTION</span><span>08 — 错版</span></div>
-      <div className={styles['offset-stamp']}>R<br />/ K</div>
+      <div className={styles['offset-frame']}><span>FIG. 08 / IN FORM</span><div>{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</div></div>
       <div className={styles['offset-cross']} />
       <div className={styles['offset-title']}>OFF<span>SET.</span></div>
       <div className={styles['offset-caption']}><span>NOT EVERYTHING<br />HAS TO LINE UP.</span><b>把日常，重新排版。</b></div>

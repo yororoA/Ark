@@ -204,10 +204,17 @@ function Login() {
           <RainPlanes variant="identity" />
           <section className={styles['login-copy']}>
             <div className={styles['login-offset']} aria-hidden="true">
-              <div className={styles['offset-plate-heading']}><span>YOROROICE / PERSONAL IMPRESSIONS</span><span>08 — 错版</span></div>
+              <div className={styles['offset-plate-heading']}><span>YOROROICE / NOTES IN MOTION</span><span>08 — 错版</span></div>
+              <div className={styles['offset-poster-label']}><span>01 / A PLACE TO BEGIN</span><span>R / B / K <i /><i /><i /></span></div>
+              <div className={styles['offset-frame-field']}>
+                <i /><i /><i /><i />
+                <span>08</span>
+                <small>ROOM FOR<br />ANOTHER YOU.</small>
+              </div>
+              <div className={styles['offset-fragments']}><i /><i /><i /><i /><i /><i /></div>
               <div className={styles['offset-poster-type']}><span>OFF<b>OFF</b></span><span>SET<b>SET</b></span></div>
               <i className={styles['offset-poster-mark']} />
-              <div className={styles['offset-poster-rule']}><i /><span>NOT QUITE<br />THE SAME.</span></div>
+              <div className={styles['offset-poster-rule']}><span>YOUR LIFE.<br />YOUR IMPRESSION.</span><i /><strong>↗</strong></div>
               <div className={styles['offset-plate-caption']}><span>错开一点，留下自己。</span><span>{activeAccount?.username || 'YOUR STORY STARTS HERE'} ↗</span></div>
             </div>
             <div className={styles['login-voyage']} aria-hidden="true">

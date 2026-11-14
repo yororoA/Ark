@@ -206,6 +206,8 @@
   --offset-signal: #ef3d2f;
   --offset-panel: #f5f0e5;
   --offset-danger: #b92c20;
+  --offset-blue: #3563e9;
+  --offset-blue-soft: #dae8f9;
 }
 
 @mixin offset-night {
@@ -217,6 +219,8 @@
   --ark-soft: #2c2824;
   --offset-panel: #24211e;
   --offset-danger: #ff7868;
+  --offset-blue: #9bbaff;
+  --offset-blue-soft: #202f4a;
 }
 
 @mixin night {

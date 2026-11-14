@@ -186,6 +186,14 @@ export default function OffsetMenu({ locale, close }: { locale: Locale; close: (
           <div className={styles.plateTop}><span>OUT OF REGISTER</span><span>00—07</span></div>
           <div className={styles.indexWord}>OFF<br /><span>SET.</span></div>
           <div className={styles.typePlates}><span>INDEX</span><i /><i /><i /></div>
+          <div className={styles.geometryFrame}>
+            <span>FIG. 08 / IN FORM</span>
+            <div className={styles.geometryField}>{Array.from({ length: 9 }, (_, index) => <i key={index} style={{
+              '--tile-column': index % 3, '--tile-row': Math.floor(index / 3),
+              '--tile-x': `${(index % 3 - 1) * 2}px`, '--tile-y': `${(Math.floor(index / 3) - 1) * 2}px`,
+              '--tile-turn': `${index % 2 ? 2 : -2}deg`,
+            } as CSSProperties} />)}</div>
+          </div>
           <div className={styles.readout}><span>{copy.selected}</span><div><strong key={selected}>{destinations[selected][1]}</strong><ArrowUpRight size={45} strokeWidth={1} /></div><p>{translate(locale, destinations[selected][0])}</p></div>
           <div className={styles.cross} /><span className={styles.plateFoot}>YOUR EVERYDAY. YOUR EDITION.</span>
         </aside>
