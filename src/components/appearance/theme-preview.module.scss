@@ -10,7 +10,13 @@
   &[data-preview='fold'] { --cover-paper: #eeeee1; --cover-ink: #172125; --ark-fold-paper: #eeeee1; --ark-fold-carbon: #11191d; --ark-fold-slate: #485c65; --ark-fold-mist: #a9b9c9; --ark-fold-signal: #b6392a; }
   &[data-preview='allotype'] { --cover-paper: #e7d47b; --cover-ink: #492b38; }
   &[data-preview='voyage'] { --cover-paper: #102cce; --cover-ink: #edf0e8; }
+  &[data-preview='offset'] { --cover-paper: #eee9dd; --cover-ink: #191817; --cover-accent: #ef3d2f; }
 }
+.offset-heading { position: absolute; inset: 6% 6% auto; display: flex; justify-content: space-between; padding-bottom: 3%; border-bottom: 1px solid var(--cover-ink); font: 1.55cqw/1.4 var(--font-ibm-plex),sans-serif; letter-spacing: .06em; }
+.offset-stamp { position: absolute; right: 7%; top: 23%; width: 21%; aspect-ratio: .8; padding: 4%; background: var(--cover-accent); color: var(--cover-ink); font: 800 8cqw/.85 var(--font-barlow-condensed),sans-serif; box-shadow: 1cqw 1cqw 0 var(--cover-ink); transform: rotate(5deg); }
+.offset-cross { position: absolute; left: 88%; top: 68%; width: 5cqw; height: 5cqw; background: linear-gradient(var(--cover-ink),var(--cover-ink)) center/1px 100% no-repeat,linear-gradient(var(--cover-ink),var(--cover-ink)) center/100% 1px no-repeat; }
+.offset-title { position: absolute; left: 6%; top: 21%; font: 900 29cqw/.76 var(--font-voyage-display),Impact,sans-serif; letter-spacing: -.05em; text-shadow: .6cqw .4cqw 0 var(--cover-accent); span { display: block; padding-left: .14em; margin-top: .08em; color: var(--cover-accent); text-shadow: -.6cqw .4cqw 0 var(--cover-ink); } }
+.offset-caption { position: absolute; inset: auto 0 0; display: flex; align-items: center; justify-content: space-between; padding: 5% 6%; background: var(--cover-accent); color: var(--cover-ink); font: 600 1.7cqw/1.2 var(--font-ibm-plex),sans-serif; b { font: 800 2.8cqw/1.4 var(--font-noto-sans),sans-serif; letter-spacing: -.04em; } }
 .voyage-heading { position: absolute; inset: 6% 6% auto; display: flex; justify-content: space-between; align-items: center; font: 1.55cqw/1.4 var(--font-ibm-plex),sans-serif; letter-spacing: .12em; color: #edf0e8; >span:last-child { display: grid; place-items: center; width: 6cqw; height: 6cqw; border: 1px solid #e6ff6280; border-radius: 50%; color: #e6ff62; font-size: 2cqw; } }
 .voyage-title { position: absolute; top: 27%; left: 7%; display: flex; flex-direction: column; font: 500 12cqw/1.15 var(--font-noto-serif),serif; letter-spacing: -.04em; color: #edf0e8; span { padding-left: .24em; } }
 .voyage-route { position: absolute; width: 100%; height: 100%; inset: 0; color: #e6ff62; }

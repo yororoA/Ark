@@ -10,7 +10,13 @@ import styles from './theme-preview.module.scss'
 // artwork where a theme has its own renderer. They never run background motion.
 export default function ThemePreview({ design }: { design: Design }) {
   return <div className={styles.cover} data-preview={design} aria-hidden="true">
-    {design === 'voyage' ? <>
+    {design === 'offset' ? <>
+      <div className={styles['offset-heading']}><span>ARK / NOTES IN MOTION</span><span>08 — 错版</span></div>
+      <div className={styles['offset-stamp']}>R<br />/ K</div>
+      <div className={styles['offset-cross']} />
+      <div className={styles['offset-title']}>OFF<span>SET.</span></div>
+      <div className={styles['offset-caption']}><span>NOT EVERYTHING<br />HAS TO LINE UP.</span><b>把日常，重新排版。</b></div>
+    </> : design === 'voyage' ? <>
       <div className={styles['voyage-heading']}><span>ARK / READING ATLAS</span><span>07</span></div>
       <div className={styles['voyage-title']}>夜<span>航</span></div>
       <svg className={styles['voyage-route']} viewBox="0 0 400 250" fill="none">

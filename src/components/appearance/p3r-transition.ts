@@ -3,6 +3,9 @@ export const P3R_WIPE_EVENT = 'ark:p3r-wipe'
 export interface P3RWipeRequest {
   x: number
   y: number
+  // Plain-text destination information for accessible transition controls.
+  destination?: string
+  label?: string
   // Runs once the wipe covers the page. Return false when the caller cancels.
   navigate?: () => boolean
   // Fall back to native navigation if the client router never commits.

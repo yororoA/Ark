@@ -8,7 +8,7 @@ import HomeCodeActivity from './home-code-activity'
 import VoyageDial from './voyage-dial'
 import styles from './home-activity.module.scss'
 
-type ActivityDesign = 'voyage' | 'allotype' | 'fold'
+type ActivityDesign = 'voyage' | 'allotype' | 'fold' | 'offset'
 type GithubSummary = { reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }
 type Props = { locale: Locale; design: ActivityDesign; activeDates?: string[]; github?: GithubSummary; calendarState: ReactNode; githubState: ReactNode }
 
@@ -85,7 +85,7 @@ function Calendar({ locale, design, activeDates }: { locale: Locale; design: Act
         <div className={styles.printHeading}><span>84 / {copy.period}</span><strong>{String(count).padStart(2, '0')}<small>{copy.days}</small></strong></div>
         <svg className={styles.print} viewBox="0 0 480 280">
           {days.map((day, index) => <g key={day} data-date={day} data-active={active.has(day)} data-week={Math.floor(index / 7) === week} data-selected={index === selected} className={styles.printDay} transform={`translate(${Math.floor(index / 7) * 40 + 20} ${(index % 7) * 40 + 20})`}>
-            {design === 'allotype' ? <circle r="12" /> : <path d="M-13-13H13V8L8 13H-13Z" />}
+            {design === 'allotype' ? <circle r="12" /> : design === 'offset' ? <rect x="-12" y="-12" width="24" height="24" /> : <path d="M-13-13H13V8L8 13H-13Z" />}
           </g>)}
         </svg>
         <div className={styles.printLegend}><span><i />{copy.legend}</span><span><i />{copy.empty}</span><span>UTC</span></div>
