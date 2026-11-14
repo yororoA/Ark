@@ -9,7 +9,7 @@ type HomeCodeActivityProps = {
   locale: Locale
   summary?: { reposCount: number; monthCommits: number; languages: { name: string; percent: number }[] }
   state: ReactNode
-  design: 'allotype' | 'fold' | 'voyage' | 'offset'
+  design: 'allotype' | 'fold' | 'voyage'
 }
 
 const COPY = {

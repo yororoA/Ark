@@ -14,7 +14,6 @@ import { PrismHome } from './prism-navigation'
 import AllotypeHome from './allotype-home'
 import VoyageHome from './voyage-home'
 import FoldHome from './fold-home'
-import OffsetHome from './offset-home'
 import HomeActivity from './home-activity'
 import { useAppearance } from '@/components/appearance/appearance-store'
 
@@ -135,15 +134,12 @@ export default function Home({
   const dates = new Set(moments.data?.data.activeDates || [])
   const calendarStart = new Date()
   calendarStart.setUTCDate(calendarStart.getUTCDate() - 83)
-  const activity = design === 'allotype' || design === 'fold' || design === 'voyage' || design === 'offset' ? <HomeActivity
+  const activity = design === 'allotype' || design === 'fold' || design === 'voyage' ? <HomeActivity
     locale={locale} design={design} activeDates={moments.data?.data.activeDates} github={github.data?.data}
     calendarState={<State loading={moments.isLoading} error={moments.error} retry={() => moments.mutate()} />}
     githubState={<State loading={github.isLoading} error={github.error} retry={() => github.mutate()} />}
   /> : null
   return <>
-    <OffsetHome locale={locale} articles={orbitArticles} moments={orbitMoments} activity={design === 'offset' ? activity : null}
-      articleState={<State loading={articles.isLoading} error={articles.error} empty={articles.data?.data.length === 0} retry={() => articles.mutate()} />}
-      momentState={<State loading={moments.isLoading} error={moments.error} empty={moments.data?.data.entries.length === 0} retry={() => moments.mutate()} />} />
     <VoyageHome locale={locale} articles={orbitArticles} moments={orbitMoments} activity={design === 'voyage' ? activity : null}
       articleState={<State loading={articles.isLoading} error={articles.error} empty={articles.data?.data.length === 0} retry={() => articles.mutate()} />}
       momentState={<State loading={moments.isLoading} error={moments.error} empty={moments.data?.data.entries.length === 0} retry={() => moments.mutate()} />} />

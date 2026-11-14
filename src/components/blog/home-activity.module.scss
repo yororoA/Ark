@@ -86,26 +86,6 @@
 .printLegend { display: flex; align-items: center; gap: 22px; font-size: 9px; color: var(--ark-muted); span { display: flex; align-items: center; gap: 7px; } span:last-child { margin-left: auto; } i { width: 7px; height: 7px; background: var(--ark-accent); border: 1px solid var(--ark-accent); } span:nth-child(2) i { background: transparent; border-color: var(--ark-line); } }
 .activity[data-design='fold'] { --activity-display: var(--font-noto-sans), sans-serif; .instrument { aspect-ratio: auto; border: 1px solid var(--ark-ink); border-left-width: 5px; padding: 25px; } .calendar { border-top: 3px solid var(--ark-ink); } .dateControls h2 { font-weight: 700; } .days i { border-radius: 0; } }
 .activity[data-design='allotype'] { .instrument { aspect-ratio: auto; border-radius: 50% 50% 0 0; padding: 50px 28px 22px; background: color-mix(in srgb, var(--ark-ink) 6%, transparent); } .printHeading { padding-inline: 15%; >span { align-self: end; max-width: 80px; } } .days button { border-radius: 24px 24px 0 0; } .weeks button[aria-pressed='true'] { border-radius: 16px 16px 0 0; } }
-.activity[data-design='offset'] {
-  --activity-display: var(--font-ibm-plex),var(--font-noto-sans),sans-serif;
-  .calendar { padding-block: 70px; }
-  .instrument { aspect-ratio: auto; padding: 28px; border: 1px solid var(--ark-line); background: var(--offset-panel); }
-  .instrument::before,.instrument::after { content: ''; position: absolute; width: 13px; height: 13px; background: linear-gradient(var(--ark-ink),var(--ark-ink)) center/1px 100% no-repeat,linear-gradient(var(--ark-ink),var(--ark-ink)) center/100% 1px no-repeat; }
-  .instrument::before { top: -7px; left: -7px; }
-  .instrument::after { bottom: -7px; right: -7px; }
-  .printHeading >strong { font: 700 clamp(60px,6vw,90px)/.9 var(--font-ibm-plex),sans-serif; letter-spacing: -.075em; color: var(--ark-accent); }
-  .printHeading small { font: 11px/1.5 var(--font-noto-sans),sans-serif; letter-spacing: 0; }
-  .calendarLabel,.printHeading >span,.printLegend,.calendarFoot { font-size: 11px; }
-  .dateControls h2 { font-weight: 700; letter-spacing: -.04em; }
-  .weeks button[aria-pressed='true'] { background: var(--offset-button); color: #fff; i { background: #fff; } }
-  .days button[aria-pressed='true'] { background: var(--offset-button); color: #fff; border-color: var(--offset-button); }
-  .days strong { font-weight: 700; }
-  .days i { border-radius: 0; }
-  .printDay[data-active='true'] { fill: var(--ark-accent); stroke: var(--ark-accent); }
-  .printDay[data-selected='true'] { stroke: var(--ark-ink); stroke-width: 4; }
-  @media(max-width:800px) { .calendar { padding-block: 40px; } .calendarBody { gap: 35px; } }
-  @media(max-width:480px) { .instrument { padding: 22px 16px; } .printLegend { gap: 12px; font-size: 10px; } }
-}
 
 @media (max-width: 1050px) { .calendarBody { gap: 5%; } .calendar { padding-block: 45px; } .calendarFoot { flex-direction: column; } .dateControls h2 { font-size: 27px; } }
 @media (max-width: 800px) {

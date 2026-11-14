@@ -191,34 +191,6 @@
   --ark-soft: #14203a;
 }
 
-// Print pigments stay constant; text colors adapt to the paper.
-@mixin offset-day {
-  --ark-paper: #eee9dd;
-  --ark-ink: #191817;
-  --ark-muted: #605b55;
-  --ark-line: #bab3a8;
-  --ark-accent: #b92c20;
-  --ark-soft: #e1d9cb;
-  --offset-red: #ef3d2f;
-  --offset-button: #b92c20;
-  --offset-cream: #eee9dd;
-  --offset-black: #191817;
-  --offset-signal: #ef3d2f;
-  --offset-panel: #f5f0e5;
-  --offset-danger: #b92c20;
-}
-
-@mixin offset-night {
-  --ark-paper: #191817;
-  --ark-ink: #eee9dd;
-  --ark-muted: #b7afa3;
-  --ark-line: #565049;
-  --ark-accent: #ff7868;
-  --ark-soft: #2c2824;
-  --offset-panel: #24211e;
-  --offset-danger: #ff7868;
-}
-
 @mixin night {
   --ark-color-scheme: dark;
   --ark-white-logo-filter: none;
@@ -230,7 +202,6 @@
   &[data-design="allotype"] { @include allotype-night; }
   &[data-design="fold"] { @include fold-night; }
   &[data-design="voyage"] { @include voyage-night; }
-  &[data-design="offset"] { @include offset-night; }
 }
 
 :root {
@@ -259,7 +230,6 @@
   &[data-design="allotype"] { @include allotype-day; }
   &[data-design="fold"] { @include fold-day; }
   &[data-design="voyage"] { @include voyage-day; }
-  &[data-design="offset"] { @include offset-day; }
   &[data-theme="dark"] { @include night; }
   @media (prefers-color-scheme: dark) {
     &:not([data-theme="light"]):not([data-theme="dark"]) { @include night; }

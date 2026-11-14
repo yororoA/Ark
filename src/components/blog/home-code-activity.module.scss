@@ -85,18 +85,6 @@
   .languageTrack { height: 5px; border-radius: 4px; >span { border-radius: inherit; } }
 }
 
-.activity[data-design='offset'] {
-  --code-display: var(--font-ibm-plex),var(--font-noto-sans),sans-serif;
-  border: 1px solid var(--ark-line); background: var(--offset-panel);
-  .title h2 { font-family: var(--code-display); font-weight: 700; letter-spacing: -.045em; }
-  .eyebrow,.period,.metricIndex,.metricLabel,.languageHeading h3,.languageText,.scale { font-size: 11px; }
-  .commitValue { font-size: clamp(58px,7vw,110px); letter-spacing: -.08em; }
-  .repositoryValue { font-size: clamp(50px,5vw,82px); letter-spacing: -.075em; }
-  .languageTrack { height: 5px; background: var(--ark-soft); >span { background: var(--ark-accent); } }
-  .profile svg { color: var(--ark-accent); }
-  @media(max-width:520px) { .commitValue { font-size: clamp(48px,16vw,75px); } .repositoryValue { font-size: clamp(42px,14vw,65px); } }
-}
-
 .activity[data-enter='visible'] {
   .header, .log { animation: log-arrive .55s cubic-bezier(.2, .7, .2, 1) both; }
   .log { animation-delay: .08s; }

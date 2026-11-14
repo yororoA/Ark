@@ -10,7 +10,7 @@ type P3RLinkProps = ComponentProps<typeof Link> & { voyagePassage?: boolean }
 
 export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, prefetch, replace, scroll, transitionTypes, voyagePassage = false, ...props }: P3RLinkProps) {
   const router = useRouter()
-  const origin = useRef({ x: 0, y: 0, href: '', label: '' })
+  const origin = useRef({ x: 0, y: 0, href: '' })
   const [prefetchOnIntent, setPrefetchOnIntent] = useState(false)
   const linkPrefetch = prefetch === undefined ? (prefetchOnIntent ? null : false) : prefetch
 
@@ -30,12 +30,11 @@ export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, pr
         x: event.detail ? event.clientX : rect.left + rect.width / 2,
         y: event.detail ? event.clientY : rect.top + rect.height / 2,
         href: anchor.href,
-        label: (anchor.querySelector('h2,h3')?.textContent || anchor.getAttribute('aria-label') || anchor.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 90),
       }
       onClick?.(event)
     }}
     onNavigate={event => {
-      const { x, y, href, label } = origin.current
+      const { x, y, href } = origin.current
       if (!href) { onNavigate?.(event); return }
       const url = new URL(href, location.href)
       const changesPage = url.origin === location.origin && url.pathname !== location.pathname
@@ -53,7 +52,7 @@ export default function P3RLink({ onClick, onFocus, onMouseEnter, onNavigate, pr
       const destination = `${url.pathname}${url.search}${url.hash}`
       // The caller's handler and the route change wait until the page is
       // covered, so loading boundaries never flash beside the expanding edge.
-      const request = { x, y, destination, label, navigate: () => {
+      const request = { x, y, navigate: () => {
         let cancelled = false
         onNavigate?.({ preventDefault: () => { cancelled = true } })
         if (cancelled) return false

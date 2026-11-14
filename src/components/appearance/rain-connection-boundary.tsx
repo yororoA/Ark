@@ -40,11 +40,6 @@ const VoyageSequence = dynamic(() => import('./voyage-connection'), {
   loading: () => <LoadingCurtain label="夜航 · 正在接入" />,
 })
 
-const OffsetSequence = dynamic(() => import('./offset-connection'), {
-  ssr: false,
-  loading: () => <LoadingCurtain label="错版 · 正在接入" paper />,
-})
-
 function Transition({ connection }: { connection: RainConnection }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -55,7 +50,7 @@ function Transition({ connection }: { connection: RainConnection }) {
   // non-login route is what the umbrella must uncover.
   const routeCommitted = navigating && pathname !== '/login'
   const [foldContentReady, setFoldContentReady] = useState(false)
-  const waitsForContent = connection.design === 'fold' || connection.design === 'allotype' || connection.design === 'voyage' || connection.design === 'offset'
+  const waitsForContent = connection.design === 'fold' || connection.design === 'allotype' || connection.design === 'voyage'
   const pageReady = routeCommitted && (!waitsForContent || foldContentReady)
 
   useEffect(() => {
@@ -104,7 +99,7 @@ function Transition({ connection }: { connection: RainConnection }) {
   const dismiss = useCallback(() => {
     useRainConnection.getState().clear(connection.id)
     connection.onDismiss()
-    if ((connection.design === 'fold' || connection.design === 'voyage' || connection.design === 'offset') && navigationStarted.current) {
+    if ((connection.design === 'fold' || connection.design === 'voyage') && navigationStarted.current) {
       router.replace(`/login?returnTo=${encodeURIComponent(connection.destination)}`)
     }
   }, [connection, router])
@@ -129,7 +124,7 @@ function Transition({ connection }: { connection: RainConnection }) {
     return () => window.clearTimeout(timer)
   }, [navigating, pageReady])
 
-  const Sequence = connection.design === 'offset' ? OffsetSequence : connection.design === 'voyage' ? VoyageSequence : connection.design === 'fold' ? FoldSequence : connection.design === 'allotype' ? AllotypeSequence : connection.design === 'prism' ? PrismSequence : connection.design === 'p3r' ? P3RSequence : RainSequence
+  const Sequence = connection.design === 'voyage' ? VoyageSequence : connection.design === 'fold' ? FoldSequence : connection.design === 'allotype' ? AllotypeSequence : connection.design === 'prism' ? PrismSequence : connection.design === 'p3r' ? P3RSequence : RainSequence
   return <Sequence
     {...connection}
     pageReady={pageReady}

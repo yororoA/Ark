@@ -4,7 +4,6 @@
 @use './allotype-ui';
 @use './fold-ui';
 @use './voyage-ui';
-@use './offset-ui';
 
 // The first rain iteration remains in 3d601fb; the second pass is isolated in
 // rain-ui so theme rules have one owner, without remounting shared content.
@@ -87,5 +86,4 @@
   @include allotype-ui.personality;
   @include fold-ui.personality;
   @include voyage-ui.personality;
-  @include offset-ui.personality;
 }
