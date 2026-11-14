@@ -1,0 +1,46 @@
+@mixin personality {
+  .login-offset, .offset-login-heading { display: none; }
+  :global(html[data-design='offset']) {
+    .login-scene { --display-latin: var(--font-ibm-plex), sans-serif; --display-cjk: var(--font-noto-sans), sans-serif; }
+    .login-header, .login-footer { border-color: var(--line); }
+    .login-main { max-width: 1500px; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .8fr); gap: 7%; padding: 45px 5% 55px; }
+    .login-copy { max-width: none; animation: none; }
+    .login-signature, .login-eyebrow, .access-notes, .archive-register, .standard-login-heading { display: none; }
+    .offset-login-heading { display: inline; }
+    .login-copy h1 { margin: 24px 0 12px; font: 700 clamp(26px, 2.5vw, 40px)/1.4 var(--display-cjk); letter-spacing: -.05em; }
+    .login-copy > p { max-width: 430px; font: 13px/1.9 var(--display-cjk); }
+    .login-offset { display: block; position: relative; min-width: 0; aspect-ratio: 1.23; color: var(--offset-black, #191817); background: var(--offset-cream, #eee9dd); border: 1px solid var(--line); overflow: hidden; isolation: isolate; container-type: inline-size; }
+    .offset-plate-heading { position: absolute; z-index: 3; inset: 20px 20px auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 9px/1.5 var(--font-ibm-plex), sans-serif; letter-spacing: .13em; border-bottom: 1px solid currentColor; padding-bottom: 13px; }
+    .offset-poster-type { position: absolute; inset: 16% 6% 22%; font: 700 36cqw/.76 var(--font-voyage-display), Impact, sans-serif; letter-spacing: -.05em;
+      >span { display: block; position: relative; &:last-child { margin-left: 18%; } }
+      b { position: absolute; top: 0; left: 0; font: inherit; letter-spacing: inherit; color: var(--offset-red, #ef3d2f); translate: 7% -8%; clip-path: inset(0 -20%); animation: offset-overprint .9s .35s cubic-bezier(.2, .8, .2, 1) both; transition: translate .4s; }
+      >span:last-child b { animation-delay: .5s; translate: -9% 8%; }
+    }
+    .offset-poster-mark { position: absolute; z-index: 2; right: 6%; top: 24%; width: 18%; aspect-ratio: 1; border: max(6px, 1.6cqw) solid var(--offset-black, #191817); border-radius: 50%; transform: translateX(14%) rotate(-12deg); animation: offset-mark-arrive .8s .15s cubic-bezier(.2, .8, .2, 1) both;
+      &::before, &::after { content: ''; position: absolute; background: var(--offset-red, #ef3d2f); }
+      &::before { width: 130%; height: 3px; left: -15%; top: calc(50% - 1px); }
+      &::after { width: 3px; height: 130%; top: -15%; left: calc(50% - 1px); }
+    }
+    .offset-poster-rule { position: absolute; left: 6%; right: 6%; bottom: 18%; height: 10%; display: flex; align-items: center; gap: 18px; i { display: block; height: 80%; width: 54%; background: var(--offset-red, #ef3d2f); transform: skewX(-17deg); } span { font: 700 2cqw/1.1 var(--font-ibm-plex), sans-serif; letter-spacing: -.03em; } }
+    .offset-plate-caption { position: absolute; inset: auto 20px 20px; display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid currentColor; padding-top: 13px; font: 10px/1.5 var(--font-noto-sans), sans-serif; >span:last-child { max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+    .login-offset:hover .offset-poster-type b { translate: 0 0; }
+    .login-offset:hover .offset-poster-type >span:last-child b { translate: 0 0; }
+    .access-panel { min-height: 0; justify-self: stretch; max-width: 440px; width: 100%; border: 1px solid var(--line); border-top: 5px solid var(--accent); background: var(--paper); padding: 30px; box-shadow: none; animation: none; }
+    .access-panel::after { width: 10px; height: 10px; right: -5px; bottom: -5px; border-color: var(--accent); background: var(--paper); }
+    .panel-header { border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+    .panel-index { letter-spacing: .06em; font-size: 11px; }
+    .panel-signal i { border-radius: 0; background: var(--accent); box-shadow: none; }
+    .account-glyph { border: 1px solid var(--line); background: var(--soft); border-radius: 0; color: var(--accent); }
+    .account-overview { margin-block: 28px; }
+    .active-account strong { font-family: var(--font-noto-sans), sans-serif; font-weight: 700; letter-spacing: -.035em; }
+    .credential-status div { grid-template-columns: 1fr; gap: 10px; padding-block: 16px; }
+    .credential-status strong { font-family: var(--font-ibm-plex), sans-serif; font-size: 13px; }
+    .primary-action { color: var(--paper) !important; background: var(--ink); border-color: var(--ink); font-weight: 700; border-radius: 0; min-height: 52px; &::after { display: none; } svg { transition: translate .25s; } &:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); svg { translate: 3px -3px; } } }
+    .secondary-action { min-height: 44px; align-self: stretch; justify-content: space-between; border-color: var(--line); }
+    @media (max-width: 850px) { .login-main { gap: 5%; grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr); } .offset-plate-heading, .offset-plate-caption { inset-inline: 14px; } .access-panel { padding: 24px; } }
+    @media (max-width: 680px) { .login-main { grid-template-columns: minmax(0, 1fr); padding: 24px 6% 40px; gap: 28px; } .access-panel { max-width: none; } .login-copy h1 { font-size: 27px; } .login-header nav { gap: 12px; } .offset-plate-heading { font-size: 8px; top: 14px; padding-bottom: 9px; } .offset-plate-caption { font-size: 9px; bottom: 14px; padding-top: 9px; } .offset-poster-rule span { font-size: 8px; } }
+    @media (prefers-reduced-motion: reduce) { .offset-poster-type b, .offset-poster-mark { animation: none; } .offset-poster-type b, .primary-action, .primary-action svg { transition: none; } }
+  }
+}
+@keyframes offset-overprint { from { clip-path: inset(0 100% 0 0); transform: translateX(-25%); } 70% { clip-path: inset(0 -20%); transform: translateX(4%); } to { clip-path: inset(0 -20%); transform: none; } }
+@keyframes offset-mark-arrive { from { transform: translate(100%, -35%) rotate(-90deg); } 75% { transform: translateX(8%) rotate(8deg); } to { transform: translateX(14%) rotate(-12deg); } }
