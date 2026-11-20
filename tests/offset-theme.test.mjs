@@ -100,10 +100,12 @@ async function traceWipe(page) {
     const sample = () => {
       if (!state.active) return
       const layer = document.querySelector('[data-testid="offset-wipe"]')
+      const shutter = layer?.querySelector('[data-offset-shutter]')
       state.frames.push({
         phase: layer?.dataset.phase, pathname: location.pathname,
         ready: Boolean(document.querySelector('#main-content')?.children.length && !document.querySelector('[data-route-loading]')),
         x: [...(layer?.querySelectorAll('[data-offset-plate]') ?? [])].map(plate => new DOMMatrixReadOnly(getComputedStyle(plate).transform).e),
+        aperture: shutter ? getComputedStyle(shutter).clipPath : null,
       })
       state.id = requestAnimationFrame(sample)
     }
@@ -118,6 +120,19 @@ async function traceWipe(page) {
     if (name) await writeFile(join(shots, `${name}.json`), JSON.stringify(frames))
     return frames
   }
+}
+
+function apertureArea(clipPath) {
+  if (clipPath === 'none') return 0
+  assert.match(clipPath ?? '', /^polygon\(evenodd,/, 'The reveal uses a real even-odd aperture')
+  const coordinates = clipPath.match(/-?\d+(?:\.\d+)?%/g)?.map(value => Number.parseFloat(value)) ?? []
+  assert.equal(coordinates.length, 20, 'The aperture contains an exterior boundary and an interior opening')
+  const opening = Array.from({ length: 5 }, (_, index) => coordinates.slice(10 + index * 2, 12 + index * 2))
+  const doubleArea = opening.reduce((area, [x, y], index) => {
+    const [nextX, nextY] = opening[(index + 1) % opening.length]
+    return area + x * nextY - nextX * y
+  }, 0)
+  return Math.abs(doubleArea) / 20000
 }
 
 async function holdRoute(context, pathname, t) {
@@ -194,6 +209,7 @@ test('Offset journey: login and real routes use moving print plates and wait for
   const wipe = page.getByTestId('offset-wipe')
   await page.getByTestId('offset-home').getByRole('link', { name: /进入文字/ }).click()
   await expect(wipe).toHaveAttribute('data-phase', 'covered')
+  await expect(wipe.locator('[data-offset-destination]')).toHaveText('进入文字')
   await page.waitForTimeout(900)
   await expect(wipe).toHaveAttribute('data-phase', 'covered')
   assert.equal(new URL(page.url()).pathname, '/home', 'A slow real route response has not committed')
@@ -208,11 +224,19 @@ test('Offset journey: login and real routes use moving print plates and wait for
   await wipeFinished(page, '/moments')
   const frames = await finish('motion-route-journey')
   const covering = frames.filter(frame => frame.phase === 'covering')
+  const held = frames.filter(frame => frame.phase === 'covered')
   const revealing = frames.filter(frame => frame.phase === 'revealing')
   assert(covering.length > 5 && new Set(covering.map(frame => JSON.stringify(frame.x.map(Math.round)))).size > 5, 'Three plates actually move through intermediate cover frames')
   assert(covering.some(frame => new Set(frame.x.map(x => Math.round(Math.abs(x) / 20))).size === 3), 'The three plates are staggered rather than one static overlay')
+  assert(held.length > 5 && held.every(frame => apertureArea(frame.aperture) === 0), 'The aperture remains closed throughout the wait for real destination content')
   assert(revealing.length > 5 && revealing.every(frame => frame.ready && ['/articles', '/moments'].includes(frame.pathname)), 'Reveal runs only over committed, ready destination content')
-  assert(new Set(revealing.map(frame => JSON.stringify(frame.x.map(Math.round)))).size > 5, 'The cover leaves through intermediate geometry')
+  assert(revealing.every(frame => frame.x.length === 3 && frame.x.every(x => Math.abs(x) < 1)), 'The three interlocking sheets stay in place while the aperture reveals the page')
+  for (const pathname of ['/articles', '/moments']) {
+    const routeFrames = revealing.filter(frame => frame.pathname === pathname)
+    assert(new Set(routeFrames.map(frame => frame.aperture)).size > 5, `${pathname} is revealed through multiple computed aperture shapes`)
+    const openingAreas = routeFrames.map(frame => apertureArea(frame.aperture))
+    assert(Math.min(...openingAreas) < .03 && Math.max(...openingAreas) > 1, `${pathname} opens from a nearly closed aperture to an opening larger than the viewport`)
+  }
   await noOverflow(page)
   await page.waitForTimeout(800)
   await context.close()
@@ -376,6 +400,7 @@ for (const motion of ['no-preference', 'reduce']) {
       const sample = () => {
         const dialog = document.querySelector('[data-testid="offset-connection"]')
         if (!dialog) return
+        const sheets = dialog.querySelector('[data-offset-login-sheets]')
         frames.push({
           phase: dialog.dataset.phase,
           status: dialog.dataset.status,
@@ -383,8 +408,13 @@ for (const motion of ['no-preference', 'reduce']) {
           pageReady: dialog.dataset.pageReady,
           pathname: location.pathname,
           contentReady: Boolean(document.querySelector('#main-content')?.children.length && !document.querySelector('[data-route-loading]')),
+          cover: sheets ? { clip: getComputedStyle(sheets).clipPath, transform: getComputedStyle(sheets).transform, visibility: getComputedStyle(sheets).visibility } : null,
           slices: [...dialog.querySelectorAll('[data-offset-login-type-slice]')].map(slice => ({ transform: getComputedStyle(slice).transform, clip: getComputedStyle(slice).clipPath })),
-          exit: [...dialog.querySelectorAll('[data-offset-login-exit-sheet]')].map(slice => getComputedStyle(slice).transform),
+          exit: [...dialog.querySelectorAll('[data-offset-login-exit-sheet]')].map(sheet => {
+            const transform = getComputedStyle(sheet).transform
+            const matrix = new DOMMatrixReadOnly(transform)
+            return { side: sheet.dataset.side, transform, x: matrix.e, y: matrix.f, width: sheet.offsetWidth, height: sheet.offsetHeight }
+          }),
         })
         requestAnimationFrame(sample)
       }
@@ -402,9 +432,17 @@ for (const motion of ['no-preference', 'reduce']) {
       const assembly = frames.filter(frame => frame.status === 'success' && frame.revealing !== 'true')
       assert(assembly.length > 5 && assembly.every(frame => frame.slices.length === 5), 'Observe five type slices throughout successful registration')
       assert(new Set(assembly.map(frame => JSON.stringify(frame.slices))).size >= 5, 'Authentication success actually moves and registers the type slices over multiple frames')
+      const covering = frames.filter(frame => frame.phase === 'impressing')
+      assert(covering.length > 3 && covering.every(frame => frame.pathname === '/login' && frame.pageReady === 'false'), 'The login route stays in place while its opaque cover grows')
+      assert(new Set(covering.map(frame => frame.cover?.clip)).size > 3, 'The login cover expands through multiple computed aperture shapes')
       const opening = frames.filter(frame => frame.revealing === 'true')
-      assert(opening.length > 3 && opening.every(frame => frame.contentReady && frame.pathname === '/articles' && frame.pageReady === 'true'), 'Print sheets reveal only committed destination content')
-      assert(new Set(opening.map(frame => JSON.stringify(frame.exit))).size >= 3, 'Three print sheets move during the final opening, rather than disappearing in one frame')
+      assert(opening.length > 3 && opening.every(frame => frame.contentReady && frame.pathname === '/articles' && frame.pageReady === 'true'), 'The four aperture leaves reveal only committed destination content')
+      assert(opening.every(frame => frame.exit.length === 4 && frame.exit.map(sheet => sheet.side).join(',') === 'top,right,bottom,left'), 'All four aperture edges remain present throughout the opening')
+      assert(new Set(opening.map(frame => JSON.stringify(frame.exit))).size > 5, 'The four aperture leaves move through intermediate geometry')
+      assert(opening.every(({ exit: [top, right, bottom, left] }) => top.y <= 1 && right.x >= -1 && bottom.y >= -1 && left.x <= 1
+        && Math.abs(top.x) < 1 && Math.abs(bottom.x) < 1 && Math.abs(left.y) < 1 && Math.abs(right.y) < 1), 'Each aperture leaf moves outward along its own axis')
+      const travel = sheet => sheet.side === 'top' || sheet.side === 'bottom' ? Math.abs(sheet.y) / sheet.height : Math.abs(sheet.x) / sheet.width
+      assert(opening.some(frame => frame.exit.every(sheet => travel(sheet) < .05)) && opening.some(frame => frame.exit.every(sheet => travel(sheet) > .95)), 'The aperture opens from a fully covered centre to all four leaves clearing the viewport')
     }
     await expect(page.locator('main h1:visible')).toHaveCount(1)
     assert.equal(await page.locator('main').evaluate(element => element.closest('[inert]') !== null), false)
@@ -412,6 +450,29 @@ for (const motion of ['no-preference', 'reduce']) {
     await noOverflow(page)
   })
 }
+
+test('Offset login: a paused cover cannot release navigation before its animation finishes', async t => {
+  const { page, authRequests } = await session(t, { motion: 'no-preference', accounts: [account] })
+  await visit(page, '/login?returnTo=%2Fabout')
+  const pausedCover = await page.addStyleTag({ content: '[data-offset-login-sheets] { animation-play-state: paused !important; }' })
+  await page.getByRole('button', { name: '建立连接', exact: true }).click()
+  const dialog = page.getByTestId('offset-connection')
+  await expect(dialog).toHaveAttribute('data-status', 'success')
+  await expect(dialog).toHaveAttribute('data-phase', 'impressing')
+  const cover = dialog.locator('[data-offset-login-sheets]')
+  const paused = await cover.evaluate(element => ({ name: getComputedStyle(element).animationName, state: getComputedStyle(element).animationPlayState, clip: getComputedStyle(element).clipPath }))
+  assert.notEqual(paused.name, 'none', 'Pause the actual CSS cover animation')
+  assert.equal(paused.state, 'paused')
+  assert.notEqual(paused.clip, 'inset(0px)', 'The paused cover has not filled the screen')
+  await page.waitForTimeout(750) // Longer than the authored cover, with its actual animation held still.
+  await expect(page).toHaveURL(`${baseURL}/login?returnTo=%2Fabout`)
+  await expect(dialog).toHaveAttribute('data-assembled', 'false')
+  await expect(dialog).toHaveAttribute('data-revealing', 'false')
+  await pausedCover.evaluate(element => element.remove())
+  await expect(page).toHaveURL(`${baseURL}/about`, { timeout: 20000 })
+  await expect(dialog).toHaveCount(0)
+  assert.deepEqual(authRequests, [{ path: '/api/auth/switch', body: { uid: account.uid } }])
+})
 
 test('Offset login: a rejected connection shows its error and Escape restores the form', async t => {
   const { page, context } = await session(t, { width: 320, mode: 'dark', accounts: [account] })

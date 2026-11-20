@@ -7,6 +7,9 @@ import { useRainConnection } from './rain-connection-store'
 import { P3R_WIPE_EVENT, handOffUnderP3RWipe, type P3RWipeRequest } from './p3r-transition'
 import styles from './offset-effects.module.scss'
 
+const CLOSED_APERTURE = 'polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%)'
+const OPEN_APERTURE = 'polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, -5% -5%, 105% -5%, 105% 105%, -5% 105%, -5% -5%)'
+
 const COPY = {
   zh: { next: '下一版', skip: '跳过动画', waiting: '页面仍在载入', open: '直接打开' },
   en: { next: 'NEXT EDITION', skip: 'Skip animation', waiting: 'The page is still loading', open: 'Open directly' },
@@ -29,6 +32,12 @@ export default function OffsetEffects() {
     if (design !== 'offset' || !layer || !layer.showPopover || !layer.animate) return
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
     const plates = [...layer.querySelectorAll<HTMLElement>('[data-offset-plate]')]
+    const shutter = layer.querySelector<HTMLElement>('[data-offset-shutter]')!
+    const scene = layer.querySelector<HTMLElement>('[data-offset-scene]')!
+    const glyphs = [...layer.querySelectorAll<HTMLElement>('[data-offset-glyph]')]
+    const tiles = [...layer.querySelectorAll<HTMLElement>('[data-offset-tile]')]
+    const frames = [...layer.querySelectorAll<HTMLElement>('[data-offset-frame]')]
+    const reticle = layer.querySelector<HTMLElement>('[data-offset-reticle]')!
     const heading = layer.querySelector<HTMLElement>('[data-offset-destination]')!
     const caption = layer.querySelector<HTMLElement>('[data-offset-caption]')!
     const skipButton = layer.querySelector<HTMLButtonElement>('[data-offset-skip]')!
@@ -80,12 +89,56 @@ export default function OffsetEffects() {
     }
     const animatePlates = (opening: boolean) => {
       animations.forEach(animation => animation.cancel())
-      animations = plates.map((plate, index) => plate.animate(opening ? [
-        { transform: 'translateX(0%)' }, { transform: `translateX(${index % 2 ? 103 : -103}%)` },
-      ] : [
-        { transform: `translateX(${index % 2 ? -103 : 103}%)` }, { transform: 'translateX(0%)' },
-      ], { duration: opening ? 590 : 510, delay: (opening ? 2 - index : index) * 74, easing: opening ? 'cubic-bezier(.72,0,.24,1)' : 'cubic-bezier(.16,.82,.18,1)', fill: 'both' }))
-      return Promise.allSettled(animations.map(animation => animation.finished))
+      animations = []
+      const animate = (element: HTMLElement, keyframes: Keyframe[], options: KeyframeAnimationOptions) => {
+        const animation = element.animate(keyframes, { fill: 'both', ...options })
+        animations.push(animation)
+        return animation
+      }
+      if (opening) {
+        // Keep all three interlocking surfaces still and fully opaque. Only
+        // this aperture can expose the destination, after readyMain permits it.
+        const aperture = animate(shutter, [
+          { clipPath: CLOSED_APERTURE, offset: 0 },
+          { clipPath: 'polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 44% 40%, 56% 40%, 56% 60%, 44% 60%, 44% 40%)', offset: .18 },
+          { clipPath: OPEN_APERTURE, offset: 1 },
+        ], { duration: 720, easing: 'cubic-bezier(.65,0,.2,1)' })
+        animate(scene, [{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.24)', opacity: 0 }], { duration: 430, easing: 'cubic-bezier(.4,0,.8,.2)' })
+        frames.forEach((frame, index) => animate(frame, [
+          { transform: `translate(-50%,-50%) scale(${.15 + index * .075})`, opacity: .95 },
+          { transform: `translate(-50%,-50%) scale(${6 + index})`, opacity: 0 },
+        ], { duration: 660, delay: index * 30, easing: 'cubic-bezier(.65,0,.2,1)' }))
+        return aperture.finished.catch(() => {})
+      }
+
+      const x = Math.max(0, Math.min(innerWidth, request?.x ?? innerWidth / 2)) - innerWidth / 2
+      const y = Math.max(0, Math.min(innerHeight, request?.y ?? innerHeight / 2)) - innerHeight / 2
+      animate(reticle, [
+        { transform: `translate(${x}px,${y}px) scale(.12) rotate(-12deg)`, opacity: 1 },
+        { transform: 'translate(0,0) scale(1.4) rotate(0deg)', opacity: 1, offset: .7 },
+        { transform: 'translate(0,0) scale(1.7)', opacity: 0 },
+      ], { duration: 530, easing: 'cubic-bezier(.16,.8,.2,1)' })
+      const covers = plates.map((plate, index) => animate(plate, [
+        { transform: `translateX(${index === 1 ? -110 : 110}%)` },
+        { transform: 'translateX(0%)' },
+      ], { duration: 620, delay: 120 + index * 55, easing: 'cubic-bezier(.76,0,.18,1)' }))
+      animate(scene, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 260 })
+      glyphs.forEach((glyph, index) => animate(glyph, [
+        { transform: `translate(${[80,-60,45,-70][index]}%,${index % 2 ? 105 : -105}%) rotate(${index % 2 ? 14 : -14}deg)`, opacity: 0 },
+        { transform: `translate(0,${index % 2 ? -5 : 5}%) rotate(0deg)`, opacity: 1, offset: .8 },
+        { transform: 'translate(0,0)', opacity: 1 },
+      ], { duration: 530, delay: 190 + index * 40, easing: 'cubic-bezier(.16,.85,.2,1)' }))
+      animate(heading, [
+        { clipPath: 'inset(0 100% 0 0)', transform: 'translateX(32px)' },
+        { clipPath: 'inset(0)', transform: 'translateX(0)' },
+      ], { duration: 320, delay: 510, easing: 'cubic-bezier(.2,.8,.2,1)' })
+      tiles.forEach((tile, index) => animate(tile, [
+        { transform: 'translate(0,0) scale(.1) rotate(-45deg)', opacity: 0 },
+        { transform: `translate(${index % 2 ? -15 : 15}%,${index % 3 ? 15 : -15}%) scale(1.08) rotate(4deg)`, opacity: 1, offset: .72 },
+        { transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1 },
+      ], { duration: 400, delay: 200 + index * 30, easing: 'cubic-bezier(.16,.85,.2,1)' }))
+      // Decorations fit inside this gate. Navigation never races the last plate.
+      return Promise.allSettled(covers.map(animation => animation.finished))
     }
     const reveal = (arrived: boolean) => {
       if (!active || layer.dataset.phase === 'revealing') return
@@ -215,11 +268,19 @@ export default function OffsetEffects() {
   }, [design])
 
   return <div ref={layerRef} popover="manual" className={styles.layer} data-testid="offset-wipe" data-phase="idle" aria-label="OFFSET">
-    <div className={styles.plates} aria-hidden="true">
-      <div className={styles.plate} data-offset-plate><span className={styles.edition}>ARK / OFFSET<br />PRINT — 08</span><strong>OFF<span>SET</span></strong><i /></div>
-      <div className={styles.plate} data-offset-plate><span className={styles.caption} data-offset-caption>下一版</span><strong className={styles.destination} data-offset-destination>OFFSET</strong><span className={styles.cross}>＋</span></div>
-      <div className={styles.plate} data-offset-plate><strong>NEXT<span>→</span></strong><span className={styles.registration}>C / M / Y / K<span /><span /><span /></span></div>
+    <div className={styles.reticle} data-offset-reticle aria-hidden="true"><i /><span>＋</span><i /></div>
+    <div className={styles.shutter} data-offset-shutter aria-hidden="true">
+      <div className={styles.plates}>
+        <div className={styles.plate} data-offset-plate /><div className={styles.plate} data-offset-plate /><div className={styles.plate} data-offset-plate />
+      </div>
+      <div className={styles.scene} data-offset-scene>
+        <div className={styles.masthead}><span>YOROROICE</span><span>OFFSET</span></div>
+        <div className={styles.wordmark}>{'NEXT'.split('').map(letter => <span key={letter} data-offset-glyph>{letter}</span>)}</div>
+        <div className={styles.window}><div className={styles.windowHead}><span data-offset-caption>下一版</span><span>↗</span></div><strong className={styles.destination} data-offset-destination>OFFSET</strong><div className={styles.windowFoot}><i /><i /><i /></div></div>
+        <div className={styles.tiles}>{Array.from({ length: 8 }, (_, index) => <i key={index} data-offset-tile />)}</div>
+      </div>
     </div>
+    <div className={styles.frames} aria-hidden="true"><i data-offset-frame /><i data-offset-frame /><i data-offset-frame /></div>
     <div className={styles.actions}>
       <div className={styles.recovery} data-offset-recovery hidden><span role="status" data-offset-waiting>页面仍在载入</span><a data-offset-direct>直接打开</a></div>
       <button type="button" data-offset-skip>跳过动画</button>

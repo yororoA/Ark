@@ -57,7 +57,7 @@ export default function OffsetHome({ locale, articles, moments, articleState, mo
           <h2>{copy.title.map(line => <span key={line}>{line}</span>)}</h2>
           <p>{copy.intro}</p>
           <nav className={styles.index} aria-label={translate(locale, 'contents')}>
-            {([['/articles', copy.read, '01'], ['/moments', copy.moments, '02'], ['/chat', copy.connect, '03']] as const).map(([href, label, number]) => <Link href={href} key={href}><span>{number}</span><strong>{label}</strong><ArrowUpRight size={23} /></Link>)}
+            {([['/articles', copy.read, '01'], ['/moments', copy.moments, '02'], ['/chat', copy.connect, '03']] as const).map(([href, label, number]) => <Link href={href} key={href} aria-label={label}><span aria-hidden="true">{number}</span><strong>{label}</strong><ArrowUpRight size={23} /></Link>)}
           </nav>
         </div>
       </div>

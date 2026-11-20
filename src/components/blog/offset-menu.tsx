@@ -201,7 +201,7 @@ export default function OffsetMenu({ locale, close }: { locale: Locale; close: (
           <div className={styles.heading} data-offset-surface><h2>{copy.contents}</h2><span>{copy.title}</span></div>
           <nav ref={navRef} className={styles.directory} aria-label={translate(locale, 'contents')} onKeyDown={arrows} data-offset-surface>
             <span className={styles.registerBar} aria-hidden="true"><i /><i /></span>
-            {destinations.map(([key, number, english], index) => <Link key={key} href={`/${key}`} onNavigate={navigate}
+            {destinations.map(([key, number, english], index) => <Link key={key} href={`/${key}`} aria-label={translate(locale, key)} onNavigate={navigate}
               aria-current={current === index ? 'page' : undefined} data-destination={index} data-selected={selected === index}
               onMouseEnter={() => setPointed(index)} onMouseLeave={() => setPointed(null)}
               onFocus={() => { setFocused(index); setPointed(null) }} onBlur={() => setFocused(null)}>

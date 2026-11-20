@@ -31,18 +31,24 @@ const TYPE_SLICES = Array.from({ length: 5 }, (_, index) => ({
   '--shift': `${[38, -27, 46, -35, 22][index]}%`,
   '--delay': `${index * 45}ms`,
 } as CSSProperties))
-const SHEETS = [
-  { word: 'OFF', direction: 1, delay: 0 },
-  { word: 'SET', direction: -1, delay: 55 },
-  { word: '↗', direction: 1, delay: 100 },
+const FRAGMENTS = [
+  { x: '-185%', y: '-160%', turn: '-24deg', size: '13%', left: '19%', top: '12%' },
+  { x: '180%', y: '-140%', turn: '38deg', size: '7%', left: '82%', top: '19%' },
+  { x: '-200%', y: '100%', turn: '-16deg', size: '8%', left: '9%', top: '56%' },
+  { x: '200%', y: '150%', turn: '28deg', size: '11%', left: '78%', top: '73%' },
+  { x: '-120%', y: '180%', turn: '55deg', size: '5%', left: '30%', top: '85%' },
+  { x: '130%', y: '-190%', turn: '-45deg', size: '5%', left: '65%', top: '3%' },
 ] as const
-const TIMING = { prepare: 250, register: 650, identity: 780, impress: 1080, covered: 1540, open: 600 } as const
+// Success starts a finite composition. The opaque aperture must finish growing
+// before navigation; the opening still waits for real destination readiness.
+const TIMING = { prepare: 160, register: 580, identity: 1040, impress: 1580, open: 720 } as const
 type Step = 'aligning' | 'registering' | 'identity' | 'impressing' | 'waiting'
 
 function TypeBlock() { return <><span>OFF</span><span>SET</span></> }
 
 export default function OffsetConnection({ status, username, error, destination, pageReady, navigationSlow, onCovered, onComplete, onDismiss }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const handedOff = useRef(false)
   const [locale] = useState(readLocale)
   const [quick, setQuick] = useState(false)
   const [prepared, setPrepared] = useState(false)
@@ -60,8 +66,8 @@ export default function OffsetConnection({ status, username, error, destination,
     const overflow = document.body.style.overflow
     dialog?.showModal()
     document.body.style.overflow = 'hidden'
-    // Let the initial registration line land before an instant auth response
-    // starts the type movement. Authentication itself is never delayed.
+    // Settle the small registration frame before an instant auth response
+    // unfolds the composition. Authentication itself is never delayed.
     const timer = window.setTimeout(() => setPrepared(true), TIMING.prepare)
     const motion = matchMedia('(prefers-reduced-motion: reduce)')
     const simplify = () => { if (motion.matches || document.hidden) setQuick(true) }
@@ -84,12 +90,15 @@ export default function OffsetConnection({ status, username, error, destination,
       window.setTimeout(() => setStep('registering'), TIMING.register),
       window.setTimeout(() => setStep('identity'), TIMING.identity),
       window.setTimeout(() => setStep('impressing'), TIMING.impress),
-      window.setTimeout(() => setStep('waiting'), TIMING.covered),
     ]
     return () => timers.forEach(clearTimeout)
   }, [assembling, quick])
 
-  useEffect(() => { if (status === 'success' && ready) onCovered() }, [status, ready, onCovered])
+  useEffect(() => {
+    if (status !== 'success' || !ready || handedOff.current) return
+    handedOff.current = true
+    onCovered()
+  }, [status, ready, onCovered])
   useEffect(() => {
     if (!revealing) return
     const timer = window.setTimeout(onComplete, quick ? 0 : TIMING.open)
@@ -100,26 +109,32 @@ export default function OffsetConnection({ status, username, error, destination,
     data-status={status} data-phase={phase} data-assembling={assembling} data-assembled={ready} data-cover={coverVisible} data-revealing={revealing} data-quick={quick} data-page-ready={pageReady} data-navigation-slow={navigationSlow}
     onCancel={event => { event.preventDefault(); if (status === 'success') setQuick(true); else onDismiss() }}>
     <div className={styles.paper} aria-hidden="true" />
-    <div className={styles.sheets} data-offset-login-sheets aria-hidden="true">
-      {SHEETS.map(({ word, direction, delay }, index) => <div className={styles.sheet} data-offset-login-exit-sheet={index} key={word} style={{ '--direction': direction, '--sheet-delay': `${delay}ms` } as CSSProperties}>
-        <small>YOROROICE / 0{index + 1}</small><strong>{word}</strong><span>PERSONAL IMPRESSIONS — 08</span>
-      </div>)}
+    <div className={styles.sheets} data-offset-login-sheets aria-hidden="true" onAnimationEnd={event => {
+      // Child glyph/frame animations also bubble here. Only the completed
+      // opaque cover can release navigation; a paused cover keeps the gate shut.
+      if (event.target === event.currentTarget && status === 'success' && step === 'impressing') setStep('waiting')
+    }}>
+      {['top', 'right', 'bottom', 'left'].map((side, index) => <div className={styles.sheet} data-side={side} data-offset-login-exit-sheet={index} key={side} />)}
+      <div className={styles.gateFrames} data-offset-login-gate><i /><i /><i /></div>
+      <div className={styles.gateWord}><strong>IN<span>↗</span></strong></div>
     </div>
     <header className={styles.header}><span>YOROROICE / OFFSET</span><span>08 — PERSONAL ACCESS</span></header>
     <div className={styles.composition}>
       <div className={styles.print} aria-hidden="true">
+        <div className={styles.frameField} data-offset-login-frame><i /><i /><i /><i /><span>08</span></div>
+        <div className={styles.fragments}>{FRAGMENTS.map((fragment, index) => <i key={index} style={{ '--burst-x': fragment.x, '--burst-y': fragment.y, '--turn': fragment.turn, '--size': fragment.size, '--left': fragment.left, '--top': fragment.top, '--fragment-delay': `${index * 28}ms` } as CSSProperties} />)}</div>
         <div className={styles.registration} data-offset-login-registration><i /><i /><i /><i /></div>
         <div className={styles.typePlate} data-offset-login-plate>
           <div className={styles.outlineType}><TypeBlock /></div>
           <div className={styles.redType}><TypeBlock /></div>
           {TYPE_SLICES.map((style, index) => <div className={styles.typeSlice} data-offset-login-type-slice={index} style={style} key={index}><TypeBlock /></div>)}
         </div>
-        <div className={styles.imprint}><span>NOT QUITE<br />THE SAME.</span><i /><b>08</b></div>
+        <div className={styles.imprint}><i /><b>↗</b></div>
       </div>
       <div className={styles.identity}>
-        <span className={styles.marker}>A PERSONAL IMPRESSION</span>
+        <span className={styles.marker} aria-hidden="true" />
         <h1>{copy.title}</h1>
-        <div className={styles.nameBlock} tabIndex={0}>
+        <div className={styles.nameBlock} tabIndex={coverVisible ? -1 : 0}>
           <strong>{username}<span className={styles.nameOverprint} data-offset-login-name aria-hidden="true">{username}</span></strong>
         </div>
         <p role="status">{status === 'error' ? copy.failed : status === 'pending' ? copy.pending : revealing ? copy.ready : copy.success}</p>
