@@ -38,6 +38,7 @@ export default function OffsetHome({ locale, articles, moments, articleState, mo
   const copy = COPY[locale]
   const featured = articles[0]
   const preview = featured ? articlePreview(featured.content) : null
+  const recent = articles.slice(1, 4)
   return <div className={styles.home} data-testid="offset-home" lang={locale}>
     <section className={styles.poster} aria-labelledby="offset-title">
       <div className={styles.masthead}><span>YOROROICE / NOTES IN MOTION</span><span>EDITION 08 <i /> {copy.name}</span></div>
@@ -49,7 +50,6 @@ export default function OffsetHome({ locale, articles, moments, articleState, mo
             <span className={styles.typeRow}><span data-ink="SET.">SET.</span></span>
           </h1>
           <div className={styles.registration} aria-hidden="true"><i /><span>R / K</span><i /></div>
-          <div className={styles.typeAnnotation} aria-hidden="true"><i /><span>A LITTLE<br />OUT OF LINE.</span><b>↗</b></div>
           <p className={styles.typeNote}><span>WORDS HAVE SHAPE.</span><span>SO DOES A LIFE.</span></p>
         </div>
         <div className={styles.copy}>
@@ -73,30 +73,62 @@ export default function OffsetHome({ locale, articles, moments, articleState, mo
     </section>
 
     <section id="offset-writings" className={styles.writings}>
-      <header className={styles.sectionHead}><div><span>01 / WRITTEN MATTER</span><h2>{copy.writings}</h2></div><Link href="/articles">{copy.all}<ArrowUpRight size={20} /></Link></header>
-      {articleState}
-      <div className={styles.articleGrid}>
-        {featured && preview && <Link href={`/articles/${featured._id}`} className={styles.featured}>
-          <div className={styles.featuredImage}>
-            {preview.coverUrl ? <img src={preview.coverUrl} alt={preview.coverAlt || ''} loading="lazy" /> : <div className={styles.emptyCover} aria-hidden="true">TYPE<br /><span>MATTERS.</span></div>}
-            <span className={styles.imageIndex}>SELECTED / 01</span><ArrowUpRight className={styles.imageArrow} size={40} />
-          </div>
-          <div className={styles.meta}><span>{featured.category || translate(locale, 'articles')}</span><time>{dateLabel(featured.createdAt, locale)}</time></div>
-          <h3>{featured.title}</h3><p>{excerpt(preview.content, 115)}</p>
-        </Link>}
-        <div className={styles.notes}>
-          <div className={styles.wordmark} aria-hidden="true"><span>NO</span><span>SMALL</span><span>THINGS<span className={styles.dot}>.</span></span><i>EVERY DETAIL LEAVES A MARK.</i><div className={styles.wordTiles}><b /><b /><b /><b /></div></div>
-          {articles.slice(1, 4).map((entry, index) => <Link key={entry._id} href={`/articles/${entry._id}`} className={styles.note}><span>0{index + 2}</span><div><time>{dateLabel(entry.createdAt, locale)}</time><h3>{entry.title}</h3></div><ArrowUpRight size={20} /></Link>)}
-          <Link href="/archive" className={styles.archiveLink}>{translate(locale, 'archive')}<ArrowRight size={22} /></Link>
+      <header className={styles.sectionHead}>
+        <div><span>01 / WRITTEN MATTER</span><h2>{copy.writings}</h2></div>
+        <div className={styles.writingsLinks}>
+          <Link href="/articles">{copy.all}<ArrowUpRight size={20} /></Link>
+          {!recent.length && <Link href="/archive">{translate(locale, 'archive')}<ArrowRight size={20} /></Link>}
         </div>
-      </div>
+      </header>
+      {articleState}
+      {featured && preview && <div className={styles.articleGrid} data-count={recent.length + 1} data-cover={!!preview.coverUrl}>
+        <Link href={`/articles/${featured._id}`} className={styles.featured} data-cover={!!preview.coverUrl}>
+          {preview.coverUrl && <div className={styles.featuredImage}>
+            <img src={preview.coverUrl} alt={preview.coverAlt || ''} loading="lazy" />
+            <span className={styles.imageIndex}>SELECTED / 01</span><ArrowUpRight className={styles.imageArrow} size={40} aria-hidden="true" />
+          </div>}
+          <div className={styles.featuredCopy}>
+            {!preview.coverUrl && <span className={styles.featuredLabel}>SELECTED / 01</span>}
+            <div className={styles.meta}>
+              <span>{featured.category || translate(locale, 'articles')}</span>
+              <time dateTime={featured.createdAt}>{dateLabel(featured.createdAt, locale)}</time>
+            </div>
+            <h3>{featured.title}</h3>
+            <p>{excerpt(preview.content, 155)}</p>
+          </div>
+          <span className={styles.featuredFoot}>
+            <span>{translate(locale, 'read')}</span><ArrowUpRight size={22} aria-hidden="true" />
+          </span>
+        </Link>
+        {!!recent.length && <div className={styles.notes}>
+          <div className={styles.wordmarkSlot} aria-hidden="true">
+            <div className={styles.wordmark}>
+              <span>NO</span><span>SMALL</span><span>THINGS<span className={styles.dot}>.</span></span>
+              <i>EVERY DETAIL LEAVES A MARK.</i>
+              <div className={styles.wordTiles}><b /><b /><b /><b /></div>
+            </div>
+          </div>
+          {recent.map((entry, index) => <Link key={entry._id} href={`/articles/${entry._id}`} className={styles.note}>
+            <span>0{index + 2}</span>
+            <div>
+              <time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time>
+              <h3>{entry.title}</h3>
+            </div>
+            <ArrowUpRight size={20} aria-hidden="true" />
+          </Link>)}
+          <Link href="/archive" className={styles.archiveLink}>{translate(locale, 'archive')}<ArrowRight size={22} /></Link>
+        </div>}
+      </div>}
     </section>
 
     <section className={styles.fragments}>
       <header className={styles.sectionHead}><div><span>02 / UNBOUND NOTES</span><h2>{copy.fragments}</h2></div><Link href="/moments">{copy.allMoments}<ArrowUpRight size={20} /></Link></header>
       {momentState}
       <div className={styles.momentList}>{moments.slice(0, 3).map((entry, index) => <Link key={entry._id} href={`/moments/${entry._id}`} className={styles.moment}>
-        <div className={styles.momentTop}><span>0{index + 1}</span><ArrowUpRight size={27} /></div><time>{dateLabel(entry.createdAt, locale)}</time><h3>{entry.title}</h3><p>{excerpt(articlePreview(entry.content).content, 80)}</p><span className={styles.momentFoot}>A MOMENT / AN IMPRESSION</span>
+        <div className={styles.momentTop}><span>0{index + 1}</span><ArrowUpRight size={27} aria-hidden="true" /></div>
+        <h3>{entry.title}</h3>
+        <p>{excerpt(articlePreview(entry.content).content, 80)}</p>
+        <time dateTime={entry.createdAt}>{dateLabel(entry.createdAt, locale)}</time>
       </Link>)}</div>
     </section>
     {activity}

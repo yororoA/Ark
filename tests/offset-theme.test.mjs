@@ -162,6 +162,10 @@ for (const width of [320, 390, 1440]) for (const mode of ['light', 'dark']) {
     await expect(page.getByTestId('activity-calendar')).toBeVisible()
     await expect(page.getByTestId('activity-github')).toBeVisible()
     await expect(page.getByTestId('offset-home').getByRole('heading', { name: 'OFFSET / 错版', level: 1 })).toBeVisible()
+    const [off, set] = await page.locator('#offset-title > span').evaluateAll(rows =>
+      rows.map(row => row.getBoundingClientRect().toJSON()))
+    assert(set.left >= off.left + 12 && set.right > off.right, 'SET starts and ends to the right of OFF')
+    assert(Math.abs(set.top - off.bottom) < 1, 'The two staggered plates meet at a common edge')
     for (const href of ['/articles', '/moments', '/chat']) await expect(page.getByTestId('offset-home').locator(`nav a[href="${href}"]`)).toHaveCount(1)
     await noOverflow(page)
     assert.equal(await page.locator('html').evaluate(element => getComputedStyle(element).colorScheme), mode)

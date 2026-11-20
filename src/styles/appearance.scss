@@ -193,6 +193,7 @@
 
 // Print pigments stay constant; text colors adapt to the paper.
 @mixin offset-day {
+  --offset-step: clamp(12px, 2.6vw, 38px);
   --ark-paper: #eee9dd;
   --ark-ink: #191817;
   --ark-muted: #605b55;
