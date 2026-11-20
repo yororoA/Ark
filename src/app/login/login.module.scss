@@ -3,6 +3,7 @@
 @use '@/styles/prism-motion';
 @use './allotype-login';
 @use './fold-login';
+@use './offset-login';
 
 .login-scene {
   @include appearance.surface;
@@ -500,3 +501,5 @@
 @include fold-login.personality;
 
 @include voyage-login.personality;
+
+@include offset-login.personality;

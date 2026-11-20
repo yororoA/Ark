@@ -46,6 +46,10 @@ function Login() {
   const destination = loginDestination(returnTo);
   const { design } = useAppearance();
   useEffect(() => {
+    if (design === 'offset') {
+      void import('@/components/appearance/offset-connection').catch(() => {});
+      return;
+    }
     if (design === 'voyage') {
       void import('@/components/appearance/voyage-connection').catch(() => {});
       return;
@@ -122,7 +126,7 @@ function Login() {
     setConnectionDesign(design);
     setConnection(initial);
     setIsDeclarationVisible(false);
-    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism' || design === 'allotype' || design === 'fold' || design === 'voyage';
+    const themedConnection = design === 'rain' || design === 'p3r' || design === 'prism' || design === 'allotype' || design === 'fold' || design === 'voyage' || design === 'offset';
     const rainId = themedConnection
       ? useRainConnection.getState().begin({ ...initial, design, destination, onDismiss: handleDismissConnection })
       : null;
@@ -199,6 +203,20 @@ function Login() {
         <main className={styles['login-main']}>
           <RainPlanes variant="identity" />
           <section className={styles['login-copy']}>
+            <div className={styles['login-offset']} aria-hidden="true">
+              <div className={styles['offset-plate-heading']}><span>YOROROICE / NOTES IN MOTION</span><span>08 — 错版</span></div>
+              <div className={styles['offset-poster-label']}><span>01 / A PLACE TO BEGIN</span><span>R / B / K <i /><i /><i /></span></div>
+              <div className={styles['offset-frame-field']}>
+                <i /><i /><i /><i />
+                <span>08</span>
+                <small>ROOM FOR<br />ANOTHER YOU.</small>
+              </div>
+              <div className={styles['offset-fragments']}><i /><i /><i /><i /><i /><i /></div>
+              <div className={styles['offset-poster-type']}><span>OFF<b>OFF</b></span><span>SET<b>SET</b></span></div>
+              <i className={styles['offset-poster-mark']} />
+              <div className={styles['offset-poster-rule']}><span>YOUR LIFE.<br />YOUR IMPRESSION.</span><i /><strong>↗</strong></div>
+              <div className={styles['offset-plate-caption']}><span>错开一点，留下自己。</span><span>{activeAccount?.username || 'YOUR STORY STARTS HERE'} ↗</span></div>
+            </div>
             <div className={styles['login-voyage']} aria-hidden="true">
               <div className={styles['voyage-plate-heading']}><span>ARK / NIGHT VOYAGE</span><span>继续阅读 ↗</span></div>
               <strong className={styles['voyage-plate-title']}>THE NEXT<br /><i>CHAPTER.</i></strong>
@@ -223,7 +241,7 @@ function Login() {
               <span>{QINGJIAN_COPY.zh.name}</span><small>YOROROICE / ARK</small>
             </div>
             <div className={styles['login-eyebrow']}>IDENTITY ACCESS / 01</div>
-            <h1><span className={styles['fold-login-heading']}>走进故事</span><span className={styles['standard-login-heading']}>身份验证</span></h1>
+            <h1><span className={styles['offset-login-heading']}>在这一页，留下你的名字。</span><span className={styles['fold-login-heading']}>走进故事</span><span className={styles['standard-login-heading']}>身份验证</span></h1>
             <p>登录已有账号、注册新身份，或以游客身份继续访问。</p>
             <div className={styles['access-notes']}><span><ShieldCheck size={15} />安全会话</span><span><BookOpen size={15} />保留原有内容</span></div>
             <dl className={styles['archive-register']}>

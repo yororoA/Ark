@@ -10,7 +10,23 @@
   &[data-preview='fold'] { --cover-paper: #eeeee1; --cover-ink: #172125; --ark-fold-paper: #eeeee1; --ark-fold-carbon: #11191d; --ark-fold-slate: #485c65; --ark-fold-mist: #a9b9c9; --ark-fold-signal: #b6392a; }
   &[data-preview='allotype'] { --cover-paper: #e7d47b; --cover-ink: #492b38; }
   &[data-preview='voyage'] { --cover-paper: #102cce; --cover-ink: #edf0e8; }
+  &[data-preview='offset'] { --cover-paper: #eee9dd; --cover-ink: #191817; --cover-accent: #ef3d2f; --cover-blue: #3563e9; --cover-blue-soft: #dae8f9; }
 }
+.offset-heading { position: absolute; inset: 6% 6% auto; display: flex; justify-content: space-between; padding-bottom: 3%; border-bottom: 1px solid var(--cover-ink); font: 1.55cqw/1.4 var(--font-ibm-plex),sans-serif; letter-spacing: .06em; }
+.offset-frame { position: absolute; right: 6%; top: 23%; width: 29%; aspect-ratio: 1; background: var(--cover-blue-soft); color: var(--cover-blue); border: 1px solid currentColor; box-shadow: .9cqw .9cqw 0 var(--cover-ink);
+  &::before { content: ''; position: absolute; inset: 12%; border: 1px solid currentColor; opacity: .55; }
+  >span { position: absolute; top: 4%; left: 4%; font: 600 1cqw/1 var(--font-ibm-plex),sans-serif; letter-spacing: .04em; }
+  >div { position: absolute; inset: 24% 23% 20%; display: grid; grid-template-columns: repeat(3,1fr); gap: 7%; }
+  i { display: block; aspect-ratio: 1; background: currentColor; border: 1px solid currentColor; }
+  i:nth-child(1) { transform: translate(-35%,-30%) rotate(-12deg); }
+  i:nth-child(3) { transform: translate(35%,-30%) rotate(12deg); background: var(--cover-paper); }
+  i:nth-child(5) { background: var(--cover-accent); border-color: var(--cover-accent); }
+  i:nth-child(7) { transform: translate(-25%,30%) rotate(12deg); background: var(--cover-paper); }
+  i:nth-child(9) { transform: translate(35%,30%) rotate(-12deg); }
+}
+.offset-cross { position: absolute; left: 88%; top: 73%; width: 3cqw; height: 3cqw; background: linear-gradient(var(--cover-blue),var(--cover-blue)) center/1px 100% no-repeat,linear-gradient(var(--cover-blue),var(--cover-blue)) center/100% 1px no-repeat; }
+.offset-title { position: absolute; left: 6%; top: 21%; font: 900 20.5cqw/.76 var(--font-voyage-display),Impact,sans-serif; letter-spacing: -.05em; text-shadow: .6cqw .4cqw 0 var(--cover-accent); span { display: block; padding-left: .14em; margin-top: .08em; color: var(--cover-accent); text-shadow: -.6cqw .4cqw 0 var(--cover-ink); } }
+.offset-caption { position: absolute; inset: auto 0 0; display: flex; align-items: center; justify-content: space-between; padding: 5% 6%; background: var(--cover-accent); color: var(--cover-ink); font: 600 1.7cqw/1.2 var(--font-ibm-plex),sans-serif; b { font: 800 2.8cqw/1.4 var(--font-noto-sans),sans-serif; letter-spacing: -.04em; } }
 .voyage-heading { position: absolute; inset: 6% 6% auto; display: flex; justify-content: space-between; align-items: center; font: 1.55cqw/1.4 var(--font-ibm-plex),sans-serif; letter-spacing: .12em; color: #edf0e8; >span:last-child { display: grid; place-items: center; width: 6cqw; height: 6cqw; border: 1px solid #e6ff6280; border-radius: 50%; color: #e6ff62; font-size: 2cqw; } }
 .voyage-title { position: absolute; top: 27%; left: 7%; display: flex; flex-direction: column; font: 500 12cqw/1.15 var(--font-noto-serif),serif; letter-spacing: -.04em; color: #edf0e8; span { padding-left: .24em; } }
 .voyage-route { position: absolute; width: 100%; height: 100%; inset: 0; color: #e6ff62; }
@@ -45,6 +61,8 @@
   .cover[data-preview='rain'] { --cover-paper: #142c2e; --cover-ink: #d8eeea; --cover-accent: #8dbfb9; }
   .cover[data-preview='allotype'] { --cover-paper: #211b20; --cover-ink: #e7d47b; }
   .cover[data-preview='fold'] { --cover-paper: #131b1f; --cover-ink: #e3e7de; --ark-fold-paper: #131b1f; --ark-fold-carbon: #8ea1a8; --ark-fold-slate: #435d68; --ark-fold-mist: #273c47; --ark-fold-signal: #df7359; }
+  .cover[data-preview='offset'] { --cover-paper: #1b1b1a; --cover-ink: #eee9dd; --cover-blue: #91b1ff; --cover-blue-soft: #24324b; }
+  .cover[data-preview='offset'] .offset-caption { color: #191817; }
 }
 :global(html[data-theme='dark']) { @include night-covers; }
 @media (prefers-color-scheme: dark) { :global(html[data-theme='system']) { @include night-covers; } }

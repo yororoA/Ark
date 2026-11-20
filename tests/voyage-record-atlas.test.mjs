@@ -33,7 +33,7 @@ async function aligned(page, index) {
   assert(point && marker && Math.hypot(point.x + point.width / 2 - marker.x - marker.width / 2, point.y + point.height / 2 - marker.y - marker.height / 2) < 1.5, 'The beacon and selected record share the same physical position')
 }
 
-test('The route is chronological, mixed, deduplicated and distinct from the remaining directory', async t => {
+test('The route is chronological and mixed while the directory retains every deduplicated record', async t => {
   const { page, context } = await session(t)
   const olderArticle = record('5', 'An older page', '2026-11-02T12:00:00Z')
   const olderMoment = record('6', 'An older observation', '2026-11-01T12:00:00Z')
@@ -44,13 +44,14 @@ test('The route is chronological, mixed, deduplicated and distinct from the rema
   const routeKeys = await tabs.evaluateAll(nodes => nodes.map(node => node.dataset.recordKey))
   assert.deepEqual(routeKeys, ['article:1', 'moment:2', 'article:3', 'moment:4'].map(key => key.replace(/:(\d)$/, (_, id) => `:${id.padStart(24, '0')}`)))
   const directoryKeys = await directory.evaluateAll(nodes => nodes.map(node => node.dataset.recordKey))
-  assert.equal(directoryKeys.length, 3)
-  assert.equal(new Set([...routeKeys, ...directoryKeys]).size, 7, 'Every real ID appears in either the route or the directory, never both')
+  assert.equal(directoryKeys.length, 7)
+  assert.equal(new Set(directoryKeys).size, 7, 'Every real ID appears once in the complete directory')
+  assert(routeKeys.every(key => directoryKeys.includes(key)), 'Route previews remain discoverable in the complete directory')
   const before = { ...reads }
   await tabs.first().focus(); await page.keyboard.press('End')
   await expect(page.getByRole('tabpanel').getByRole('heading')).toHaveText('An earlier moment')
   await expect(page.getByRole('tabpanel').getByRole('link', { name: '打开这一页' })).toHaveAttribute('href', `/moments/${'4'.padStart(24, '0')}`)
-  assert.deepEqual(await directory.evaluateAll(nodes => nodes.map(node => node.dataset.recordKey)), directoryKeys, 'Selection never rearranges the remaining directory')
+  assert.deepEqual(await directory.evaluateAll(nodes => nodes.map(node => node.dataset.recordKey)), directoryKeys, 'Selection never rearranges the complete directory')
   assert.deepEqual(reads, before, 'Choosing a record uses existing data')
 })
 
@@ -72,8 +73,9 @@ for (const count of [1, 2, 4]) {
       await page.getByTestId('voyage-stop-0').click()
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
     }
-    await expect(page.locator('#voyage-logbook h2')).toHaveCount(0)
-    await expect(page.locator('#voyage-logbook a')).toHaveCount(4)
+    await expect(page.locator('#voyage-logbook h2')).toHaveText('继续阅读')
+    await expect(page.locator('#voyage-logbook [data-record-key]')).toHaveCount(count)
+    await expect(page.locator('#voyage-logbook a')).toHaveCount(count + 4)
     await expect(page.getByRole('button', { name: '下一段记录', exact: true })).toHaveCount(count === 1 ? 0 : 1)
     await expect(page.getByRole('button', { name: '上一段记录', exact: true })).toHaveCount(count === 1 ? 0 : 1)
   })

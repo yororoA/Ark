@@ -58,7 +58,6 @@ export default function VoyageHome({ locale, articles, moments, articleState, mo
   const { design } = useAppearance()
   const records = collectRecords(articles, moments, locale)
   const stops = records.slice(0, 4)
-  const remaining = records.slice(4)
   const geometry = routeGeometry(stops.length)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const selected = Math.max(0, stops.findIndex(record => record.key === selectedKey))
@@ -173,13 +172,13 @@ export default function VoyageHome({ locale, articles, moments, articleState, mo
         </> : <div className={styles.emptyAtlas}><span aria-hidden="true">—</span><h2>{copy.empty}</h2><p>{copy.emptyNote}</p><Link href="/articles">{copy.allWritings}<ArrowUpRight size={22}/></Link></div>}
       </div>
     </section>
-    <section className={styles.directory} id="voyage-logbook" data-empty={!remaining.length} aria-labelledby={remaining.length ? 'voyage-continue-title' : undefined} aria-label={remaining.length ? undefined : copy.continue}>
-      {remaining.length ? <>
+    <section className={styles.directory} id="voyage-logbook" data-empty={!records.length} aria-labelledby={records.length ? 'voyage-continue-title' : undefined} aria-label={records.length ? undefined : copy.continue}>
+      {records.length ? <>
         <header className={styles.directoryHead}><h2 id="voyage-continue-title">{copy.continue}</h2><div><Link href="/gallery">{translate(locale, 'gallery')}<ArrowUpRight size={16}/></Link><Link href="/archive">{translate(locale, 'archive')}<ArrowUpRight size={16}/></Link></div></header>
         <div className={styles.directoryColumns}>{(['article', 'moment'] as const).map(kind => <div key={kind}>
           <header className={styles.columnHead}><h3>{kindLabel(kind)}</h3><Link href={kind === 'article' ? '/articles' : '/moments'}>{kind === 'article' ? copy.allWritings : copy.allMoments}<ArrowUpRight size={17}/></Link></header>
           {kind === 'article' ? articleState : momentState}
-          {remaining.filter(record => record.kind === kind).map(record => <Link key={record.key} href={record.href} className={styles.directoryEntry} data-record-key={record.key}><time dateTime={record.date}>{dateLabel(record.date, locale)}</time><h3>{record.title}</h3><ArrowUpRight size={20}/></Link>)}
+          {records.filter(record => record.kind === kind).map(record => <Link key={record.key} href={record.href} className={styles.directoryEntry} data-record-key={record.key}><time dateTime={record.date}>{dateLabel(record.date, locale)}</time><h3>{record.title}</h3><ArrowUpRight size={20}/></Link>)}
         </div>)}</div>
       </> : <>
         <div className={styles.browse}>{[['/articles', copy.writings], ['/moments', copy.moments], ['/gallery', translate(locale, 'gallery')], ['/archive', translate(locale, 'archive')]].map(([href, label]) => <Link key={href} href={href}>{label}<ArrowUpRight size={19}/></Link>)}</div>

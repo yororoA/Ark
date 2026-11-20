@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-img-element -- Migrated media has arbitrary dimensions and hosts; preserve its original aspect ratio. */
 
-import { useCallback, useEffect, useId, useRef, useState, type TextareaHTMLAttributes } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type TextareaHTMLAttributes } from 'react'
 import Link from '@/components/appearance/p3r-link'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileImage, Heart, LoaderCircle, Play, RotateCcw, Trash2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react'
@@ -60,18 +60,37 @@ const markdownComponents: Components = {
 }
 
 export function Markdown({ content, readingGuide = false }: { content: string; readingGuide?: boolean }) {
-  return <div className={styles['markdown']} data-voyage-prose={readingGuide || undefined}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown></div>
+  // Markdown accepts CR, CRLF and LF line endings. Bare CR survives in fenced
+  // code text, where a client-rendered DOM node does not display it as a break.
+  const source = content.replace(/\r\n?/g, '\n')
+  return <div className={styles['markdown']} data-voyage-prose={readingGuide || undefined}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{source}</ReactMarkdown></div>
 }
-export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
+export function AutoTextarea({ value, minRows = 4, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   const resize = useCallback(() => {
     const textarea = ref.current
-    if (!textarea) return
-    textarea.style.height = '0'
-    const borderHeight = textarea.offsetHeight - textarea.clientHeight
-    textarea.style.height = `${textarea.scrollHeight + borderHeight}px`
+    if (!textarea?.isConnected || !textarea.clientWidth) return
+    const computed = getComputedStyle(textarea)
+    // Shrinking the live field to measure it collapses a long document, so the
+    // browser clamps its scroll position and moves the caret's viewport. An
+    // out-of-flow sibling keeps the same theme/field rules without that collapse.
+    const measure = textarea.cloneNode(false) as HTMLTextAreaElement
+    measure.removeAttribute('id')
+    measure.removeAttribute('name')
+    measure.removeAttribute('required')
+    measure.setAttribute('aria-hidden', 'true')
+    measure.tabIndex = -1
+    Object.assign(measure.style, { position: 'fixed', top: '0', left: '0', visibility: 'hidden', pointerEvents: 'none', height: 'auto', width: computed.width, margin: '0' })
+    measure.value = textarea.value
+    textarea.after(measure)
+    const borderHeight = measure.offsetHeight - measure.clientHeight
+    const paddingHeight = parseFloat(computed.paddingTop) + parseFloat(computed.paddingBottom)
+    const height = measure.scrollHeight + (computed.boxSizing === 'border-box' ? borderHeight : -paddingHeight)
+    measure.remove()
+    const nextHeight = `${height}px`
+    if (textarea.style.height !== nextHeight) textarea.style.height = nextHeight
   }, [])
-  useEffect(resize, [resize, value])
+  useLayoutEffect(resize, [resize, value, minRows])
   useEffect(() => {
     const textarea = ref.current
     if (!textarea) return
@@ -84,7 +103,7 @@ export function AutoTextarea({ value, minRows = 4, onInput, style, ...props }: O
     observer.observe(textarea)
     return () => observer.disconnect()
   }, [resize])
-  return <textarea {...props} ref={ref} rows={minRows} value={value} style={{ ...style, overflowY: 'hidden' }} onInput={event => { resize(); onInput?.(event) }} />
+  return <textarea {...props} ref={ref} rows={minRows} value={value} style={{ ...style, overflowY: 'hidden' }} />
 }
 export function RequireLogin({ children, guestAllowed = false }: { children: React.ReactNode; guestAllowed?: boolean }) {
   const { session, sessionLoading, t } = useBlog()

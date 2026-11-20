@@ -18,6 +18,7 @@ import { PrismMenu } from './prism-navigation'
 import MobileNavigation from './mobile-navigation'
 import VoyageMenu from './voyage-menu'
 import FoldMenu from './fold-menu'
+import OffsetMenu from './offset-menu'
 import AppNavigation, { MobilePageContext } from './app-navigation'
 import { syncAuthDetails } from '@/store/auth'
 import styles from './blog.module.scss'
@@ -28,7 +29,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const showMenuCloseIcon = open && (design === 'p3r' || design === 'prism' || design === 'fold' || design === 'voyage')
+  const showMenuCloseIcon = open && (design === 'p3r' || design === 'prism' || design === 'fold' || design === 'voyage' || design === 'offset')
   const closeMenu = useCallback(() => setOpen(false), [])
   useEffect(() => {
     const hash = location.hash.slice(1)
@@ -54,7 +55,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </Link>
         <Suspense><MobilePageContext /></Suspense>
         <nav className={styles['desktop-nav']} aria-label={t('menu')}>
-          {sections.map(([key, number]) => <Link href={`/${key}`} key={key} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span className={styles['nav-index']} aria-hidden="true">{number}</span>{t(key)}</Link>)}
+          {sections.map(([key, number]) => <Link href={`/${key}`} key={key} aria-label={t(key)} aria-current={pathname.startsWith(`/${key}`) ? 'page' : undefined}><span className={styles['nav-index']} aria-hidden="true">{number}</span>{t(key)}</Link>)}
         </nav>
         <div className={styles['header-tools']}>
           <Link className={styles['chat-link']} href="/chat">{t('chat')}<ArrowUpRight size={14} /></Link>
@@ -67,7 +68,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       {/* onNavigate closes the menu beneath a page wipe instead of at the click. */}
-      {open && (design === 'voyage' ? <VoyageMenu locale={locale} close={closeMenu} /> : design === 'fold' ? <FoldMenu locale={locale} close={closeMenu} /> : design === 'prism' ? <PrismMenu locale={locale} close={closeMenu} /> : design === 'p3r' ? <P3RMenu locale={locale} close={closeMenu} /> : <MobileNavigation close={closeMenu} />)}
+      {open && (design === 'offset' ? <OffsetMenu locale={locale} close={closeMenu} /> : design === 'voyage' ? <VoyageMenu locale={locale} close={closeMenu} /> : design === 'fold' ? <FoldMenu locale={locale} close={closeMenu} /> : design === 'prism' ? <PrismMenu locale={locale} close={closeMenu} /> : design === 'p3r' ? <P3RMenu locale={locale} close={closeMenu} /> : <MobileNavigation close={closeMenu} />)}
       <main id="main-content" className={styles['main-content']}>{children}</main>
       <footer className={styles['site-footer']}>
         <div className={styles['footer-signatures']}>
