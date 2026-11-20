@@ -60,7 +60,10 @@ const markdownComponents: Components = {
 }
 
 export function Markdown({ content, readingGuide = false }: { content: string; readingGuide?: boolean }) {
-  return <div className={styles['markdown']} data-voyage-prose={readingGuide || undefined}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown></div>
+  // Markdown accepts CR, CRLF and LF line endings. Bare CR survives in fenced
+  // code text, where a client-rendered DOM node does not display it as a break.
+  const source = content.replace(/\r\n?/g, '\n')
+  return <div className={styles['markdown']} data-voyage-prose={readingGuide || undefined}><ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{source}</ReactMarkdown></div>
 }
 export function AutoTextarea({ value, minRows = 4, style, ...props }: Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'rows'> & { value: string; minRows?: number }) {
   const ref = useRef<HTMLTextAreaElement>(null)
